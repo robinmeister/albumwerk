@@ -1,0 +1,36 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+.yarn
+
+# PocketBase runtime data (created by docker compose / local pocketbase serve)
+pb_data/
+
+# instance credentials (copied from .env.example)
+.env
+saas/.env
+
+# backups created by `make backup`
+backup-*.tar.gz
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+/skripts/

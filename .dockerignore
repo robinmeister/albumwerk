@@ -1,0 +1,9 @@
+node_modules
+dist
+pb_data
+.git
+.firebase
+docs
+skripts
+*.log
+.env.development

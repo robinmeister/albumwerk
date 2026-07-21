@@ -1,0 +1,82 @@
+import { Typography } from "@mui/material";
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
+import { toast } from "react-toastify";
+import { ReactElement } from "react";
+import {
+  CreateOrderData,
+  OnApproveData,
+  OnApproveActions,
+} from "@paypal/paypal-js";
+
+import { ImagePriceObject, User } from "../../../../utils/types";
+import { useSettings } from "../../../../context/SettingsContext";
+import { pb } from "../../../../config/pocketbase";
+import PaymentUnavailable from "../../../../components/feedback/PaymentUnavailable";
+
+type Props = {
+  paymentCompleted: boolean;
+  setPaymentCompleted: (paymentCompleted: boolean) => void;
+  disabled: boolean;
+  userData: User;
+  imagePriceObjectList: ImagePriceObject[];
+  shootingId?: string;
+  // called with the server-created order id once payment is verified
+  onPaid: (orderId: string) => void;
+};
+
+// PayPal is driven entirely server-side (pb_hooks/paypal.pb.js): the button's
+// createOrder/onApprove call our own endpoints, which price, create and capture
+// the order with the instance's PayPal credentials. The browser never sets the
+// amount and cannot grant itself the download.
+export default function PaypalForm(props: Props): ReactElement {
+  const { setPaymentCompleted, disabled, userData, imagePriceObjectList, shootingId, onPaid } = props;
+  const { settings } = useSettings();
+
+  // configured at runtime on the admin payments page; env var only as dev fallback
+  const clientId =
+    settings.paypalClientId || import.meta.env.VITE_PAYPAL_CLIENT_ID || "";
+
+  if (!clientId) {
+    return <PaymentUnavailable />;
+  }
+
+  return (
+    <PayPalScriptProvider options={{
+      "client-id": clientId,
+      "disable-funding": "bancontact,eps,ideal,mercadopago,mybank,p24,sepa",
+      "currency": settings.currency || "EUR",
+      "locale": "de_DE",
+    }}>
+      {!disabled ? (<PayPalButtons
+        createOrder={async (_data: CreateOrderData): Promise<string> => {
+          const res = await pb.send("/api/custom/paypal/create-order", {
+            method: "POST",
+            body: { imagePriceObjectList, shootingId, userData },
+          });
+          return res.id as string;
+        }}
+        onApprove={async (data: OnApproveData, _actions: OnApproveActions): Promise<void> => {
+          const res = await pb.send("/api/custom/paypal/capture", {
+            method: "POST",
+            body: { orderID: data.orderID },
+          });
+          if (res?.status === "success") {
+            toast.success("Bezahlung abgeschlossen");
+            onPaid(res.orderId as string);
+            setPaymentCompleted(true);
+          } else {
+            toast.error("Die Zahlung konnte nicht bestätigt werden.");
+          }
+        }}
+        onError={(err: Record<string, unknown>) => {
+          toast.error("Bezahlung fehlgeschlagen");
+          console.error("Payment error: ", err);
+        }}
+      />) : (
+        <Typography variant="subtitle1" component="div" sx={{ p: 2 }}>
+          Bitte fülle alle oben stehenden Pflichtfelder aus, um fortzufahren.
+        </Typography>
+      )}
+    </PayPalScriptProvider>
+  )
+}

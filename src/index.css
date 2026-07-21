@@ -1,0 +1,7 @@
+/* Global tweaks only — layout, colors and typography come from the MUI theme
+   (src/utils/theme.ts, built from the instance settings). */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}

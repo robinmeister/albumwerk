@@ -1,0 +1,45 @@
+# Albumwerk — Self-Hosting mit einem Container.
+# Start:  docker compose up -d
+# Update: docker compose pull && docker compose up -d   (bzw. --build)
+# Backup: nächtlich automatisch nach ./pb_data/backups/ + "make backup" (README → Backup).
+services:
+  app:
+    build: .
+    # Alternativ ein veröffentlichtes Image verwenden:
+    # image: gitea.robinhm.de/robinmeister/albumwerk:latest
+    restart: unless-stopped
+    ports:
+      # Für die Ersteinrichtung / lokalen Zugriff. Läuft die App hinter Caddy
+      # (siehe unten) unter einer eigenen Domain, kann diese Zeile entfernt
+      # werden, damit die App nur noch über HTTPS erreichbar ist.
+      # Host-Port anpassbar, falls 8090 belegt ist: APP_PORT=8092 docker compose up -d
+      - "${APP_PORT:-8090}:8090"
+    volumes:
+      - ./pb_data:/pb/pb_data
+    environment:
+      # Superuser wird beim ersten Start automatisch angelegt.
+      # Danach können diese Zeilen entfernt werden.
+      PB_SUPERUSER_EMAIL: ${PB_SUPERUSER_EMAIL:-}
+      PB_SUPERUSER_PASSWORD: ${PB_SUPERUSER_PASSWORD:-}
+
+  # --- HTTPS mit eigener Domain (empfohlen für den Produktivbetrieb) --------
+  # Caddy besorgt automatisch Let's-Encrypt-Zertifikate. Die Domain wird im
+  # Einrichtungs-Assistenten der App eingetragen — die Caddyfile muss NICHT
+  # editiert werden (On-Demand-TLS, siehe Caddyfile).
+  #
+  # Voraussetzungen: Ports 80 und 443 in der Firewall geöffnet und ein
+  # DNS-A/AAAA-Record der Domain auf die Server-IP.
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+
+volumes:
+  caddy_data:

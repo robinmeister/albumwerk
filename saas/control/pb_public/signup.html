@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Albumwerk — 14 Tage kostenlos testen</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #f4f4f5; color: #1a1a1a; min-height: 100vh;
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+    }
+    .card {
+      background: #fff; border: 1px solid #e5e5e5; border-radius: 12px;
+      border-top: 4px solid #3d4a3d; max-width: 440px; width: 100%; padding: 32px;
+    }
+    h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 4px; }
+    p.sub { color: #666; font-size: .95rem; margin-bottom: 24px; }
+    label { display: block; font-size: .85rem; font-weight: 600; margin: 14px 0 4px; }
+    input {
+      width: 100%; padding: 10px 12px; font-size: 1rem;
+      border: 1px solid #ccc; border-radius: 6px;
+    }
+    .domain-row { display: flex; align-items: center; gap: 6px; }
+    .domain-row input { flex: 1; }
+    .domain-row span { color: #666; white-space: nowrap; }
+    button {
+      width: 100%; margin-top: 22px; padding: 12px; font-size: 1rem; font-weight: 600;
+      color: #fff; background: #3d4a3d; border: 0; border-radius: 999px; cursor: pointer;
+    }
+    button:disabled { opacity: .6; cursor: wait; }
+    .msg { margin-top: 16px; padding: 12px; border-radius: 6px; font-size: .95rem; display: none; }
+    .msg.ok { background: #e8f5e9; color: #1b5e20; display: block; }
+    .msg.err { background: #fdecea; color: #b71c1c; display: block; }
+    .fine { color: #888; font-size: .8rem; margin-top: 18px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>14 Tage kostenlos testen</h1>
+    <p class="sub">Dein eigenes Kundenalbum mit Bildverkauf — 0&nbsp;% Kommission,
+      Server in Deutschland. Keine Kreditkarte nötig.</p>
+    <form id="f">
+      <label for="name">Dein Name</label>
+      <input id="name" name="name" autocomplete="name" placeholder="Katharina Muster">
+      <label for="email">E-Mail-Adresse</label>
+      <input id="email" name="email" type="email" required autocomplete="email" placeholder="du@beispiel.de">
+      <label for="subdomain">Wunsch-Adresse</label>
+      <div class="domain-row">
+        <input id="subdomain" name="subdomain" required minlength="3" maxlength="31"
+               pattern="[a-z0-9][a-z0-9\-]{2,30}" placeholder="katharina-fotografie">
+        <span id="domainSuffix">.albumwerk.de</span>
+      </div>
+      <button type="submit" id="btn">Album erstellen</button>
+      <div class="msg" id="msg"></div>
+      <p class="fine">Nach 14 Tagen pausiert dein Album automatisch — es entsteht
+        kein Abo und keine Zahlungspflicht. Deine Daten bleiben danach noch 30 Tage
+        erhalten.</p>
+    </form>
+  </div>
+  <script>
+    // Suffix aus dem Host ableiten (signup läuft auf control.SAAS_DOMAIN)
+    const host = location.hostname.split(".").slice(1).join(".");
+    if (host) document.getElementById("domainSuffix").textContent = "." + host;
+
+    const f = document.getElementById("f");
+    const msg = document.getElementById("msg");
+    const btn = document.getElementById("btn");
+    f.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      msg.className = "msg";
+      btn.disabled = true;
+      btn.textContent = "Wird eingerichtet …";
+      try {
+        const res = await fetch("/api/saas/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: f.name.value.trim(),
+            email: f.email.value.trim(),
+            subdomain: f.subdomain.value.trim().toLowerCase(),
+          }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          msg.textContent = data.message + " Dein Album: " + data.url;
+          msg.className = "msg ok";
+          f.querySelectorAll("input,button").forEach((el) => { el.disabled = true; });
+        } else {
+          msg.textContent = data.message || "Das hat leider nicht geklappt. Bitte versuche es erneut.";
+          msg.className = "msg err";
+          btn.disabled = false;
+          btn.textContent = "Album erstellen";
+        }
+      } catch (e) {
+        msg.textContent = "Verbindungsfehler — bitte versuche es erneut.";
+        msg.className = "msg err";
+        btn.disabled = false;
+        btn.textContent = "Album erstellen";
+      }
+    });
+  </script>
+</body>
+</html>
