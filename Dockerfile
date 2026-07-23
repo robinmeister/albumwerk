@@ -5,7 +5,7 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --legacy-peer-deps
+RUN npm ci
 
 COPY tsconfig.json tsconfig.node.json vite.config.ts index.html ./
 COPY public ./public

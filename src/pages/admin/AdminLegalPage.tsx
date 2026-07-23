@@ -1,17 +1,21 @@
 import { Button } from "@astryxdesign/core/Button";
 import { Divider } from "@astryxdesign/core/Divider";
 import { TextInput } from "@astryxdesign/core/TextInput";
-import { TextArea } from "@astryxdesign/core/TextArea";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Text } from "@astryxdesign/core/Text";
 import * as stylex from "@stylexjs/stylex";
-import { ReactElement, ReactNode, useEffect, useState } from "react";
+import { lazy, ReactElement, ReactNode, Suspense, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 import Page from "../../components/layout/Page";
 import { pb } from "../../config/pocketbase";
 import { SETTINGS_RECORD_ID } from "../../config/settings";
 import { useSettings } from "../../context/SettingsContext";
+import {
+  buildImprintHtml,
+  buildPrivacyHtml,
+  type LegalOperator,
+} from "../../utils/legalTemplates";
 
 const s = stylex.create({
   sections: { display: "flex", flexDirection: "column", gap: 16 },
@@ -41,39 +45,18 @@ function SectionCard({ title, subtitle, children }: { title: string; subtitle: s
   );
 }
 
-interface ImprintForm {
-  name: string;
-  street: string;
-  city: string;
-  representative: string;
-  phone: string;
-  email: string;
-  vatId: string;
+// TipTap/ProseMirror is ~120 kB gzip and only ever needed on this admin page,
+// so it stays out of the bundle every customer downloads.
+const RichTextEditor = lazy(() => import("../../components/widgets/RichTextEditor"));
+
+function EditorFallback({ label }: { label: string }) {
+  return <Text type="supporting" color="secondary">{`${label} wird geladen …`}</Text>;
 }
 
-const esc = (v: string) =>
-  v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-// ponytail: static template string, no CMS — reicht für ein Standard-Impressum nach § 5 DDG
-function buildImprintHtml(g: ImprintForm): string {
-  const address = `${esc(g.name)}<br/>${esc(g.street)}<br/>${esc(g.city)}`;
-  return [
-    "<h2>Impressum</h2>",
-    "<h3>Angaben gemäß § 5 DDG</h3>",
-    `<p>${address}</p>`,
-    g.representative && `<p>Vertreten durch:<br/>${esc(g.representative)}</p>`,
-    "<h3>Kontakt</h3>",
-    `<p>${g.phone ? `Telefon: ${esc(g.phone)}<br/>` : ""}E-Mail: ${esc(g.email)}</p>`,
-    g.vatId &&
-      `<h3>Umsatzsteuer-ID</h3><p>Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz:<br/>${esc(g.vatId)}</p>`,
-    "<h3>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h3>",
-    `<p>${address}</p>`,
-    "<h3>Verbraucherstreitbeilegung / Universalschlichtungsstelle</h3>",
-    "<p>Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>",
-  ]
-    .filter(Boolean)
-    .join("\n");
-}
+const EMPTY_OPERATOR: LegalOperator = {
+  name: "", street: "", city: "", representative: "", phone: "", email: "", vatId: "",
+  hostingProvider: "", mailProvider: "",
+};
 
 export default function AdminLegalPage(): ReactElement {
   const { settings, loaded, refresh } = useSettings();
@@ -81,28 +64,47 @@ export default function AdminLegalPage(): ReactElement {
   const [imprintHtml, setImprintHtml] = useState("");
   const [privacyHtml, setPrivacyHtml] = useState("");
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<ImprintForm>({
-    name: "", street: "", city: "", representative: "", phone: "", email: "", vatId: "",
-  });
+  const [form, setForm] = useState<LegalOperator>(EMPTY_OPERATOR);
+  // true while the privacy text on screen is the untouched template
+  const [privacyPrefilled, setPrivacyPrefilled] = useState(false);
+
+  const privacyContext = {
+    paypalEnabled: settings.paypalEnabled,
+    stripeEnabled: settings.stripeEnabled,
+  };
 
   useEffect(() => {
     if (!loaded) return;
+    const operator: LegalOperator = {
+      ...EMPTY_OPERATOR,
+      name: settings.businessName,
+      email: settings.contactEmail,
+    };
     setImprintHtml(settings.imprintHtml);
-    setPrivacyHtml(settings.privacyHtml);
-    setForm((f) => ({
-      ...f,
-      name: f.name || settings.businessName,
-      email: f.email || settings.contactEmail,
-    }));
+    setForm((f) => ({ ...f, name: f.name || operator.name, email: f.email || operator.email }));
+    // Nothing stored yet: start from the template instead of a blank page, so
+    // the instance has a complete draft to work through.
+    if (settings.privacyHtml.trim()) {
+      setPrivacyHtml(settings.privacyHtml);
+    } else {
+      setPrivacyHtml(buildPrivacyHtml(operator, privacyContext));
+      setPrivacyPrefilled(true);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded]);
 
-  const setF = (patch: Partial<ImprintForm>) => setForm((f) => ({ ...f, ...patch }));
+  const setF = (patch: Partial<LegalOperator>) => setForm((f) => ({ ...f, ...patch }));
   const canGenerate = Boolean(form.name.trim() && form.street.trim() && form.city.trim() && form.email.trim());
 
   const generate = () => {
     setImprintHtml(buildImprintHtml(form));
     toast.info("Impressum erzeugt — unten prüfen und speichern");
+  };
+
+  const generatePrivacy = () => {
+    setPrivacyHtml(buildPrivacyHtml(form, privacyContext));
+    setPrivacyPrefilled(false);
+    toast.info("Datenschutzerklärung erzeugt — unten prüfen und speichern");
   };
 
   const save = async () => {
@@ -123,8 +125,8 @@ export default function AdminLegalPage(): ReactElement {
     <Page title="Rechtliches">
       <div {...stylex.props(s.sections)}>
         <SectionCard
-          title="Impressum erstellen"
-          subtitle="Angaben eintragen und ein Standard-Impressum (§ 5 DDG) erzeugen lassen"
+          title="Angaben zum Betrieb"
+          subtitle="Grundlage für die erzeugten Texte — Impressum (§ 5 DDG) und Datenschutzerklärung"
         >
           <div {...stylex.props(s.grid2)}>
             <TextInput width="100%" label="Name / Firma" value={form.name}
@@ -141,30 +143,57 @@ export default function AdminLegalPage(): ReactElement {
               onChange={(v) => setF({ email: v })} />
             <TextInput width="100%" label="Umsatzsteuer-ID (optional)" placeholder="DE123456789"
               value={form.vatId} onChange={(v) => setF({ vatId: v })} />
+            <TextInput width="100%" label="Hosting-Anbieter (für die Datenschutzerklärung)"
+              placeholder="Firma, Anschrift — oder „eigener Server“"
+              value={form.hostingProvider} onChange={(v) => setF({ hostingProvider: v })} />
+            <TextInput width="100%" label="E-Mail-Dienst / SMTP (für die Datenschutzerklärung)"
+              placeholder="Firma, Anschrift"
+              value={form.mailProvider} onChange={(v) => setF({ mailProvider: v })} />
           </div>
           <div {...stylex.props(s.actionRow)}>
             <Button variant="secondary" label="Standard-Impressum erzeugen"
               isDisabled={!canGenerate} onClick={generate} />
+            <Button variant="secondary" label="Datenschutzerklärung erzeugen"
+              onClick={generatePrivacy} />
             <Text type="supporting" color="secondary">
-              Überschreibt den Impressum-Text unten — dort kannst du ihn noch anpassen.
+              Überschreibt den jeweiligen Text unten — dort kannst du ihn weiter anpassen.
             </Text>
           </div>
+          <Text type="supporting" color="secondary">
+            Die beiden Anbieter-Angaben werden nur in den erzeugten Text übernommen und nicht gespeichert.
+          </Text>
         </SectionCard>
 
         <SectionCard
           title="Impressum"
-          subtitle="Öffentlich sichtbar unter /imprint (HTML erlaubt)"
+          subtitle="Öffentlich sichtbar unter /imprint"
         >
-          <TextArea width="100%" rows={12} label="Impressum"
-            value={imprintHtml} onChange={setImprintHtml} />
+          <Suspense fallback={<EditorFallback label="Editor" />}>
+            <RichTextEditor label="Impressum" value={imprintHtml} onChange={setImprintHtml} />
+          </Suspense>
         </SectionCard>
 
         <SectionCard
           title="Datenschutzerklärung"
-          subtitle="Öffentlich sichtbar unter /privacy (HTML erlaubt)"
+          subtitle="Öffentlich sichtbar unter /privacy"
         >
-          <TextArea width="100%" rows={12} label="Datenschutzerklärung"
-            value={privacyHtml} onChange={setPrivacyHtml} />
+          {privacyPrefilled && (
+            <Text type="supporting" color="secondary">
+              Vorbelegt mit der Standard-Vorlage — noch nicht gespeichert. Bitte die mit „[bitte ergänzen: …]“
+              markierten Stellen ausfüllen und den Text vor der Veröffentlichung rechtlich prüfen lassen.
+            </Text>
+          )}
+          <Suspense fallback={<EditorFallback label="Editor" />}>
+            <RichTextEditor
+              label="Datenschutzerklärung"
+              value={privacyHtml}
+              onChange={(html) => {
+                setPrivacyHtml(html);
+                setPrivacyPrefilled(false);
+              }}
+              minHeight={420}
+            />
+          </Suspense>
         </SectionCard>
 
         <Divider />
