@@ -60,6 +60,28 @@ eintragen und mit *Send test email* prüfen. Unter **Settings → Application**
 die öffentliche Adresse des Albums als *Application URL* eintragen (steht in
 den E-Mail-Links).
 
+### Support-Anfragen
+
+Angemeldete Nutzer können unter **Support** Anfragen stellen; Sie beantworten
+sie als Admin direkt in der App (Menüpunkt *Support*). Der Kunde bekommt jede
+Antwort zusätzlich per E-Mail — dafür muss SMTP eingerichtet sein (siehe oben)
+und unter *Settings → Application* die Application URL stimmen.
+
+Meldet jemand ein **technisches Problem der Software**, kann die Anfrage an den
+Hersteller weitergeleitet werden. Das passiert **nur**, wenn Sie eine der beiden
+Umgebungsvariablen setzen:
+
+| Variable | Bedeutung |
+|---|---|
+| `SAAS_CONTROL_URL` | zentrale Support-Annahme des Herstellers (bevorzugt) |
+| `VENDOR_SUPPORT_EMAIL` | E-Mail-Fallback, falls die erste Adresse fehlt/nicht erreichbar ist |
+
+**Ohne diese Variablen verlässt keine Support-Anfrage Ihre Instanz** — alle
+Tickets bleiben bei Ihnen, und die App weist die meldende Person darauf hin.
+Wird weitergeleitet, sieht der Melder vor dem Absenden genau, welche Daten
+übertragen werden, und muss ausdrücklich zustimmen; ohne Zustimmung werden Name
+und E-Mail-Adresse nicht mitgesendet.
+
 ## Update
 
 **Weg A (Image):**

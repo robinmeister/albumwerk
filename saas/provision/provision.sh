@@ -64,6 +64,18 @@ coolify_api POST "/applications/$UUID/envs" \
   "{\"key\":\"PB_SUPERUSER_PASSWORD\",\"value\":\"$OPS_PASS\",\"is_shown_once\":true}" > /dev/null
 echo "  Ops-Zugang gesetzt ($OPS_EMAIL)" >&2
 
+# --- 3b) Support-Weiterleitung an den Hersteller ------------------------------
+# Technische Tickets der Instanz gehen an die Control-Plane; die E-Mail dient
+# als Fallback, wenn die Control-Plane gerade nicht erreichbar ist.
+SUPPORT_CONTROL_URL="${CONTROL_URL:-https://control.$SAAS_DOMAIN}"
+coolify_api POST "/applications/$UUID/envs" \
+  "{\"key\":\"SAAS_CONTROL_URL\",\"value\":\"$SUPPORT_CONTROL_URL\"}" > /dev/null
+if [ -n "${SUPPORT_NOTIFY_EMAIL:-}" ]; then
+  coolify_api POST "/applications/$UUID/envs" \
+    "{\"key\":\"VENDOR_SUPPORT_EMAIL\",\"value\":\"$SUPPORT_NOTIFY_EMAIL\"}" > /dev/null
+fi
+echo "  Support-Weiterleitung: $SUPPORT_CONTROL_URL / ${SUPPORT_NOTIFY_EMAIL:-(keine E-Mail)}" >&2
+
 # --- 4) Deploy + auf Gesundheit warten ----------------------------------------
 coolify_api POST "/applications/$UUID/start" > /dev/null
 echo "  Deployment gestartet, warte auf $URL/api/health …" >&2

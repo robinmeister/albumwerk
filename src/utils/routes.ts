@@ -23,6 +23,7 @@ export const adminNavItems: NavItem[] = [
   { key: "orders", label: "Bestellungen", path: "/orders", Icon: ReceiptLong },
   { key: "users", label: "Nutzer", path: "/users", Icon: People },
   { key: "payments", label: "Zahlungen", path: "/payments", Icon: Payments },
+  { key: "support", label: "Support", path: "/support", Icon: SupportAgent },
   { key: "branding", label: "Branding", path: "/branding", Icon: Palette },
   { key: "legal", label: "Rechtliches", path: "/legal", Icon: Scale },
 ];

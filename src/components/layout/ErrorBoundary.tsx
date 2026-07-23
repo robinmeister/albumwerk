@@ -5,6 +5,10 @@ import { Button } from "@astryxdesign/core/Button";
 import { Text } from "@astryxdesign/core/Text";
 import * as stylex from "@stylexjs/stylex";
 
+import { pb } from "../../config/pocketbase";
+import { useSettings } from "../../context/SettingsContext";
+import { recordAppError } from "../../utils/errorReport";
+
 interface Props {
   children: ReactNode;
 }
@@ -12,6 +16,7 @@ interface Props {
 interface ErrorState {
   error: Error | null;
   componentStack: string;
+  errorId: string;
 }
 
 const s = stylex.create({
@@ -42,14 +47,39 @@ export default function ErrorBoundary({ children }: Props): ReactElement {
   const [errorState, setErrorState] = useState<ErrorState>({
     error: null,
     componentStack: "",
+    errorId: "",
   });
   const [showDetails, setShowDetails] = useState(false);
+  const { settings } = useSettings();
+  const contactEmail = settings.contactEmail;
 
   const handleError = (error: unknown, componentStack: string) => {
     const normalizedError =
       error instanceof Error ? error : new Error(String(error));
-    setErrorState({ error: normalizedError, componentStack });
+    // stash the crash so /support can attach it to a ticket
+    const errorId = recordAppError(normalizedError, componentStack);
+    setErrorState({ error: normalizedError, componentStack, errorId });
     console.error(normalizedError, componentStack);
+  };
+
+  // Full page load, not navigate(): the router subtree that just crashed is
+  // exactly the one that would have to render the target route.
+  const reportProblem = () => {
+    if (pb.authStore.isValid) {
+      window.location.href = `/support?new=1&error=${encodeURIComponent(errorState.errorId)}`;
+      return;
+    }
+    // signed out (public album, login): no ticket to open — hand the details to
+    // the mail client instead
+    const body = [
+      "Beim Benutzen der Seite ist ein Fehler aufgetreten.",
+      "",
+      `Seite: ${window.location.href}`,
+      `Fehler: ${errorState.error?.message ?? "unbekannt"}`,
+    ].join("\n");
+    window.location.href =
+      `mailto:${contactEmail}?subject=${encodeURIComponent("Fehler auf der Seite")}` +
+      `&body=${encodeURIComponent(body)}`;
   };
 
   return (
@@ -76,6 +106,14 @@ export default function ErrorBoundary({ children }: Props): ReactElement {
                   window.location.href = "/";
                 }}
               />
+              {(pb.authStore.isValid || contactEmail) && (
+                <Button
+                  size="sm"
+                  variant="primary"
+                  label="Problem melden"
+                  onClick={reportProblem}
+                />
+              )}
             </div>
             {errorState.error?.message && (
               <div>

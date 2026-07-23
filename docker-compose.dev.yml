@@ -24,6 +24,10 @@ services:
       PB_DEV_SMTP_HOST: mailpit
       PB_DEV_SMTP_PORT: "1025"
       PB_DEV_APP_URL: http://localhost:${APP_PORT:-8091}
+      # Support-Weiterleitung an den "Hersteller" — im Dev-Setup landet die
+      # Meldung in Mailpit, solange keine Control-Plane gesetzt ist.
+      SAAS_CONTROL_URL: ${SAAS_CONTROL_URL:-}
+      VENDOR_SUPPORT_EMAIL: ${VENDOR_SUPPORT_EMAIL:-vendor@demo.test}
 
   mailpit:
     image: axllent/mailpit:latest

@@ -3,8 +3,18 @@ import react from '@vitejs/plugin-react-swc'
 import { VitePWA } from 'vite-plugin-pwa'
 import StylexRsPlugin from '@stylexswc/unplugin/vite'
 
+import pkg from './package.json'
+
+// Baked into the bundle so support tickets can report which build a customer
+// was running (src/utils/errorReport.ts). The Docker build passes the release
+// tag as APP_VERSION; a plain `npm run build` falls back to package.json.
+const appVersion = process.env.APP_VERSION || pkg.version
+
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+  },
   server: {
     host: '0.0.0.0',
     port: 5173,

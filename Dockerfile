@@ -7,6 +7,8 @@
 # ---------------------------------------------------------------------------
 FROM node:20-bookworm-slim AS build
 
+ARG APP_VERSION=dev
+
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -14,7 +16,8 @@ RUN npm ci
 COPY tsconfig.json tsconfig.node.json vite.config.ts index.html ./
 COPY public ./public
 COPY src ./src
-RUN npm run build
+# vite.config.ts bakes APP_VERSION into the bundle for support/error reports
+RUN APP_VERSION="${APP_VERSION}" npm run build
 
 # ---------------------------------------------------------------------------
 # Stage 2: PocketBase serves API + SPA (pb_public) in one container
@@ -54,6 +57,9 @@ COPY pb_hooks /pb/pb_hooks
 COPY --from=build /app/dist /pb/pb_public
 COPY docker-entrypoint.sh /pb/docker-entrypoint.sh
 RUN chmod +x /pb/docker-entrypoint.sh
+
+# read by pb_hooks/lib/supportlib.js when forwarding a ticket to the vendor
+ENV APP_VERSION=${APP_VERSION}
 
 EXPOSE 8090
 

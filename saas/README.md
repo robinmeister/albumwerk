@@ -80,6 +80,32 @@ Signup (control.SAAS_DOMAIN/signup.html)
 Fehlerfälle landen mit `lastError` im Record (Status `error` bei
 Deploy-Timeout) — sichtbar im Dashboard, Details in den PB-Logs.
 
+## 3b. Support-Eingang (`supportReports`)
+
+Technische Support-Anfragen aus den Kunden-Instanzen landen zentral in der
+Control-Plane — Dashboard → Collection `supportReports`.
+
+```
+Nutzer meldet "Technisches Problem" in der Instanz
+   └─> Instanz (pb_hooks/support.pb.js)
+         ├─> POST control.SAAS_DOMAIN/api/saas/support-report   (Regelweg)
+         └─> E-Mail an VENDOR_SUPPORT_EMAIL                     (Fallback)
+```
+
+- `provision.sh` setzt `SAAS_CONTROL_URL` (aus `CONTROL_URL`, sonst
+  `https://control.$SAAS_DOMAIN`) und `VENDOR_SUPPORT_EMAIL`
+  (aus `SUPPORT_NOTIFY_EMAIL`) an jeder neuen Instanz.
+- Bestandsinstanzen: beide Envs in Coolify nachtragen + Redeploy.
+- Bei jedem Eingang geht eine Mail an `SUPPORT_NOTIFY_EMAIL`. Der Report wird
+  über `instanceUrl` automatisch einem `customers`-Record zugeordnet;
+  Self-Host-Instanzen kommen mit `selfHosted = true` an.
+- Der Endpoint ist unauthentifiziert (Instanzen haben keine
+  Control-Plane-Credentials), aber auf 200 kB Payload und 20 Reports pro
+  Instanz und Stunde begrenzt.
+- **Antwort**: per E-Mail an `reporterEmail` (nur bei Einwilligung gefüllt),
+  sonst an `adminEmail` der Instanz — es gibt bewusst keinen automatischen
+  Rückkanal in den Ticket-Thread der Instanz.
+
 ## 4. Billing anbinden (nach der Steuerberatung)
 
 Noch offen ist die Wahl **Stripe Billing vs. Paddle** (Merchant of Record —

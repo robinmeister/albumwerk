@@ -93,3 +93,40 @@ export type UserOrder = {
   user: string;
   orderValue: number;
 }
+
+// --- Support (pb_migrations/1784600008_support.js) --------------------------
+
+export type SupportCategory = "technical" | "album" | "order" | "billing" | "other";
+export type SupportStatus = "open" | "waiting" | "resolved" | "closed";
+export type SupportTarget = "admin" | "vendor";
+export type SupportForwardState = "none" | "sent" | "failed";
+
+export type SupportTicket = {
+  id: string;
+  userId: string;
+  subject: string;
+  category: SupportCategory;
+  target: SupportTarget;
+  status: SupportStatus;
+  context: unknown;
+  consentForward: boolean;
+  forwardState: SupportForwardState;
+  forwardedAt: string;
+  forwardRef: string;
+  forwardError: string;
+  lastMessageAt: string;
+  unreadForAdmin: boolean;
+  unreadForUser: boolean;
+  created: string;
+  updated: string;
+  expand?: { userId?: { id: string; email: string; firstName?: string; lastName?: string } };
+}
+
+export type SupportMessage = {
+  id: string;
+  ticketId: string;
+  authorId: string;
+  authorRole: "user" | "admin" | "vendor";
+  body: string;
+  created: string;
+}

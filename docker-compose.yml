@@ -21,6 +21,11 @@ services:
       # Danach können diese Zeilen entfernt werden.
       PB_SUPERUSER_EMAIL: ${PB_SUPERUSER_EMAIL:-}
       PB_SUPERUSER_PASSWORD: ${PB_SUPERUSER_PASSWORD:-}
+      # Optional: Weiterleitung technischer Support-Anfragen an den Hersteller.
+      # Bleiben beide leer, verlässt keine Anfrage diese Instanz — alle Tickets
+      # landen beim Admin (siehe docs/selfhosting.md).
+      SAAS_CONTROL_URL: ${SAAS_CONTROL_URL:-}
+      VENDOR_SUPPORT_EMAIL: ${VENDOR_SUPPORT_EMAIL:-}
 
   # --- HTTPS mit eigener Domain (empfohlen für den Produktivbetrieb) --------
   # Caddy besorgt automatisch Let's-Encrypt-Zertifikate. Die Domain wird im
