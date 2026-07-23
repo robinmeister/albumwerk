@@ -1,15 +1,9 @@
 import { ReactElement, ReactNode, useState } from "react";
 import { ErrorBoundary as Boundary } from "react-error-boundary";
-import {
-  Alert,
-  AlertTitle,
-  Box,
-  Button,
-  Card,
-  Collapse,
-  Container,
-  Link,
-} from "@mui/material";
+import { Banner } from "@astryxdesign/core/Banner";
+import { Button } from "@astryxdesign/core/Button";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
 
 interface Props {
   children: ReactNode;
@@ -19,6 +13,30 @@ interface ErrorState {
   error: Error | null;
   componentStack: string;
 }
+
+const s = stylex.create({
+  container: { maxWidth: 560, margin: "48px auto", padding: "0 16px" },
+  actions: { display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 },
+  detailsToggle: {
+    marginTop: 16,
+    background: "none",
+    border: "none",
+    padding: 0,
+    color: "var(--color-text-secondary)",
+    textDecoration: "underline",
+    cursor: "pointer",
+    font: "inherit",
+  },
+  pre: {
+    marginTop: 8,
+    padding: 8,
+    fontSize: 12,
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+    backgroundColor: "var(--color-background-muted)",
+    borderRadius: "var(--radius-element)",
+  },
+});
 
 export default function ErrorBoundary({ children }: Props): ReactElement {
   const [errorState, setErrorState] = useState<ErrorState>({
@@ -37,65 +55,46 @@ export default function ErrorBoundary({ children }: Props): ReactElement {
   return (
     <Boundary
       fallbackRender={(): ReactElement => (
-        <Container maxWidth="sm" sx={{ py: 6 }}>
-          <Card>
-            <Alert severity="error">
-              <AlertTitle>Es ist ein Fehler aufgetreten</AlertTitle>
+        <div {...stylex.props(s.container)}>
+          <Banner status="error" title="Es ist ein Fehler aufgetreten">
+            <Text type="body">
               Beim Laden dieser Seite ist etwas schiefgelaufen. Bitte lade die
               Seite neu. Falls das Problem bestehen bleibt, kontaktiere uns bitte.
-              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 2 }}>
-                <Button
-                  size="small"
-                  color="inherit"
-                  variant="outlined"
-                  onClick={() => window.location.reload()}
+            </Text>
+            <div {...stylex.props(s.actions)}>
+              <Button
+                size="sm"
+                variant="secondary"
+                label="Seite neu laden"
+                onClick={() => window.location.reload()}
+              />
+              <Button
+                size="sm"
+                variant="secondary"
+                label="Zur Startseite"
+                onClick={() => {
+                  window.location.href = "/";
+                }}
+              />
+            </div>
+            {errorState.error?.message && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowDetails((v) => !v)}
+                  {...stylex.props(s.detailsToggle)}
                 >
-                  Seite neu laden
-                </Button>
-                <Button
-                  size="small"
-                  color="inherit"
-                  variant="outlined"
-                  onClick={() => {
-                    window.location.href = "/";
-                  }}
-                >
-                  Zur Startseite
-                </Button>
-              </Box>
-              {errorState.error?.message && (
-                <Box sx={{ mt: 2 }}>
-                  <Link
-                    component="button"
-                    type="button"
-                    variant="caption"
-                    color="inherit"
-                    underline="always"
-                    onClick={() => setShowDetails((v) => !v)}
-                  >
-                    {showDetails ? "Technische Details ausblenden" : "Technische Details anzeigen"}
-                  </Link>
-                  <Collapse in={showDetails}>
-                    <Box
-                      component="pre"
-                      sx={{
-                        mt: 1,
-                        p: 1,
-                        fontSize: 12,
-                        whiteSpace: "pre-wrap",
-                        wordBreak: "break-word",
-                        bgcolor: "action.hover",
-                        borderRadius: 1,
-                      }}
-                    >
-                      {errorState.error.message}
-                    </Box>
-                  </Collapse>
-                </Box>
-              )}
-            </Alert>
-          </Card>
-        </Container>
+                  {showDetails
+                    ? "Technische Details ausblenden"
+                    : "Technische Details anzeigen"}
+                </button>
+                {showDetails && (
+                  <pre {...stylex.props(s.pre)}>{errorState.error.message}</pre>
+                )}
+              </div>
+            )}
+          </Banner>
+        </div>
       )}
       onError={(error, { componentStack }) =>
         handleError(error, componentStack ?? "")

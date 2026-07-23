@@ -1,4 +1,8 @@
-import { Box, Button, Grid, TextField, Typography } from "@mui/material";
+import { Button } from "@astryxdesign/core/Button";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { ReactElement, useState } from "react";
@@ -13,6 +17,20 @@ interface SignUpData {
   password: string;
 }
 
+const EMAIL_RE = /\S+@\S+\.\S+/;
+
+const s = stylex.create({
+  head: { textAlign: "center", display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 },
+  form: { display: "flex", flexDirection: "column", gap: 16 },
+  names: {
+    display: "grid",
+    gridTemplateColumns: { default: "1fr", "@media (min-width: 600px)": "1fr 1fr" },
+    gap: 16,
+  },
+  center: { display: "flex", justifyContent: "center", marginTop: 16 },
+  link: { fontSize: "0.875rem", color: "var(--color-text-accent)", textDecoration: "none" },
+});
+
 export default function SignUpPage(): ReactElement {
   const navigate = useNavigate();
   const [signUpData, setSignUpData] = useState<SignUpData>({
@@ -26,16 +44,10 @@ export default function SignUpPage(): ReactElement {
   const shootingId = searchParams.get("shootingId");
 
   const isSignUpDataValid = () => {
-    const emailRegex = /\S+@\S+\.\S+/;
     if (signUpData.firstName === "") return false;
     if (signUpData.lastName === "") return false;
-    if (signUpData.email === "" || !emailRegex.test(signUpData.email)) return false;
+    if (signUpData.email === "" || !EMAIL_RE.test(signUpData.email)) return false;
     return signUpData.password.length >= 8;
-  };
-
-  const handleSignUp = async (event: any) => {
-    event.preventDefault();
-    void signUp();
   };
 
   const signUp = async () => {
@@ -76,100 +88,87 @@ export default function SignUpPage(): ReactElement {
     }
   };
 
+  const emailInvalid = Boolean(signUpData.email && !EMAIL_RE.test(signUpData.email));
+  const passwordInvalid = Boolean(signUpData.password && signUpData.password.length < 8);
+
   return (
     <AuthHero maxWidth={520}>
-      <Typography variant="h6" component="h2" align="center">
-        Registrieren
-      </Typography>
-      <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1, mb: 2 }}>
-        {shootingId
-          ? "Erstelle ein Konto, um dein Album zu sehen. Du hast schon eines? Unten anmelden — das Album wird automatisch verknüpft."
-          : "Bitte gib deinen Namen, deine E-Mail-Adresse und ein Passwort ein."}
-      </Typography>
-      <form onKeyDown={(e) => e.key === "Enter" && handleSignUp(e)}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              required
-              fullWidth
-              id="first_name"
-              label="Vorname"
-              name="first_name"
-              autoComplete="given-name"
-              value={signUpData.firstName}
-              onChange={(e) => setSignUpData({ ...signUpData, firstName: e.target.value })}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              required
-              fullWidth
-              id="last_name"
-              label="Nachname"
-              name="last_name"
-              autoComplete="family-name"
-              value={signUpData.lastName}
-              onChange={(e) => setSignUpData({ ...signUpData, lastName: e.target.value })}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              required
-              fullWidth
-              id="email"
-              label="E-Mail-Adresse"
-              name="email"
-              autoComplete="email"
-              value={signUpData.email}
-              onChange={(e) => setSignUpData({ ...signUpData, email: e.target.value })}
-              error={!!(signUpData.email && !/\S+@\S+\.\S+/.test(signUpData.email))}
-              helperText={
-                signUpData.email &&
-                !/\S+@\S+\.\S+/.test(signUpData.email) &&
-                "Bitte gib eine gültige E-Mail-Adresse ein."
-              }
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              required
-              fullWidth
-              name="password"
-              label="Passwort"
-              type="password"
-              id="password"
-              autoComplete="new-password"
-              value={signUpData.password}
-              onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
-              error={!!(signUpData.password && signUpData.password.length < 8)}
-              helperText={
-                !!(signUpData.password && signUpData.password.length < 8) &&
-                "Mindestens 8 Zeichen."
-              }
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Button
-              fullWidth
-              onClick={handleSignUp}
-              variant="contained"
-              size="large"
-              sx={{ mt: 1, mb: 2 }}
-              disabled={!isSignUpDataValid()}
-            >
-              Registrieren
-            </Button>
-          </Grid>
-        </Grid>
+      <div {...stylex.props(s.head)}>
+        <Heading level={6} accessibilityLevel={2}>
+          Registrieren
+        </Heading>
+        <Text type="body" color="secondary">
+          {shootingId
+            ? "Erstelle ein Konto, um dein Album zu sehen. Du hast schon eines? Unten anmelden — das Album wird automatisch verknüpft."
+            : "Bitte gib deinen Namen, deine E-Mail-Adresse und ein Passwort ein."}
+        </Text>
+      </div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void signUp();
+        }}
+        {...stylex.props(s.form)}
+      >
+        <div {...stylex.props(s.names)}>
+          <TextInput
+            isRequired
+            width="100%"
+            label="Vorname"
+            value={signUpData.firstName}
+            onChange={(v) => setSignUpData({ ...signUpData, firstName: v })}
+          />
+          <TextInput
+            isRequired
+            width="100%"
+            label="Nachname"
+            value={signUpData.lastName}
+            onChange={(v) => setSignUpData({ ...signUpData, lastName: v })}
+          />
+        </div>
+        <TextInput
+          isRequired
+          width="100%"
+          label="E-Mail-Adresse"
+          type="email"
+          value={signUpData.email}
+          onChange={(v) => setSignUpData({ ...signUpData, email: v })}
+          status={
+            emailInvalid
+              ? { type: "error", message: "Bitte gib eine gültige E-Mail-Adresse ein." }
+              : undefined
+          }
+        />
+        <TextInput
+          isRequired
+          width="100%"
+          label="Passwort"
+          type="password"
+          value={signUpData.password}
+          onChange={(v) => setSignUpData({ ...signUpData, password: v })}
+          status={
+            passwordInvalid
+              ? { type: "error", message: "Mindestens 8 Zeichen." }
+              : undefined
+          }
+        />
+        <Button
+          type="submit"
+          width="100%"
+          size="lg"
+          variant="primary"
+          label="Registrieren"
+          isDisabled={!isSignUpDataValid()}
+        />
       </form>
-      <Box display="flex" justifyContent="center">
+      <div {...stylex.props(s.center)}>
         <Link
           to={shootingId ? `/login?shootingId=${shootingId}` : "/login"}
-          style={{ fontSize: "0.875rem" }}
+          {...stylex.props(s.link)}
         >
           Du hast bereits einen Account? Hier anmelden
         </Link>
-      </Box>
+      </div>
     </AuthHero>
   );
 }

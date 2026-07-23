@@ -1,6 +1,10 @@
 import { ReactElement } from "react";
-import { Add, Cancel, Edit, Save } from "@mui/icons-material";
-import { Box, Card, CardContent, Grid, IconButton, TextField, Typography } from "@mui/material";
+import { Plus as Add, CircleX as Cancel, Pencil as Edit, Save } from "lucide-react";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { TextArea } from "@astryxdesign/core/TextArea";
+import { Heading } from "@astryxdesign/core/Heading";
+import * as stylex from "@stylexjs/stylex";
 
 import { Price } from "../../../../utils/types";
 
@@ -12,9 +16,32 @@ type Props = {
   editNewPrice: boolean;
   setEditNewPrice: (editNewPrice: boolean) => void;
   handleCreate: (price: Price) => Promise<void>;
-}
+};
 
-export default function PriceCreate(props : Props): ReactElement {
+const s = stylex.create({
+  card: {
+    borderRadius: "var(--radius-container)",
+    border: "1px solid var(--color-border)",
+    backgroundColor: "var(--color-background-card)",
+    padding: 16,
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  },
+  head: { display: "flex", alignItems: "center", justifyContent: "space-between" },
+  actions: { display: "flex", gap: 4 },
+  placeholder: {
+    minHeight: 160,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "var(--color-text-secondary)",
+    fontSize: 32,
+  },
+});
+
+export default function PriceCreate(props: Props): ReactElement {
   const {
     setNewPrice,
     handleCreate,
@@ -26,134 +53,72 @@ export default function PriceCreate(props : Props): ReactElement {
   } = props;
 
   return (
-    <>
-    <Grid item xs={12} md={4} lg={4}>
-              <Card onClick={() => {
-                if(!createNewPrice) {
-                  setCreateNewPrice(true);
-                  setEditNewPrice(true);
-                  setNewPrice({
-                    id: "",
-                    title: "",
-                    amount: "",
-                    description: "",
-                    isDownloadable: false,
-                  });
-              }
-              }}>
-                <CardContent>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="h6">Neuer Einzelpreis</Typography>
-                    </Grid>
-                    {createNewPrice && (
-                      <Grid item xs={6}>
-                        {!editNewPrice ? (
-                          <IconButton
-                            sx={{ float: "right" }}
-                            onClick={() => setEditNewPrice(true)}
-                          >
-                            <Edit />
-                          </IconButton>
-                        ) : (
-                          <>
-                            <IconButton
-                              sx={{ float: "right" }}
-                              onClick={() => handleCreate(newPrice as Price)}
-                            >
-                              <Save />
-                            </IconButton>
-                            <IconButton
-                              sx={{ float: "right" }}
-                              onClick={() => {
-                                setEditNewPrice(false);
-                                setCreateNewPrice(!createNewPrice);
-                              }}
-                            >
-                              <Cancel />
-                            </IconButton>
-                          </>
-                        )}
-                      </Grid>
-                    )}
-                    {createNewPrice ? (
-                      <>
-                        <Grid item xs={12}>
-                          <TextField
-                            fullWidth
-                            label="Titel"
-                            name="title"
-                            required
-                            size="small"
-                            variant="outlined"
-                            value={newPrice?.title}
-                            onChange={(e) => {
-                              const price: Price = { ...(newPrice as Price) };
-                              price.title = e.target.value;
-                              setNewPrice(price);
-                            }}
-                          />
-                        </Grid>
-                        <Grid item xs={12}>
-                          <TextField
-                            fullWidth
-                            type={"number"}
-                            label="Preis"
-                            name="price"
-                            required
-                            size="small"
-                            variant="outlined"
-                            onChange={(e) => {
-                              const price: Price = { ...(newPrice as Price) };
-                              price.amount = e.target.value;
-                              setNewPrice(price);
-                            }}
-                            value={newPrice?.amount}
-                          />
-                        </Grid>
+    <div
+      {...stylex.props(s.card)}
+      onClick={() => {
+        if (!createNewPrice) {
+          setCreateNewPrice(true);
+          setEditNewPrice(true);
+          setNewPrice({ id: "", title: "", amount: "", description: "", isDownloadable: false });
+        }
+      }}
+    >
+      <div {...stylex.props(s.head)}>
+        <Heading level={6}>Neuer Einzelpreis</Heading>
+        {createNewPrice && (
+          <div {...stylex.props(s.actions)}>
+            {!editNewPrice ? (
+              <IconButton variant="ghost" icon={<Edit />} label="Bearbeiten" onClick={() => setEditNewPrice(true)} />
+            ) : (
+              <>
+                <IconButton variant="ghost" icon={<Save />} label="Speichern" onClick={() => handleCreate(newPrice as Price)} />
+                <IconButton
+                  variant="ghost"
+                  icon={<Cancel />}
+                  label="Abbrechen"
+                  onClick={() => {
+                    setEditNewPrice(false);
+                    setCreateNewPrice(!createNewPrice);
+                  }}
+                />
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
-                        <Grid item xs={12}>
-                          <TextField
-                            fullWidth
-                            label="Beschreibung"
-                            name="description"
-                            required
-                            multiline
-                            size="small"
-                            variant="outlined"
-                            onChange={(e) => {
-                              if (newPrice) {
-                                setNewPrice({ ...newPrice, description: e.target.value })
-                              }
-                            }}
-                            value={newPrice?.description}
-                          />
-                        </Grid>
-                      </>
-                    ) : (
-                      <Grid
-                        item
-                        xs={12}
-                        alignItems="center"
-                        justifyContent={"center"}
-                      >
-                        <Box
-                          sx={{minHeight: 200, minWidth: 300}}
-                          alignContent="center"
-                          justifyContent="center"
-                          alignItems="center"
-                          display="flex"
-                        >
-                          <Typography variant="h6">
-                            <Add />
-                          </Typography>
-                        </Box>
-                      </Grid>
-                    )}
-                  </Grid>
-                </CardContent>
-              </Card>
-            </Grid>
-    </>
-  )
+      {createNewPrice ? (
+        <>
+          <TextInput
+            width="100%"
+            size="sm"
+            label="Titel"
+            isRequired
+            value={newPrice?.title ?? ""}
+            onChange={(v) => setNewPrice({ ...(newPrice as Price), title: v })}
+          />
+          <TextInput
+            width="100%"
+            size="sm"
+           
+            label="Preis"
+            isRequired
+            value={newPrice?.amount ?? ""}
+            onChange={(v) => setNewPrice({ ...(newPrice as Price), amount: v })}
+          />
+          <TextArea
+            width="100%"
+            label="Beschreibung"
+            isRequired
+            value={newPrice?.description ?? ""}
+            onChange={(v) => setNewPrice({ ...(newPrice as Price), description: v })}
+          />
+        </>
+      ) : (
+        <div {...stylex.props(s.placeholder)}>
+          <Add />
+        </div>
+      )}
+    </div>
+  );
 }

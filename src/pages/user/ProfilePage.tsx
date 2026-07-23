@@ -1,13 +1,9 @@
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Divider,
-  Grid,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Button } from "@astryxdesign/core/Button";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { Divider } from "@astryxdesign/core/Divider";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
 import { currentUser } from "../../config/currentUser";
 import {
   deleteDoc,
@@ -17,7 +13,6 @@ import {
   updateDoc,
 } from "../../config/firestore-compat";
 import {
-  ChangeEvent,
   FormEvent,
   ReactElement,
   useContext,
@@ -32,6 +27,25 @@ import DeleteModal from "../../components/widgets/DeleteModal";
 import { AuthContext } from "../../context/AuthContext";
 import { User as UserType } from "../../utils/types";
 import { AuthUser } from "../../config/authUser";
+
+const s = stylex.create({
+  card: {
+    padding: 24,
+    borderRadius: "var(--radius-container)",
+    border: "1px solid var(--color-border)",
+    backgroundColor: "var(--color-background-card)",
+  },
+  form: { display: "flex", flexDirection: "column", gap: 16 },
+  row2: {
+    display: "grid",
+    gridTemplateColumns: { default: "1fr", "@media (min-width: 600px)": "1fr 1fr" },
+    gap: 16,
+  },
+  actions: { display: "flex", gap: 12 },
+  cancel: { flex: 1 },
+  save: { flex: 2 },
+  danger: { marginTop: 32, display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" },
+});
 
 export default function ProfilePage(): ReactElement {
   const { user } = useContext(AuthContext);
@@ -95,10 +109,8 @@ export default function ProfilePage(): ReactElement {
     void updateProfile();
   };
 
-  const handleDataChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    const { name, value } = event.target;
-    setUserData((prev) => ({ ...prev, [name]: value }));
-  };
+  const set = (patch: Partial<UserType>) =>
+    setUserData((prev) => ({ ...prev, ...patch }));
 
   const deleteUserFromDB = async (user: AuthUser | null): Promise<void> => {
     if (!user) return;
@@ -126,141 +138,92 @@ export default function ProfilePage(): ReactElement {
 
   return (
     <Page title="Profil">
-      <Card>
-        <CardContent>
-          <form onSubmit={handleSubmit}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Box fontWeight="fontWeightBold" fontSize={18} mb={1}>
-                  Kontaktinformationen
-                </Box>
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Vorname"
-                  name="firstName"
-                  value={userData.firstName}
-                  onChange={handleDataChange}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Nachname"
-                  name="lastName"
-                  value={userData.lastName}
-                  onChange={handleDataChange}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="E-Mail-Adresse"
-                  name="email"
-                  disabled
-                  value={userData.email}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Telefonnummer"
-                  name="phone"
-                  value={userData.phone}
-                  onChange={handleDataChange}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Box fontWeight="fontWeightBold" fontSize={18} mb={1} mt={1}>
-                  Adressinformationen
-                </Box>
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Straße"
-                  name="street"
-                  value={userData.street}
-                  onChange={handleDataChange}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Stadt"
-                  name="city"
-                  value={userData.city}
-                  onChange={handleDataChange}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Bundesland"
-                  name="state"
-                  value={userData.state}
-                  onChange={handleDataChange}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Postleitzahl"
-                  name="zip"
-                  value={userData.zip}
-                  onChange={handleDataChange}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid item xs={4}>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  color="inherit"
-                  size="large"
-                  onClick={() => navigate(-1)}
-                >
-                  Abbrechen
-                </Button>
-              </Grid>
-              <Grid item xs={8}>
-                <Button
-                  fullWidth
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  size="large"
-                >
-                  Speichern
-                </Button>
-              </Grid>
-            </Grid>
-          </form>
-
-          <Box sx={{ mt: 4 }}>
-            <Divider sx={{ mb: 2 }} />
-            <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-              Gefahrenzone
-            </Typography>
+      <div {...stylex.props(s.card)}>
+        <form onSubmit={handleSubmit} {...stylex.props(s.form)}>
+          <Heading level={6}>Kontaktinformationen</Heading>
+          <TextInput
+            width="100%"
+            label="Vorname"
+            value={userData.firstName ?? ""}
+            onChange={(v) => set({ firstName: v })}
+          />
+          <TextInput
+            width="100%"
+            label="Nachname"
+            value={userData.lastName ?? ""}
+            onChange={(v) => set({ lastName: v })}
+          />
+          <TextInput
+            width="100%"
+            label="E-Mail-Adresse"
+            isDisabled
+            value={userData.email ?? ""}
+            onChange={() => undefined}
+          />
+          <TextInput
+            width="100%"
+            label="Telefonnummer"
+            value={userData.phone ?? ""}
+            onChange={(v) => set({ phone: v })}
+          />
+          <Heading level={6}>Adressinformationen</Heading>
+          <TextInput
+            width="100%"
+            label="Straße"
+            value={userData.street ?? ""}
+            onChange={(v) => set({ street: v })}
+          />
+          <div {...stylex.props(s.row2)}>
+            <TextInput
+              width="100%"
+              label="Stadt"
+              value={userData.city ?? ""}
+              onChange={(v) => set({ city: v })}
+            />
+            <TextInput
+              width="100%"
+              label="Bundesland"
+              value={userData.state ?? ""}
+              onChange={(v) => set({ state: v })}
+            />
+          </div>
+          <TextInput
+            width="100%"
+            label="Postleitzahl"
+            value={userData.zip ?? ""}
+            onChange={(v) => set({ zip: v })}
+          />
+          <div {...stylex.props(s.actions)}>
             <Button
-              variant="text"
-              color="error"
-              size="small"
-              onClick={() => setOpen(true)}
-            >
-              Profil löschen
-            </Button>
-          </Box>
-        </CardContent>
-      </Card>
+              variant="secondary"
+              size="lg"
+              label="Abbrechen"
+              xstyle={s.cancel}
+              onClick={() => navigate(-1)}
+            />
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              label="Speichern"
+              xstyle={s.save}
+            />
+          </div>
+        </form>
+
+        <div {...stylex.props(s.danger)}>
+          <Divider />
+          <Text type="supporting" color="secondary">
+            Gefahrenzone
+          </Text>
+          <Button
+            variant="ghost"
+            size="sm"
+            label="Profil löschen"
+            onClick={() => setOpen(true)}
+          />
+        </div>
+      </div>
       <DeleteModal
         name={"dein Profil"}
         open={open}

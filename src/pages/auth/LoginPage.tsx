@@ -1,15 +1,20 @@
-import {
-  Box,
-  Button,
-  CircularProgress,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Button } from "@astryxdesign/core/Button";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ReactElement, useState } from "react";
 
 import { loginWithPocketBase } from "../../config/pocketbase";
 import AuthHero from "../../components/layout/AuthHero";
+
+const s = stylex.create({
+  form: { display: "flex", flexDirection: "column", gap: 16 },
+  right: { display: "flex", justifyContent: "flex-end" },
+  center: { display: "flex", justifyContent: "center" },
+  link: { fontSize: "0.875rem", color: "var(--color-text-accent)", textDecoration: "none" },
+  error: { color: "var(--color-error)" },
+});
 
 export default function LoginPage(): ReactElement {
   const navigate = useNavigate();
@@ -43,56 +48,50 @@ export default function LoginPage(): ReactElement {
 
   return (
     <AuthHero>
-      <Box component="form" onSubmit={handleSignIn} noValidate>
-        <TextField
-          margin="normal"
-          required
-          fullWidth
+      <form onSubmit={handleSignIn} noValidate {...stylex.props(s.form)}>
+        <TextInput
+          isRequired
+          width="100%"
           label="E-Mail-Adresse"
           type="email"
-          autoComplete="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(v) => setEmail(v)}
         />
-        <TextField
-          margin="normal"
-          required
-          fullWidth
+        <TextInput
+          isRequired
+          width="100%"
           label="Passwort"
           type="password"
-          autoComplete="current-password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(v) => setPassword(v)}
         />
-        <Box display="flex" justifyContent="flex-end" sx={{ mt: 0.5 }}>
-          <Link to="/forgotPassword" style={{ fontSize: "0.875rem" }}>
+        <div {...stylex.props(s.right)}>
+          <Link to="/forgotPassword" {...stylex.props(s.link)}>
             Passwort vergessen?
           </Link>
-        </Box>
+        </div>
         {error && (
-          <Typography color="error" sx={{ mt: 1 }} variant="body2">
+          <Text type="body" xstyle={s.error}>
             {error}
-          </Typography>
+          </Text>
         )}
         <Button
           type="submit"
-          fullWidth
-          variant="contained"
-          size="large"
-          sx={{ mt: 3, mb: 2 }}
-          disabled={loading}
-        >
-          {loading ? <CircularProgress size={24} /> : "Anmelden"}
-        </Button>
-        <Box display="flex" justifyContent="center">
+          width="100%"
+          size="lg"
+          variant="primary"
+          isLoading={loading}
+          label="Anmelden"
+        />
+        <div {...stylex.props(s.center)}>
           <Link
             to={shootingId ? `/signUp?shootingId=${shootingId}` : "/signUp"}
-            style={{ fontSize: "0.875rem" }}
+            {...stylex.props(s.link)}
           >
             Noch kein Konto? Jetzt registrieren
           </Link>
-        </Box>
-      </Box>
+        </div>
+      </form>
     </AuthHero>
   );
 }

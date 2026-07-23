@@ -1,6 +1,11 @@
 import { ReactElement } from "react";
-import { Box, Button, Chip, Divider, Grid, Typography } from "@mui/material";
-import { ArrowForward } from "@mui/icons-material";
+import { Badge } from "@astryxdesign/core/Badge";
+import { Button } from "@astryxdesign/core/Button";
+import { Divider } from "@astryxdesign/core/Divider";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
+import { ArrowRight as ArrowForward } from "lucide-react";
 
 import { Package } from "../../../../utils/types";
 import { calculateTotalPackagePrice } from "../../utils/functions";
@@ -12,99 +17,112 @@ type Props = {
   setActiveStep: (step: number) => void;
 };
 
+const s = stylex.create({
+  summary: {
+    border: "1px solid var(--color-border)",
+    borderRadius: "var(--radius-container)",
+    padding: 20,
+    marginBottom: 24,
+    backgroundColor: "var(--color-background-card)",
+  },
+  head: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12,
+  },
+  stats: {
+    display: "grid",
+    gridTemplateColumns: { default: "1fr", "@media (min-width: 600px)": "1fr 1fr 1fr" },
+    gap: 8,
+    marginTop: 12,
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: {
+      default: "1fr 1fr",
+      "@media (min-width: 600px)": "repeat(3, 1fr)",
+      "@media (min-width: 900px)": "repeat(4, 1fr)",
+    },
+    gap: 8,
+    marginBottom: 24,
+  },
+  thumb: {
+    aspectRatio: "1",
+    borderRadius: "var(--radius-element)",
+    overflow: "hidden",
+    backgroundColor: "var(--color-background-muted)",
+    border: "1px solid var(--color-border)",
+  },
+  thumbImg: { width: "100%", height: "100%", objectFit: "cover" },
+  actions: { display: "flex", justifyContent: "flex-end" },
+  sectionLabel: { marginBottom: 8 },
+});
+
 export default function PackageForm(props: Props): ReactElement {
   const { selectedImages, shootingPackage, activeStep, setActiveStep } = props;
   const total = calculateTotalPackagePrice(shootingPackage, selectedImages.length);
 
   return (
-    <Box>
+    <div>
       {/* ── Package summary ── */}
-      <Box
-        sx={{
-          border: "1px solid",
-          borderColor: "divider",
-          borderRadius: 1,
-          p: 2.5,
-          mb: 3,
-          bgcolor: "background.paper",
-        }}
-      >
-        <Box display="flex" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={1} mb={1.5}>
-          <Box>
-            <Typography variant="h6" fontWeight={700}>
-              {shootingPackage.title}
-            </Typography>
+      <div {...stylex.props(s.summary)}>
+        <div {...stylex.props(s.head)}>
+          <div>
+            <Heading level={6}>{shootingPackage.title}</Heading>
             {shootingPackage.description && (
-              <Typography variant="body2" color="text.secondary">
-                {shootingPackage.description}
-              </Typography>
+              <Text type="body" color="secondary">{shootingPackage.description}</Text>
             )}
-            <Typography variant="body2" color="text.secondary">
+            <Text type="body" color="secondary">
               {selectedImages.length} Bilder ausgewählt
-            </Typography>
-          </Box>
-          <Chip
-            label={`${total} €`}
-            color="primary"
-            sx={{ fontWeight: 700, fontSize: "1rem", height: 32, px: 1 }}
-          />
-        </Box>
+            </Text>
+          </div>
+          <Badge variant="info" label={`${total} €`} />
+        </div>
 
-        <Divider sx={{ my: 1.5 }} />
+        <Divider />
 
-        <Grid container spacing={1}>
-          <Grid item xs={12} sm={4}>
-            <Typography variant="caption" color="text.secondary" display="block">Paketpreis</Typography>
-            <Typography variant="body2" fontWeight={600}>{shootingPackage.totalPrice} €</Typography>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Typography variant="caption" color="text.secondary" display="block">Einzelbild</Typography>
-            <Typography variant="body2" fontWeight={600}>{shootingPackage.singlePrice} € / Bild</Typography>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Typography variant="caption" color="text.secondary" display="block">Anzahl</Typography>
-            <Typography variant="body2" fontWeight={600}>{selectedImages.length} Bilder</Typography>
-          </Grid>
-        </Grid>
-      </Box>
+        <div {...stylex.props(s.stats)}>
+          <div>
+            <Text type="supporting" color="secondary">Paketpreis</Text>
+            <Text type="body" weight="semibold">{shootingPackage.totalPrice} €</Text>
+          </div>
+          <div>
+            <Text type="supporting" color="secondary">Einzelbild</Text>
+            <Text type="body" weight="semibold">{shootingPackage.singlePrice} € / Bild</Text>
+          </div>
+          <div>
+            <Text type="supporting" color="secondary">Anzahl</Text>
+            <Text type="body" weight="semibold">{selectedImages.length} Bilder</Text>
+          </div>
+        </div>
+      </div>
 
       {/* ── Image grid ── */}
-      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-        Ausgewählte Bilder ({selectedImages.length})
-      </Typography>
-      <Grid container spacing={1} sx={{ mb: 3 }}>
+      <div {...stylex.props(s.sectionLabel)}>
+        <Text type="label" weight="semibold" color="secondary">
+          Ausgewählte Bilder ({selectedImages.length})
+        </Text>
+      </div>
+      <div {...stylex.props(s.grid)}>
         {selectedImages.map((img, idx) => (
-          <Grid item xs={6} sm={4} md={3} key={img}>
-            <Box
-              sx={{
-                aspectRatio: "1",
-                borderRadius: 1,
-                overflow: "hidden",
-                bgcolor: "grey.100",
-                border: "1px solid",
-                borderColor: "divider",
-              }}
-            >
-              <img
-                src={img}
-                alt={`Bild ${idx + 1}`}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            </Box>
-          </Grid>
+          <div key={img} {...stylex.props(s.thumb)}>
+            <img src={img} alt={`Bild ${idx + 1}`} {...stylex.props(s.thumbImg)} />
+          </div>
         ))}
-      </Grid>
+      </div>
 
       {/* ── Action ── */}
-      <Box display="flex" justifyContent="flex-end">
+      <div {...stylex.props(s.actions)}>
         <Button
-          variant="contained"
-          endIcon={<ArrowForward />}
+          variant="primary"
+          endContent={<ArrowForward />}
+          label="Weiter zur Bezahlung"
           onClick={() => setActiveStep(activeStep + 1)}
-        >
-          Weiter zur Bezahlung
-        </Button>
-      </Box>
-    </Box>
+        />
+      </div>
+    </div>
   );
 }

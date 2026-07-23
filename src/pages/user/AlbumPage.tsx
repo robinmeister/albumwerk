@@ -1,19 +1,14 @@
 import { ReactElement, useEffect, useMemo, useState } from "react";
-import {
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  Grid,
-  IconButton,
-  InputAdornment,
-  TextField,
-  Typography,
-} from "@mui/material";
-import { Add, ArrowBack, Collections, PhotoLibrary, Search } from "@mui/icons-material";
+import { Badge } from "@astryxdesign/core/Badge";
+import { Button } from "@astryxdesign/core/Button";
+import { Dialog } from "@astryxdesign/core/Dialog";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { Spinner } from "@astryxdesign/core/Spinner";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
+import { Plus as Add, ArrowLeft as ArrowBack, Images as Collections, Images as PhotoLibrary, Search } from "lucide-react";
 import { currentUser } from "../../config/currentUser";
 import { doc, getDoc, updateDoc } from "../../config/firestore-compat";
 import { pb } from "../../config/pocketbase";
@@ -37,6 +32,64 @@ const typeLabel: Record<string, string> = {
   sale: "Verkauf",
 };
 
+const s = stylex.create({
+  loading: { display: "flex", justifyContent: "center", alignItems: "center", height: "60vh" },
+  detailHead: { display: "flex", alignItems: "center", gap: 12, paddingTop: 16, paddingBottom: 8 },
+  detailTitle: { minWidth: 0, flex: 1 },
+  chipRight: { marginLeft: "auto" },
+  overviewHead: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+    paddingTop: 24,
+    paddingBottom: 16,
+    flexWrap: "wrap",
+  },
+  headActions: { display: "flex", gap: 8, alignItems: "center" },
+  emptyBox: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, paddingBlock: 80, textAlign: "center" },
+  emptyIcon: { fontSize: 72, color: "var(--color-icon-disabled)" },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: {
+      default: "1fr",
+      "@media (min-width: 600px)": "1fr 1fr",
+      "@media (min-width: 900px)": "repeat(3, 1fr)",
+    },
+    gap: 16,
+  },
+  card: {
+    position: "relative",
+    borderRadius: "var(--radius-container)",
+    overflow: "hidden",
+    cursor: "pointer",
+    aspectRatio: "4 / 3",
+    backgroundColor: "var(--color-background-muted)",
+  },
+  cardImg: (loaded: boolean) => ({
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
+    opacity: loaded ? 1 : 0,
+    transition: "opacity 0.3s ease, transform 0.35s ease",
+  }),
+  cardPlaceholder: { width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" },
+  placeholderIcon: { fontSize: 48, color: "var(--color-icon-disabled)" },
+  cardOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    padding: "40px 16px 12px",
+    background: "linear-gradient(transparent, rgba(0,0,0,0.72))",
+    color: "#fff",
+  },
+  cardType: { letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.85, marginTop: 4, display: "block" },
+  dialogBody: { display: "flex", flexDirection: "column", gap: 16, padding: 8 },
+  dialogActions: { display: "flex", justifyContent: "flex-end", gap: 8 },
+});
+
 // Album card: full-bleed cover with the title in a gradient overlay.
 function AlbumCard({
   shooting,
@@ -47,75 +100,31 @@ function AlbumCard({
 }): ReactElement {
   const [loaded, setLoaded] = useState(false);
   return (
-    <Box
-      onClick={onClick}
-      sx={{
-        position: "relative",
-        borderRadius: 1,
-        overflow: "hidden",
-        cursor: "pointer",
-        aspectRatio: "4 / 3",
-        bgcolor: "action.hover",
-        "&:hover img": { transform: "scale(1.04)" },
-      }}
-    >
+    <div className="album-card" onClick={onClick} {...stylex.props(s.card)}>
       {shooting.coverUrl ? (
-        <Box
-          component="img"
+        <img
           src={shooting.coverUrl}
           alt={shooting.title}
           onLoad={() => setLoaded(true)}
-          sx={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            display: "block",
-            opacity: loaded ? 1 : 0,
-            transition: "opacity 0.3s ease, transform 0.35s ease",
-          }}
+          {...stylex.props(s.cardImg(loaded))}
         />
       ) : (
-        <Box
-          sx={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Collections sx={{ fontSize: 48, color: "text.disabled" }} />
-        </Box>
+        <div {...stylex.props(s.cardPlaceholder)}>
+          <Collections {...stylex.props(s.placeholderIcon)} />
+        </div>
       )}
 
-      <Box
-        sx={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          px: 2,
-          pt: 5,
-          pb: 1.5,
-          background: "linear-gradient(transparent, rgba(0,0,0,0.72))",
-          color: "#fff",
-        }}
-      >
-        <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.2 }} noWrap>
+      <div {...stylex.props(s.cardOverlay)}>
+        <Text type="large" weight="semibold" maxLines={1}>
           {shooting.title || "Ohne Titel"}
-        </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
-          {typeLabel[shooting.type] && (
-            <Typography
-              variant="caption"
-              sx={{ letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.85 }}
-            >
-              {typeLabel[shooting.type]}
-            </Typography>
-          )}
-        </Box>
-      </Box>
-    </Box>
+        </Text>
+        {typeLabel[shooting.type] && (
+          <span {...stylex.props(s.cardType)}>
+            <Text type="supporting">{typeLabel[shooting.type]}</Text>
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -201,9 +210,9 @@ export default function AlbumPage(): ReactElement {
   if (loading) {
     return (
       <Page>
-        <Box display="flex" justifyContent="center" alignItems="center" height="60vh">
-          <CircularProgress />
-        </Box>
+        <div {...stylex.props(s.loading)}>
+          <Spinner size="lg" />
+        </div>
       </Page>
     );
   }
@@ -212,31 +221,33 @@ export default function AlbumPage(): ReactElement {
   if (selectedId && selectedShooting) {
     return (
       <Page>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, pt: 2, pb: 1 }}>
+        <div {...stylex.props(s.detailHead)}>
           <IconButton
+            variant="ghost"
+            icon={<ArrowBack />}
+            label="Zurück zur Übersicht"
             onClick={() => {
               setSelectedId(undefined);
               setSelected([]);
               setSelectMode(false);
             }}
-            aria-label="Zurück zur Übersicht"
-          >
-            <ArrowBack />
-          </IconButton>
-          <Box minWidth={0}>
-            <Typography variant="h4" component="h1" noWrap>
+          />
+          <div {...stylex.props(s.detailTitle)}>
+            <Heading level={4} accessibilityLevel={1} maxLines={1}>
               {selectedShooting.title || "Ohne Titel"}
-            </Typography>
+            </Heading>
             {selectedShooting.description && (
-              <Typography variant="body2" color="text.secondary" noWrap>
+              <Text type="body" color="secondary" maxLines={1}>
                 {selectedShooting.description}
-              </Typography>
+              </Text>
             )}
-          </Box>
+          </div>
           {typeLabel[selectedShooting.type] && (
-            <Chip label={typeLabel[selectedShooting.type]} size="small" sx={{ ml: "auto" }} />
+            <span {...stylex.props(s.chipRight)}>
+              <Badge variant="neutral" label={typeLabel[selectedShooting.type]} />
+            </span>
           )}
-        </Box>
+        </div>
         <Album
           isAdminAlbum={false}
           shootingId={selectedId}
@@ -252,118 +263,87 @@ export default function AlbumPage(): ReactElement {
   // ── album overview ──
   return (
     <Page>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 2,
-          pt: 3,
-          pb: 2,
-          flexWrap: "wrap",
-        }}
-      >
-        <Typography variant="h3" component="h1">
+      <div {...stylex.props(s.overviewHead)}>
+        <Heading level={3} accessibilityLevel={1}>
           Meine Alben
-        </Typography>
-        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+        </Heading>
+        <div {...stylex.props(s.headActions)}>
           {shootings.length > 6 && (
-            <TextField
-              size="small"
+            <TextInput
+              label="Suchen"
+              isLabelHidden
+              startIcon={<Search />}
               placeholder="Suchen…"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search fontSize="small" />
-                  </InputAdornment>
-                ),
-              }}
+              onChange={(v) => setSearch(v)}
             />
           )}
-          <Button variant="outlined" startIcon={<Add />} onClick={() => setAddOpen(true)}>
-            Hinzufügen
-          </Button>
-        </Box>
-      </Box>
+          <Button variant="secondary" icon={<Add />} label="Hinzufügen" onClick={() => setAddOpen(true)} />
+        </div>
+      </div>
 
       {filtered.length === 0 ? (
-        <Box
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="center"
-          gap={2}
-          sx={{ py: 10 }}
-        >
-          <PhotoLibrary sx={{ fontSize: 72, color: "text.disabled" }} />
-          <Typography variant="h6" color="text.secondary" align="center">
+        <div {...stylex.props(s.emptyBox)}>
+          <PhotoLibrary {...stylex.props(s.emptyIcon)} />
+          <Text type="large" color="secondary">
             {search ? "Keine Alben gefunden." : "Noch kein Album vorhanden."}
-          </Typography>
+          </Text>
           {!search && (
             <>
-              <Typography variant="body2" color="text.disabled" align="center">
-                Füge dein erstes Album mit der Shooting-ID hinzu, die du
-                erhalten hast.
-              </Typography>
-              <Button variant="contained" startIcon={<Add />} onClick={() => setAddOpen(true)}>
-                Album hinzufügen
-              </Button>
+              <Text type="body" color="disabled">
+                Füge dein erstes Album mit der Shooting-ID hinzu, die du erhalten hast.
+              </Text>
+              <Button variant="primary" icon={<Add />} label="Album hinzufügen" onClick={() => setAddOpen(true)} />
             </>
           )}
-        </Box>
+        </div>
       ) : (
-        <Grid container spacing={2}>
+        <div {...stylex.props(s.grid)}>
           {filtered.map((s) => (
-            <Grid item xs={12} sm={6} md={4} key={s.id}>
-              <AlbumCard
-                shooting={s}
-                onClick={() => {
-                  setSelectedId(s.id);
-                  setSelected([]);
-                  setSelectMode(false);
-                }}
-              />
-            </Grid>
+            <AlbumCard
+              key={s.id}
+              shooting={s}
+              onClick={() => {
+                setSelectedId(s.id);
+                setSelected([]);
+                setSelectMode(false);
+              }}
+            />
           ))}
-        </Grid>
+        </div>
       )}
 
       {/* ── add shooting dialog ── */}
       <Dialog
-        open={addOpen}
-        onClose={() => { setAddOpen(false); setNewId(""); }}
-        maxWidth="xs"
-        fullWidth
+        isOpen={addOpen}
+        onOpenChange={(open) => { if (!open) { setAddOpen(false); setNewId(""); } }}
+        width={380}
       >
-        <DialogTitle>Album hinzufügen</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        <div {...stylex.props(s.dialogBody)}>
+          <Heading level={5}>Album hinzufügen</Heading>
+          <Text type="body" color="secondary">
             Gib die Shooting-ID ein. Du findest sie auf der Karte, die du erhalten hast.
-          </Typography>
-          <TextField
-            fullWidth
+          </Text>
+          <TextInput
+            width="100%"
             label="Shooting-ID"
+            hasAutoFocus
             value={newId}
-            onChange={(e) => setNewId(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") void handleAddShooting(); }}
-            autoFocus
+            onChange={(v) => setNewId(v)}
+            onEnter={() => void handleAddShooting()}
           />
-          <Box display="flex" justifyContent="flex-end" gap={1} mt={2}>
-            <Button onClick={() => { setAddOpen(false); setNewId(""); }}>
-              Abbrechen
-            </Button>
+          <div {...stylex.props(s.dialogActions)}>
+            <Button variant="secondary" label="Abbrechen" onClick={() => { setAddOpen(false); setNewId(""); }} />
             <Button
-              variant="contained"
+              variant="primary"
+              icon={<Add />}
+              label="Hinzufügen"
+              isDisabled={!newId.trim() || adding}
+              isLoading={adding}
               onClick={() => void handleAddShooting()}
-              disabled={!newId.trim() || adding}
-              startIcon={adding ? <CircularProgress size={16} color="inherit" /> : <Add />}
-            >
-              Hinzufügen
-            </Button>
-          </Box>
-        </DialogContent>
+            />
+          </div>
+        </div>
       </Dialog>
     </Page>
   );

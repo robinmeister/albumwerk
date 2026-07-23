@@ -1,5 +1,8 @@
-import { NavigateBefore, NavigateNext } from '@mui/icons-material';
-import { Box, Card, CardMedia, CircularProgress, Grid, IconButton, Pagination, Slide, Stack } from '@mui/material';
+import { ChevronLeft as NavigateBefore, ChevronRight as NavigateNext } from "lucide-react";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { Pagination } from "@astryxdesign/core/Pagination";
+import { Spinner } from "@astryxdesign/core/Spinner";
+import * as stylex from "@stylexjs/stylex";
 import { ReactElement, useEffect, useState } from "react";
 import { toast } from 'react-toastify';
 import { useSwipeable } from 'react-swipeable';
@@ -13,11 +16,45 @@ type Props = {
     shootingIds: string[]
 }
 
+const s = stylex.create({
+  loading: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    height: 400,
+  },
+  row: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  track: {
+    display: "flex",
+    gap: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+    minWidth: 0,
+  },
+  card: {
+    flex: 1,
+    minWidth: 0,
+    height: 260,
+    borderRadius: "var(--radius-container)",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    cursor: "pointer",
+    opacity: { default: 1, ":hover": 0.85 },
+    transition: "opacity 0.2s ease",
+  },
+  pager: { display: "flex", justifyContent: "center", marginTop: 24 },
+});
+
 export default function ShootingCarousel(props: Props): ReactElement {
     const { setShootingId, shootingIds } = props
-    const [cards, setCards] = useState<ReactElement[]>([])
     const [page, setPage] = useState(0)
-    const [slideDirection, setSlideDirection] = useState<"left" | "right" | undefined>("left")
     const [loading, setLoading] = useState(false)
     const [thumbnails, setThumbnails] = useState<Record<string, string>>({})
     // cards per page depends on screen size
@@ -53,168 +90,68 @@ export default function ShootingCarousel(props: Props): ReactElement {
         }
     }, [shootingIds])
 
-    useEffect(() => {
-        if(Object.keys(thumbnails).length === 0) { return }
-        setCards(shootingCards(shootingIds))
-    }, [thumbnails, shootingIds])
+    // unique ids that actually have a thumbnail, in order
+    const cardIds = Array.from(new Set(shootingIds)).filter((id) => thumbnails[id]);
+    const numPages = Math.max(Math.ceil(cardIds.length / cardsPerPage), 1);
 
     const handleNextPage = () => {
-        if(page >= Math.ceil(cards.length / cardsPerPage) - 1) { return }
-        setSlideDirection("left")
-        setPage((prevPage) => prevPage + 1)
+        if (page >= numPages - 1) return;
+        setPage((prevPage) => prevPage + 1);
     }
 
     const handlePrevPage = () => {
-        if(page === 0) { return }
-        setSlideDirection("right")
-        setPage((prevPage) => prevPage - 1)
+        if (page === 0) return;
+        setPage((prevPage) => prevPage - 1);
     }
 
-    const shootingCards = (shootingIds: string[]): ReactElement[] => {
-      // remove duplicates
-      const uniqueIds = Array.from(new Set(shootingIds));
-      const cards: ReactElement[] = [];
-      for (const shootingId of uniqueIds) {
-        const thumbnail = thumbnails[shootingId];
-        if (!thumbnail) continue;
-
-        cards.push(
-          <Card
-            key={shootingId}
-            sx={{
-              height: "auto",
-              width: "auto",
-              backgroundImage: `url(${thumbnail})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundRepeat: "no-repeat",
-              "&:hover": {
-                cursor: "pointer",
-                opacity: 0.8,
-              },
-            }}
-            onClick={() => setShootingId(shootingId)}
-          >
-            <CardMedia
-              component="img"
-              sx={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                opacity: 0,
-              }}
-              image={thumbnail}
-              title="shooting"
-              onLoad={() => setLoading(false)}
-              onError={() => {
-                toast.error("Error loading image");
-                setLoading(false);
-              }}
-            />
-          </Card>
-        );
-      }
-
-      return cards;
-    };
-
     if(loading) { return (
-        <Box
-            sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                alignContent: 'center',
-                justifyContent: 'center',
-                height: "400px"
-            }}
-        >
-            <CircularProgress />
-        </Box>
+        <div {...stylex.props(s.loading)}>
+            <Spinner size="lg" />
+        </div>
     ) }
 
+    const pageIds = cardIds.slice(page * cardsPerPage, page * cardsPerPage + cardsPerPage);
+
     return (
-        <Grid container spacing={2}>
-            <Grid item xs={12}>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        alignContent: 'center',
-                        justifyContent: 'center',
-                    }}
-                >
-                    {!isMobile && (
-                        <IconButton
-                            onClick={handlePrevPage}
-                            disabled={page === 0}
-                            sx={{ margin: 2, padding: 2, "& svg": { fontSize: 36 } }}
-                        >
-                            <NavigateBefore />
-                        </IconButton>
-                    )}
-                    <Box
-                        {...handlers}
-                        sx={{
-                            display: 'flex',
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            alignContent: 'center',
-                            justifyContent: 'center',
-                            height: "auto",
-                            width: "auto",
-                        }}
-                    >
-                        {cards.map((card: ReactElement, index: number) => (
-                            <Box
-                                key={card.key}
-                                sx={{
-                                    width: "100%",
-                                    height: "100%",
-                                    display: page === index ? "block" : "none",
-                                }}
-                            >
-                                <Slide direction={slideDirection} in={page === index}>
-                                    <Stack
-                                        spacing={2}
-                                        direction="row"
-                                        alignContent="center"
-                                        justifyContent="center"
-                                    >
-                                        {cards.slice(index * cardsPerPage, index * cardsPerPage + cardsPerPage)}
-                                    </Stack>
-                                </Slide>
-                            </Box>
-                        ))}
-                    </Box>
-                    {!isMobile && (
-                        <IconButton
-                            onClick={handleNextPage}
-                            disabled={page >= Math.ceil(cards.length || 0) / cardsPerPage - 1}
-                            sx={{ margin: 2, padding: 2, "& svg": { fontSize: 36 } }}
-                        >
-                            <NavigateNext />
-                        </IconButton>
-                    )}
-                </Box>
-            </Grid>
-            <Grid item xs={12}>
+        <div>
+            <div {...stylex.props(s.row)}>
+                {!isMobile && (
+                    <IconButton
+                        variant="ghost"
+                        icon={<NavigateBefore />}
+                        label="Zurück"
+                        isDisabled={page === 0}
+                        onClick={handlePrevPage}
+                    />
+                )}
+                <div {...handlers} {...stylex.props(s.track)}>
+                    {pageIds.map((shootingId) => (
+                        <div
+                            key={shootingId}
+                            {...stylex.props(s.card)}
+                            style={{ backgroundImage: `url(${thumbnails[shootingId]})` }}
+                            onClick={() => setShootingId(shootingId)}
+                        />
+                    ))}
+                </div>
+                {!isMobile && (
+                    <IconButton
+                        variant="ghost"
+                        icon={<NavigateNext />}
+                        label="Weiter"
+                        isDisabled={page >= numPages - 1}
+                        onClick={handleNextPage}
+                    />
+                )}
+            </div>
+            <div {...stylex.props(s.pager)}>
                 <Pagination
-                    count={Math.ceil(cards.length / cardsPerPage)}
                     page={page + 1}
-                    onChange={(event, value) => setPage(value - 1)}
-                    color="primary"
+                    totalPages={numPages}
                     siblingCount={isMobile ? 0 : 1}
-                    sx={{
-                        margin: 5,
-                        // center pagination
-                        display: "flex",
-                        justifyContent: "center",
-                        marginTop: "auto"
-                    }}
+                    onChange={(value) => setPage(value - 1)}
                 />
-            </Grid>
-        </Grid>
+            </div>
+        </div>
     )
 }

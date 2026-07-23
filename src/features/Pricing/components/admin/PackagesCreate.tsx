@@ -1,6 +1,9 @@
 import { ReactElement } from "react";
-import { Add, Cancel, Edit, Save } from "@mui/icons-material";
-import { Box, Card, CardContent, Grid, IconButton, TextField, Typography } from "@mui/material";
+import { Plus as Add, CircleX as Cancel, Pencil as Edit, Save } from "lucide-react";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { Heading } from "@astryxdesign/core/Heading";
+import * as stylex from "@stylexjs/stylex";
 
 import { Package } from "../../../../utils/types";
 
@@ -12,9 +15,32 @@ type Props = {
   editNewPackage: boolean;
   setEditNewPackage: (editNewPackage: boolean) => void;
   handleCreate: (newPackage: Package) => Promise<void>;
-}
+};
 
-export default function PackagesCreate(props : Props): ReactElement {
+const s = stylex.create({
+  card: {
+    borderRadius: "var(--radius-container)",
+    border: "1px solid var(--color-border)",
+    backgroundColor: "var(--color-background-card)",
+    padding: 16,
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  },
+  head: { display: "flex", alignItems: "center", justifyContent: "space-between" },
+  actions: { display: "flex", gap: 4 },
+  placeholder: {
+    minHeight: 160,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "var(--color-text-secondary)",
+    fontSize: 32,
+  },
+});
+
+export default function PackagesCreate(props: Props): ReactElement {
   const {
     newPackage,
     handleCreate,
@@ -22,151 +48,84 @@ export default function PackagesCreate(props : Props): ReactElement {
     setCreateNew,
     editNewPackage,
     setEditNewPackage,
-    setNewPackage
+    setNewPackage,
   } = props;
 
   return (
-    <>
-    <Grid item xs={12} md={4} lg={4}>
-      <Card onClick={() => {
-        if(!createNew) {
+    <div
+      {...stylex.props(s.card)}
+      onClick={() => {
+        if (!createNew) {
           setCreateNew(true);
           setEditNewPackage(true);
-          setNewPackage({
-            id: "",
-            title: "",
-            numberOfImages: 0,
-            totalPrice: "",
-            singlePrice: ""
-          });
+          setNewPackage({ id: "", title: "", numberOfImages: 0, totalPrice: "", singlePrice: "" });
         }
-      }}>
-                <CardContent>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="h6">Neues Paket</Typography>
-                    </Grid>
-                    {createNew && (
-                      <Grid item xs={6}>
-                        {!editNewPackage ? (
-                          <IconButton
-                            sx={{ float: "right" }}
-                            onClick={() => setEditNewPackage(true)}
-                          >
-                            <Edit />
-                          </IconButton>
-                        ) : (
-                          <>
-                            <IconButton
-                              sx={{ float: "right" }}
-                              onClick={() => handleCreate(newPackage as Package)}
-                            >
-                              <Save />
-                            </IconButton>
-                            <IconButton
-                              sx={{ float: "right" }}
-                              onClick={() => {
-                                setEditNewPackage(false);
-                                setCreateNew(!createNew);
-                              }}
-                            >
-                              <Cancel />
-                            </IconButton>
-                          </>
-                        )}
-                      </Grid>
-                    )}
-                    {createNew ? (
-                      <>
-                        <Grid item xs={12}>
-                          <TextField
-                            fullWidth
-                            label="Titel"
-                            name="title"
-                            required
-                            size="small"
-                            variant="outlined"
-                            value={newPackage?.title}
-                            onChange={(e) => {
-                              const pkg: Package = { ...(newPackage as Package) };
-                              pkg.title = e.target.value;
-                              setNewPackage(pkg);
-                            }}
-                          />
-                        </Grid>
-                        <Grid item xs={12}>
-                          <TextField
-                            fullWidth
-                            type="number"
-                            label="Anzahl Bilder"
-                            name="numberOfImages"
-                            size="small"
-                            variant="outlined"
-                            onChange={(e) => {
-                              const pkg: Package = { ...(newPackage as Package) };
-                              pkg.numberOfImages = parseInt(e.target.value);
-                              setNewPackage(pkg);
-                            }}
-                            value={newPackage?.numberOfImages}
-                          />
-                        </Grid>
-                        <Grid item xs={12}>
-                          <TextField
-                            fullWidth
-                            type="number"
-                            label="Paketpreis"
-                            name="totalPriceText"
-                            size="small"
-                            variant="outlined"
-                            onChange={(e) => {
-                              const pkg: Package = { ...(newPackage as Package) };
-                              pkg.totalPrice = e.target.value;
-                              setNewPackage(pkg);
-                            }}
-                            value={newPackage?.totalPrice}
-                          />
-                        </Grid>
-                        <Grid item xs={12}>
-                          <TextField
-                            fullWidth
-                            type="number"
-                            label="Einzelbildpreis"
-                            name="singlePriceText"
-                            size="small"
-                            variant="outlined"
-                            onChange={(e) => {
-                              const pkg: Package = { ...(newPackage as Package) };
-                              pkg.singlePrice = e.target.value;
-                              setNewPackage(pkg);
-                            }}
-                            value={newPackage?.singlePrice}
-                          />
-                        </Grid>
-                      </>
-                    ) : (
-                      <Grid
-                        item
-                        xs={12}
-                        alignItems="center"
-                        justifyContent={"center"}
-                      >
-                        <Box
-                          sx={{minHeight: 200, minWidth: 300}}
-                          alignContent="center"
-                          justifyContent="center"
-                          alignItems="center"
-                          display="flex"
-                        >
-                          <Typography variant="h6">
-                            <Add />
-                          </Typography>
-                        </Box>
-                      </Grid>
-                    )}
-                  </Grid>
-                </CardContent>
-              </Card>
-            </Grid>
-    </>
-  )
+      }}
+    >
+      <div {...stylex.props(s.head)}>
+        <Heading level={6}>Neues Paket</Heading>
+        {createNew && (
+          <div {...stylex.props(s.actions)}>
+            {!editNewPackage ? (
+              <IconButton variant="ghost" icon={<Edit />} label="Bearbeiten" onClick={() => setEditNewPackage(true)} />
+            ) : (
+              <>
+                <IconButton variant="ghost" icon={<Save />} label="Speichern" onClick={() => handleCreate(newPackage as Package)} />
+                <IconButton
+                  variant="ghost"
+                  icon={<Cancel />}
+                  label="Abbrechen"
+                  onClick={() => {
+                    setEditNewPackage(false);
+                    setCreateNew(!createNew);
+                  }}
+                />
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {createNew ? (
+        <>
+          <TextInput
+            width="100%"
+            size="sm"
+            label="Titel"
+            isRequired
+            value={newPackage?.title ?? ""}
+            onChange={(v) => setNewPackage({ ...(newPackage as Package), title: v })}
+          />
+          <TextInput
+            width="100%"
+            size="sm"
+           
+            label="Anzahl Bilder"
+            value={String(newPackage?.numberOfImages ?? "")}
+            onChange={(v) => setNewPackage({ ...(newPackage as Package), numberOfImages: parseInt(v) })}
+          />
+          <TextInput
+            width="100%"
+            size="sm"
+           
+            label="Paketpreis"
+            value={newPackage?.totalPrice ?? ""}
+            onChange={(v) => setNewPackage({ ...(newPackage as Package), totalPrice: v })}
+          />
+          <TextInput
+            width="100%"
+            size="sm"
+           
+            label="Einzelbildpreis"
+            value={newPackage?.singlePrice ?? ""}
+            onChange={(v) => setNewPackage({ ...(newPackage as Package), singlePrice: v })}
+          />
+        </>
+      ) : (
+        <div {...stylex.props(s.placeholder)}>
+          <Add />
+        </div>
+      )}
+    </div>
+  );
 }

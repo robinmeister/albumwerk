@@ -1,10 +1,9 @@
-import {
-  Box,
-  Button,
-  LinearProgress,
-  Typography,
-} from "@mui/material";
-import { CheckCircle, CloudDownload } from "@mui/icons-material";
+import { Button } from "@astryxdesign/core/Button";
+import { ProgressBar } from "@astryxdesign/core/ProgressBar";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
+import { CircleCheck as CheckCircle, CloudDownload } from "lucide-react";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { ref, getDownloadURL } from "../../../../config/storage-compat";
@@ -21,6 +20,24 @@ type Props = {
   inDownloadPage?: boolean;
   orderId?: string;
 };
+
+const s = stylex.create({
+  center: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
+    gap: 16,
+  },
+  padSuccess: { paddingBlock: 48 },
+  padDownload: { paddingBlock: 32 },
+  successIcon: { fontSize: 72, color: "var(--color-success)" },
+  dlIcon: { fontSize: 56, color: "var(--color-accent)" },
+  maxText: { maxWidth: 420 },
+  actions: { display: "flex", gap: 8, marginTop: 8 },
+  progressWrap: { width: "100%", maxWidth: 380 },
+});
 
 export default function DownloadForm(props: Props): ReactElement {
   const { imageList, shootingIds, inDownloadPage, orderId } = props;
@@ -77,81 +94,63 @@ export default function DownloadForm(props: Props): ReactElement {
   /* ── Success state (after payment) ── */
   if (!inDownloadPage) {
     return (
-      <Box
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        textAlign="center"
-        py={6}
-        gap={2}
-      >
-        <CheckCircle sx={{ fontSize: 72, color: "success.main" }} />
-        <Typography variant="h5" fontWeight={700}>
-          Zahlung erfolgreich!
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 420 }}>
-          Vielen Dank für deine Bestellung. Deine Zahlung wurde erfolgreich bearbeitet.
-          Du erhältst in Kürze eine Bestätigung per E-Mail.
-        </Typography>
+      <div {...stylex.props(s.center, s.padSuccess)}>
+        <CheckCircle {...stylex.props(s.successIcon)} />
+        <Heading level={5}>Zahlung erfolgreich!</Heading>
+        <div {...stylex.props(s.maxText)}>
+          <Text type="body" color="secondary">
+            Vielen Dank für deine Bestellung. Deine Zahlung wurde erfolgreich bearbeitet.
+            Du erhältst in Kürze eine Bestätigung per E-Mail.
+          </Text>
+        </div>
         {orderId && (
-          <Typography variant="body2" color="text.secondary">
+          <Text type="body" color="secondary">
             Bestellnummer: <b>{orderId}</b>
-          </Typography>
+          </Text>
         )}
-        <Box display="flex" gap={1} sx={{ mt: 1 }}>
+        <div {...stylex.props(s.actions)}>
           {hasDownloads && (
-            <Button variant="contained" onClick={() => navigate("/downloads")}>
-              Zu meinen Downloads
-            </Button>
+            <Button variant="primary" label="Zu meinen Downloads" onClick={() => navigate("/downloads")} />
           )}
           <Button
-            variant={hasDownloads ? "text" : "contained"}
+            variant={hasDownloads ? "ghost" : "primary"}
+            label="Zurück zum Album"
             onClick={() => navigate("/album")}
-          >
-            Zurück zum Album
-          </Button>
-        </Box>
-      </Box>
+          />
+        </div>
+      </div>
     );
   }
 
   /* ── Download page state ── */
   return (
-    <Box
-      display="flex"
-      flexDirection="column"
-      alignItems="center"
-      textAlign="center"
-      py={4}
-      gap={2}
-    >
-      <CloudDownload sx={{ fontSize: 56, color: "primary.main" }} />
-      <Typography variant="h6" fontWeight={600}>
-        Fotos herunterladen
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 380 }}>
-        Alle deine Bilder werden als ZIP-Datei heruntergeladen.
-      </Typography>
+    <div {...stylex.props(s.center, s.padDownload)}>
+      <CloudDownload {...stylex.props(s.dlIcon)} />
+      <Heading level={6}>Fotos herunterladen</Heading>
+      <div {...stylex.props(s.maxText)}>
+        <Text type="body" color="secondary">
+          Alle deine Bilder werden als ZIP-Datei heruntergeladen.
+        </Text>
+      </div>
 
       {loadingZip && (
-        <Box width="100%" maxWidth={380}>
-          <LinearProgress variant="determinate" value={progress * 100} sx={{ mb: 1, borderRadius: 1 }} />
-          <Typography variant="body2" color="text.secondary">
+        <div {...stylex.props(s.progressWrap)}>
+          <ProgressBar label="Download" isLabelHidden value={progress * 100} max={100} />
+          <Text type="body" color="secondary">
             {Math.round(progress * 100)} % abgeschlossen
-          </Typography>
-        </Box>
+          </Text>
+        </div>
       )}
 
       <Button
-        variant="contained"
-        startIcon={loadingZip ? undefined : <CloudDownload />}
+        variant="primary"
+        size="lg"
+        icon={loadingZip ? undefined : <CloudDownload />}
+        isLoading={loadingZip}
+        isDisabled={loadingZip}
+        label={loadingZip ? "Wird vorbereitet…" : "Als ZIP herunterladen"}
         onClick={downloadImagesAsZip}
-        disabled={loadingZip}
-        size="large"
-      >
-        {loadingZip ? "Wird vorbereitet…" : "Als ZIP herunterladen"}
-      </Button>
-    </Box>
+      />
+    </div>
   );
 }

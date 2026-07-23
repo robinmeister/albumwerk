@@ -1,18 +1,11 @@
-import {
-  Box,
-  Button,
-  Grid,
-  ImageList,
-  ImageListItem,
-  LinearProgress,
-  Pagination,
-  Paper,
-  Skeleton,
-  Stack,
-  Tooltip,
-  Typography
-} from "@mui/material";
-import { ChangeEvent, ReactElement, ReactNode, useEffect, useState } from "react";
+import { Button } from "@astryxdesign/core/Button";
+import { Pagination } from "@astryxdesign/core/Pagination";
+import { ProgressBar } from "@astryxdesign/core/ProgressBar";
+import { Skeleton } from "@astryxdesign/core/Skeleton";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
+import { ReactElement, ReactNode, useEffect, useState } from "react";
 import { doc, getDoc } from "../../../config/firestore-compat";
 import { getDownloadURL, listAll, ref } from "../../../config/storage-compat";
 import { onValue, ref as refRT, set } from "../../../config/rtdb-compat";
@@ -20,7 +13,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import JSZip from "jszip";
 import saveAs from "file-saver";
-import { Check, PhotoLibrary } from "@mui/icons-material";
+import { Check, Images as PhotoLibrary } from "lucide-react";
 import EmptyState from "../../../components/feedback/EmptyState";
 
 import { fetchShootingPackage, getOriginalImages } from "../../../utils/functions";
@@ -29,7 +22,6 @@ import useMobileService from "../../../hooks/useMobileService";
 import { Package, Shooting } from "../../../utils/types";
 import { calculateTotalPackagePrice } from "../../Pricing/utils/functions";
 import { pb } from "../../../config/pocketbase";
-import { SIDEBAR_WIDTH } from "../../../components/layout/AppShell";
 
 import DeleteModal from "../../../components/widgets/DeleteModal";
 import ImagePreview from "./ImagePreview";
@@ -47,6 +39,49 @@ type Props = {
   selectMode: boolean;
   setSelectMode: (selectMode: boolean) => void;
 };
+
+const DESKTOP = "@media (min-width: 900px)";
+
+const s = stylex.create({
+  skeletonGrid: {
+    display: "grid",
+    gridTemplateColumns: { default: "1fr 1fr", [DESKTOP]: "repeat(4, 1fr)" },
+    gap: 8,
+  },
+  masonry: {
+    columnCount: { default: 2, [DESKTOP]: 4 },
+    columnGap: 4,
+    marginTop: 24,
+  },
+  tile: { breakInside: "avoid", marginBottom: 4 },
+  center: { display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 8 },
+  topBar: { display: "flex", justifyContent: "center", gap: 16, paddingTop: 24 },
+  intro: { margin: "8px 16px" },
+  progressRow: { display: "flex", alignItems: "center", gap: 12, marginTop: 8 },
+  progressDone: { display: "flex", alignItems: "center", gap: 4, color: "var(--color-success)" },
+  pager: { display: "flex", justifyContent: "center", marginTop: 16 },
+  countRow: { marginBottom: 16 },
+  actionBar: {
+    position: "fixed",
+    left: { default: 0 },
+    right: 0,
+    bottom: 0,
+    zIndex: 1100,
+    paddingInline: { default: 12, [DESKTOP]: 24 },
+    paddingBlock: 10,
+    display: "flex",
+    alignItems: "center",
+    gap: { default: 8, [DESKTOP]: 16 },
+    flexWrap: "wrap",
+    borderTop: "1px solid var(--color-border)",
+    backgroundColor: "var(--color-background-surface)",
+    boxShadow: "0 -4px 16px rgba(0,0,0,0.12)",
+  },
+  // 240 = AppShell SIDEBAR_WIDTH (must be a literal for the StyleX compiler)
+  actionBarShifted: { left: { default: 0, [DESKTOP]: 240 } },
+  barCount: { minWidth: 110 },
+  barActions: { marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" },
+});
 
 export default function Album(props: Props): ReactElement {
   const {
@@ -268,7 +303,7 @@ export default function Album(props: Props): ReactElement {
     }
   }
 
-  const handlePageChange = (event: ChangeEvent<unknown>, value: number) => {
+  const handlePageChange = (value: number) => {
     setPage(value);
     const start = (value - 1) * 18;
     const end = value * 18;
@@ -338,69 +373,44 @@ export default function Album(props: Props): ReactElement {
     : 0;
 
   const topBar : ReactNode = (
-    <Stack sx={{ pt: 3 }} direction="row" spacing={2} justifyContent="center">
-      <Button variant="contained" onClick={() => setSelectMode(true)}>
-        Bilder auswählen
-      </Button>
-    </Stack>
+    <div {...stylex.props(s.topBar)}>
+      <Button variant="primary" label="Bilder auswählen" onClick={() => setSelectMode(true)} />
+    </div>
   );
 
   // sticky bar while selecting: count, package progress and all actions in
   // one place that stays visible while scrolling through the grid
   const actionBar : ReactNode = (
-    <Paper
-      elevation={8}
-      square
-      sx={{
-        // clear the sidebar on desktop; the public album has no shell
-        position: "fixed",
-        left: { xs: 0, md: isPublicAlbum ? 0 : `${SIDEBAR_WIDTH}px` },
-        right: 0,
-        bottom: 0,
-        zIndex: (t) => t.zIndex.appBar,
-        px: { xs: 1.5, md: 3 },
-        py: 1.25,
-        display: "flex",
-        alignItems: "center",
-        gap: { xs: 1, md: 2 },
-        flexWrap: "wrap",
-        borderTop: "1px solid",
-        borderColor: "divider",
-      }}
-    >
-      <Box sx={{ minWidth: 110 }}>
-        <Typography fontWeight={600} variant="body2">
+    <div {...stylex.props(s.actionBar, !isPublicAlbum && s.actionBarShifted)}>
+      <div {...stylex.props(s.barCount)}>
+        <Text type="body" weight="semibold">
           {selected.length} ausgewählt
-        </Typography>
+        </Text>
         {shootingPackage && !isAdminAlbum && (
-          <Typography
-            variant="caption"
-            color={packageRemaining > 0 ? "text.secondary" : "success.main"}
-          >
+          <Text type="supporting" color={packageRemaining > 0 ? "secondary" : "accent"}>
             {packageRemaining > 0
               ? `noch ${packageRemaining} von ${shootingPackage.numberOfImages} inklusive wählen`
               : `Gesamt: ${calculateTotalPackagePrice(shootingPackage, selected.length)} €`}
-          </Typography>
+          </Text>
         )}
-      </Box>
-      <Box sx={{ ml: "auto", display: "flex", gap: 1, flexWrap: "wrap" }}>
+      </div>
+      <div {...stylex.props(s.barActions)}>
         <Button
-          size="small"
+          size="sm"
+          variant="ghost"
+          label="Abbrechen"
           onClick={() => {
             discardSelection();
             setSelectMode(false);
           }}
-        >
-          Abbrechen
-        </Button>
-        <Button size="small" variant="outlined" onClick={() => selectAllPhotos()}>
-          Alle
-        </Button>
+        />
+        <Button size="sm" variant="secondary" label="Alle" onClick={() => selectAllPhotos()} />
         {shooting?.withUserSelection && (
           <Button
-            size="small"
-            variant="outlined"
-            disabled={selected.length === 0}
+            size="sm"
+            variant="secondary"
+            isDisabled={selected.length === 0}
+            label={isAdminAlbum ? "Auswahl herunterladen" : "Auswahl abschicken"}
             onClick={() => {
               if (isAdminAlbum) {
                 void downloadImagesAsZip();
@@ -408,117 +418,82 @@ export default function Album(props: Props): ReactElement {
                 void sendSelectedImages(selected);
               }
             }}
-          >
-            {isAdminAlbum ? "Auswahl herunterladen" : "Auswahl abschicken"}
-          </Button>
+          />
         )}
-        <Tooltip
-          title={
+        <Button
+          size="sm"
+          variant={isAdminAlbum ? "destructive" : "primary"}
+          isDisabled={primaryDisabled}
+          label={primaryLabel}
+          tooltip={
             primaryDisabled && shootingPackage && !isAdminAlbum
               ? `Bitte mindestens ${shootingPackage.numberOfImages} Bilder auswählen`
               : primaryDisabled
                 ? "Bitte zuerst Bilder auswählen"
-                : ""
+                : undefined
           }
-        >
-          <span>
-            <Button
-              size="small"
-              variant="contained"
-              color={isAdminAlbum ? "error" : "primary"}
-              disabled={primaryDisabled}
-              onClick={() => void primaryAction()}
-            >
-              {primaryLabel}
-            </Button>
-          </span>
-        </Tooltip>
-      </Box>
-    </Paper>
+          onClick={() => void primaryAction()}
+        />
+      </div>
+    </div>
   );
 
   if(loadingPreview) { return (
-    <Grid container spacing={2}>
-      {Array.from(new Array(9)).map((_, index) => (
+    <div {...stylex.props(s.skeletonGrid)}>
+      {Array.from(new Array(8)).map((_, index) => (
         // eslint-disable-next-line react/no-array-index-key
-        <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
-          <Skeleton variant="rectangular" width="100%" height={200} />
-        </Grid>
+        <Skeleton key={index} width="100%" height={200} />
       ))}
-    </Grid>
+    </div>
   ) }
 
   return (
     <div style={{ paddingBottom: selectMode ? 88 : 0 }}>
       {!isAdminAlbum && shooting?.withUserSelection && (
-        <Grid container spacing={2}>
-          <Grid item xs={12} sx={{ mx: 2, mt: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              {shooting?.type === "paid"
-                ? "Markiere Bilder und klicke auf „Auswahl abschicken“, um eine Vorauswahl zu treffen, oder lade sie direkt über „Download“ herunter."
-                : "Markiere Bilder und klicke auf „Auswahl abschicken“, um eine Vorauswahl zu treffen, oder kaufe direkt über „Kaufen“."}
-            </Typography>
-          </Grid>
-        </Grid>
+        <div {...stylex.props(s.intro)}>
+          <Text type="body" color="secondary">
+            {shooting?.type === "paid"
+              ? "Markiere Bilder und klicke auf „Auswahl abschicken“, um eine Vorauswahl zu treffen, oder lade sie direkt über „Download“ herunter."
+              : "Markiere Bilder und klicke auf „Auswahl abschicken“, um eine Vorauswahl zu treffen, oder kaufe direkt über „Kaufen“."}
+          </Text>
+        </div>
       )}
       {shooting && (isAdminAlbum || shooting.type === "public") && (
-        <Stack
-          direction="column"
-          alignItems="center"
-          spacing={1}
-          sx={{ mt: 1 }}
-        >
+        <div {...stylex.props(s.center)}>
           {shooting.type === "public" && !isAdminAlbum && (
-            <Typography variant="body2" align="center" color="text.secondary">
+            <Text type="body" color="secondary">
               Dieses Shooting ist öffentlich. Teile den Link mit Freunden und Familie.
-            </Typography>
+            </Text>
           )}
           <ShareDialog shooting={shooting} />
-        </Stack>
+        </div>
       )}
       {selectMode && (
-        <Typography
-          variant="h5"
-          align="left"
-          color="text.secondary"
-          paragraph
-        >
-          {selected.length} ausgewählt
-        </Typography>
+        <div {...stylex.props(s.countRow)}>
+          <Heading level={5} color="secondary">
+            {selected.length} ausgewählt
+          </Heading>
+        </div>
       )}
       {showPlaceholder && progress > 0 && (
-        <Grid container sx={{ display: 'flex', alignItems: 'center' }}>
-          <Grid item xs={12} sx={{ width: '100%', mr: 1 }}>
-            <LinearProgress variant="determinate" {...props} value={progress * 100}/>
-          </Grid>
-          <Grid item xs={4} sx={{ minWidth: 35 }}>
-            <Typography variant="body2" color="text.secondary">{`${Math.round(
-              progress * 100
-            )}%`}</Typography>
-          </Grid>
+        <div {...stylex.props(s.progressRow)}>
+          <div style={{ flex: 1 }}>
+            <ProgressBar label="Download" value={progress * 100} max={100} />
+          </div>
+          <Text type="body" color="secondary">{`${Math.round(progress * 100)}%`}</Text>
           {progress === 1 && (
-            <Grid item xs={4} sx={{ display: 'flex', alignItems: 'center' }}>
-              <Typography variant="body2" color="text.secondary">Download abgeschlossen</Typography>
+            <span {...stylex.props(s.progressDone)}>
+              <Text type="body" color="secondary">Download abgeschlossen</Text>
               <Check />
-            </Grid>
+            </span>
           )}
-        </Grid>
+        </div>
       )}
       {(!isAdminAlbum && shootingPackage) && (
-        <>
-          <Typography
-            variant="body1"
-            align="left"
-            paragraph
-          >
-            Aus den vorhandenen Bildern können {shootingPackage.numberOfImages} Stk. für den Preis {shootingPackage.totalPrice} € ausgewählt werden. <br />
-            Jedes zusätzliche Bild kostet {shootingPackage.singlePrice} €. <br />
-            Gesamtpreis für alle Bilder: {" "}
-            <b>
-              {calculateTotalPackagePrice(shootingPackage, selected.length)} €
-            </b>
-          </Typography>
-        </>
+        <Text type="body">
+          Aus den vorhandenen Bildern können {shootingPackage.numberOfImages} Stk. für den Preis {shootingPackage.totalPrice} € ausgewählt werden. Jedes zusätzliche Bild kostet {shootingPackage.singlePrice} €. Gesamtpreis für alle Bilder:{" "}
+          <b>{calculateTotalPackagePrice(shootingPackage, selected.length)} €</b>
+        </Text>
       )}
       {!selectMode && topBar}
       {images.length === 0 ? (
@@ -532,14 +507,9 @@ export default function Album(props: Props): ReactElement {
           }
         />
       ) : (
-        <ImageList
-          variant="masonry"
-          cols={isMobile ? 2 : 4}
-          gap={4}
-          sx={{ flexDirection: "column", mt: 3 }}
-        >
+        <div {...stylex.props(s.masonry)}>
           {previewImages.map((image : string) => (
-            <ImageListItem key={image}>
+            <div key={image} {...stylex.props(s.tile)}>
               <AlbumImage
                 image={image}
                 selectMode={selectMode}
@@ -554,9 +524,9 @@ export default function Album(props: Props): ReactElement {
                   }
                 }}
               />
-            </ImageListItem>
+            </div>
           ))}
-        </ImageList>
+        </div>
       )}
       {selectMode && actionBar}
       <DeleteModal
@@ -580,15 +550,8 @@ export default function Album(props: Props): ReactElement {
         onSetCover={isAdminAlbum ? setCoverFromPreview : undefined}
       />
       {images.length > 0 && numPages > 1 && (
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <Stack spacing={2}>
-            <Pagination
-              count={numPages}
-              color="primary"
-              page={page}
-              onChange={(event: ChangeEvent<unknown>, value: number) => handlePageChange(event, value)}
-            />
-          </Stack>
+        <div {...stylex.props(s.pager)}>
+          <Pagination page={page} totalPages={numPages} onChange={(value) => handlePageChange(value)} />
         </div>
       )}
     </div>

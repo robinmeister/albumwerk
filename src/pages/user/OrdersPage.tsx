@@ -1,36 +1,15 @@
 import { ReactElement, useEffect, useMemo, useState } from "react";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  Divider,
-  Grid,
-  IconButton,
-  InputAdornment,
-  Tab,
-  Tabs,
-  TextField,
-  Tooltip,
-  Typography,
-} from "@mui/material";
-import {
-  ArrowBack,
-  ArrowDownward,
-  ArrowUpward,
-  Assignment,
-  CheckCircle,
-  Close,
-  CloudDownload,
-  Print,
-  Search,
-  Send,
-} from "@mui/icons-material";
+import { Badge } from "@astryxdesign/core/Badge";
+import { Button } from "@astryxdesign/core/Button";
+import { Dialog } from "@astryxdesign/core/Dialog";
+import { Divider } from "@astryxdesign/core/Divider";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { Spinner } from "@astryxdesign/core/Spinner";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
+import { ArrowLeft as ArrowBack, ArrowDown as ArrowDownward, ArrowUp as ArrowUpward, ClipboardList as Assignment, CircleCheck as CheckCircle, X as Close, CloudDownload, Printer as Print, Search, Send } from "lucide-react";
 import { toast } from "react-toastify";
 import { addDoc, collection, getDocs } from "../../config/firestore-compat";
 
@@ -47,15 +26,11 @@ import { calculateTotalPrice } from "../../features/Pricing/utils/functions";
 import { getUsersSnapshot } from "../../utils/functions";
 import useMobileService from "../../hooks/useMobileService";
 
-/* ---- Extended types ---- */
-
 type TableOrderExtended = TableOrder & { createdAt?: string };
 type FinishedOrderLocal = FinishedOrder & { createdAt?: string };
 
 type SortKey = "email" | "price";
 type SortDir = "asc" | "desc";
-
-/* ---- Helpers ---- */
 
 function parseIPOL(val: unknown): ImagePriceObject[] {
   if (typeof val === "string") return JSON.parse(val);
@@ -78,231 +53,241 @@ function getDateGroup(dateStr?: string): "Heute" | "Diese Woche" | "Älter" {
   return "Älter";
 }
 
-/* ---- Stat card ---- */
+const MD = "@media (min-width: 900px)";
+
+const s = stylex.create({
+  loading: { display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" },
+  root: { paddingTop: 8 },
+  pageTitle: { marginBottom: 12, display: { default: "none", [MD]: "block" } },
+  statGrid: {
+    display: "grid",
+    gridTemplateColumns: { default: "1fr 1fr", [MD]: "repeat(4, 1fr)" },
+    gap: 12,
+    marginBottom: 4,
+  },
+  statCard: {
+    padding: "12px 16px",
+    borderRadius: "var(--radius-container)",
+    border: "1px solid var(--color-border)",
+    backgroundColor: "var(--color-background-card)",
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+  },
+  statLabel: { textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.68rem" },
+  linkRow: { display: "flex", justifyContent: "flex-end", marginBottom: 12 },
+  panels: {
+    display: "flex",
+    flexDirection: { default: "column", [MD]: "row" },
+    border: "1px solid var(--color-border)",
+    borderRadius: "var(--radius-container)",
+    overflow: { default: "visible", [MD]: "hidden" },
+    height: { [MD]: "calc(100vh - 295px)" },
+    minHeight: { [MD]: 400 },
+    backgroundColor: "var(--color-background-card)",
+  },
+  left: {
+    width: { [MD]: 300 },
+    flexShrink: 0,
+    borderRight: { [MD]: "1px solid var(--color-border)" },
+    borderBottom: { default: "1px solid var(--color-border)", [MD]: "none" },
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+  },
+  right: { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" },
+  hideOnMobile: { display: { default: "none", [MD]: "flex" } },
+  tabs: { display: "flex", borderBottom: "1px solid var(--color-border)", flexShrink: 0 },
+  tab: {
+    flex: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    padding: "12px 4px",
+    border: "none",
+    background: "none",
+    cursor: "pointer",
+    fontSize: "0.68rem",
+    fontWeight: 600,
+    color: "var(--color-text-secondary)",
+    borderBottomWidth: 2,
+    borderBottomStyle: "solid",
+    borderBottomColor: "transparent",
+  },
+  tabActive: { color: "var(--color-text-accent)", borderBottomColor: "var(--color-accent)" },
+  leftHead: { padding: 12, borderBottom: "1px solid var(--color-border)", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 },
+  sortRow: { display: "flex", gap: 6 },
+  sortBtn: { flex: 1 },
+  list: { flex: 1, overflowY: "auto" },
+  listEmpty: { padding: 16, textAlign: "center", paddingTop: 32 },
+  groupLabel: { display: "block", padding: "6px 12px", textTransform: "uppercase", letterSpacing: "0.07em", fontSize: "0.62rem" },
+  item: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    padding: "10px 12px",
+    cursor: "pointer",
+    borderLeftWidth: 3,
+    borderLeftStyle: "solid",
+    borderLeftColor: "transparent",
+    transition: "background-color 0.15s",
+    backgroundColor: { default: "transparent", ":hover": "var(--color-overlay-hover)" },
+  },
+  itemSelected: { borderLeftColor: "var(--color-accent)", backgroundColor: "var(--color-background-muted)" },
+  itemMain: { flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2, alignItems: "flex-start" },
+  itemPrice: { flexShrink: 0 },
+  rightEmpty: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 8 },
+  emptyIcon: { fontSize: 56, color: "var(--color-icon-disabled)", opacity: 0.4 },
+  mobileBack: { padding: "12px 16px 0", flexShrink: 0 },
+  detail: { display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" },
+  detailHead: {
+    padding: { default: "16px", [MD]: "16px 24px" },
+    borderBottom: "1px solid var(--color-border)",
+    flexShrink: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  headRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 },
+  headMain: { minWidth: 0, flex: 1 },
+  headPrice: { display: "flex", alignItems: "center", gap: 12, flexShrink: 0 },
+  summaryChips: { display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" },
+  detailBody: { flex: 1, overflowY: "auto", padding: { default: 16, [MD]: 24 } },
+  imgGrid: {
+    display: "grid",
+    gridTemplateColumns: { default: "1fr", "@media (min-width: 600px)": "1fr 1fr" },
+    gap: 16,
+  },
+  card: { overflow: "hidden", borderRadius: "var(--radius-container)", border: "1px solid var(--color-border)" },
+  cardThumb: { height: 160, overflow: "hidden", backgroundColor: "var(--color-background-muted)" },
+  cardImg: { width: "100%", height: "100%", objectFit: "cover" },
+  cardBody: { padding: "12px 16px", display: "flex", flexDirection: "column", gap: 4 },
+  cardLine: { display: "flex", justifyContent: "space-between", alignItems: "center" },
+  cardLineLeft: { display: "flex", alignItems: "center", gap: 6 },
+  dialogBody: { display: "flex", flexDirection: "column", gap: 8, padding: 8 },
+  dialogHead: { display: "flex", alignItems: "center", justifyContent: "space-between" },
+  summaryRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid var(--color-border)", gap: 8 },
+});
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <Card variant="outlined" sx={{ height: "100%" }}>
-      <CardContent sx={{ py: 1.5, px: 2, "&:last-child": { pb: 1.5 } }}>
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          display="block"
-          sx={{ mb: 0.5, textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.68rem" }}
-        >
-          {label}
-        </Typography>
-        <Typography variant="h5" fontWeight={700} lineHeight={1.1}>
-          {value}
-        </Typography>
-      </CardContent>
-    </Card>
+    <div {...stylex.props(s.statCard)}>
+      <span {...stylex.props(s.statLabel)}>
+        <Text type="supporting" color="secondary">{label}</Text>
+      </span>
+      <Heading level={5}>{value}</Heading>
+    </div>
   );
 }
-
-/* ---- Order list item ---- */
-
-const listItemSx = (isSelected: boolean) =>
-  ({
-    display: "flex",
-    alignItems: "center",
-    gap: 1.5,
-    px: 1.5,
-    py: 1.25,
-    cursor: "pointer",
-    borderLeft: "3px solid",
-    borderLeftColor: isSelected ? "primary.main" : "transparent",
-    bgcolor: isSelected ? "action.selected" : "transparent",
-    "&:hover": { bgcolor: isSelected ? "action.selected" : "action.hover" },
-    transition: "background-color 0.15s",
-  } as const);
 
 function OrderListItem({
-  order,
-  isSelected,
-  onClick,
-}: {
-  order: TableOrderExtended;
-  isSelected: boolean;
-  onClick: () => void;
-}) {
+  order, isSelected, onClick,
+}: { order: TableOrderExtended; isSelected: boolean; onClick: () => void }) {
   return (
-    <Box onClick={onClick} sx={listItemSx(isSelected)}>
-      <Box flex={1} minWidth={0}>
-        <Typography variant="body2" fontWeight={isSelected ? 600 : 400} noWrap title={order.userEmail}>
+    <div onClick={onClick} {...stylex.props(s.item, isSelected && s.itemSelected)}>
+      <div {...stylex.props(s.itemMain)}>
+        <Text type="body" weight={isSelected ? "semibold" : "normal"} maxLines={1}>
           {order.userEmail ?? "–"}
-        </Typography>
-        <Typography variant="caption" color="text.secondary" noWrap display="block">
+        </Text>
+        <Text type="supporting" color="secondary" maxLines={1}>
           {order.shootingTitle ?? "–"}
-        </Typography>
-      </Box>
-      <Typography variant="body2" fontWeight={600} sx={{ flexShrink: 0 }}>
-        {order.totalPrice.toFixed(2)}€
-      </Typography>
-    </Box>
+        </Text>
+      </div>
+      <span {...stylex.props(s.itemPrice)}>
+        <Text type="body" weight="semibold">{order.totalPrice.toFixed(2)}€</Text>
+      </span>
+    </div>
   );
 }
 
-/* ---- Order detail panel ---- */
-
 function OrderDetailPanel({
-  order,
-  finishing,
-  onFinish,
-}: {
-  order: TableOrderExtended;
-  finishing: boolean;
-  onFinish: () => void;
-}) {
+  order, finishing, onFinish,
+}: { order: TableOrderExtended; finishing: boolean; onFinish: () => void }) {
   const items = useMemo(() => parseIPOL(order.imagePriceObjectList), [order.imagePriceObjectList]);
-
   const allPrices: PriceWithQuantity[] = items.flatMap(i => i.price);
   const printCount = allPrices.filter(p => !p.isDownloadable).reduce((s, p) => s + p.quantity, 0);
   const dlCount    = allPrices.filter(p => p.isDownloadable).reduce((s, p) => s + p.quantity, 0);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-      {/* Sticky action header */}
-      <Box
-        sx={{
-          px: { xs: 2, md: 3 },
-          pt: 2,
-          pb: 1.5,
-          borderBottom: "1px solid",
-          borderColor: "divider",
-          flexShrink: 0,
-          bgcolor: "background.paper",
-        }}
-      >
-        {/* Email + price row */}
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="flex-start"
-          flexWrap="wrap"
-          gap={1}
-          mb={0.75}
-        >
-          <Box minWidth={0} flex={1}>
-            <Typography variant="h6" fontWeight={600} noWrap>
-              {order.userEmail}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {order.shootingTitle}
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1.5} flexShrink={0}>
-            <Typography variant="h6" fontWeight={700}>
-              {order.totalPrice.toFixed(2)}€
-            </Typography>
+    <div {...stylex.props(s.detail)}>
+      <div {...stylex.props(s.detailHead)}>
+        <div {...stylex.props(s.headRow)}>
+          <div {...stylex.props(s.headMain)}>
+            <Heading level={6} maxLines={1}>{order.userEmail}</Heading>
+            <Text type="body" color="secondary">{order.shootingTitle}</Text>
+          </div>
+          <div {...stylex.props(s.headPrice)}>
+            <Heading level={6}>{order.totalPrice.toFixed(2)}€</Heading>
             {order.finished
-              ? <Chip label="Erledigt"   color="success" size="small" />
-              : <Chip label="Ausstehend" color="warning" size="small" />
-            }
-          </Box>
-        </Box>
+              ? <Badge variant="success" label="Erledigt" />
+              : <Badge variant="warning" label="Ausstehend" />}
+          </div>
+        </div>
 
-        {/* Summary chips */}
-        <Box display="flex" alignItems="center" gap={0.75} flexWrap="wrap" mb={order.finished ? 0 : 1.5}>
-          <Typography variant="caption" color="text.secondary">
+        <div {...stylex.props(s.summaryChips)}>
+          <Text type="supporting" color="secondary">
             {items.length} {items.length === 1 ? "Bild" : "Bilder"}
-          </Typography>
+          </Text>
           {printCount > 0 && (
-            <>
-              <Typography variant="caption" color="text.disabled">·</Typography>
-              <Chip
-                icon={<Print sx={{ fontSize: "0.85rem !important" }} />}
-                label={`${printCount} Druck`}
-                size="small"
-                variant="outlined"
-                sx={{ height: 20, fontSize: "0.68rem" }}
-              />
-            </>
+            <Badge variant="neutral" icon={<Print style={{ fontSize: 13 }} />} label={`${printCount} Druck`} />
           )}
           {dlCount > 0 && (
-            <>
-              <Typography variant="caption" color="text.disabled">·</Typography>
-              <Chip
-                icon={<CloudDownload sx={{ fontSize: "0.85rem !important" }} />}
-                label={`${dlCount} Download`}
-                size="small"
-                color="info"
-                variant="outlined"
-                sx={{ height: 20, fontSize: "0.68rem" }}
-              />
-            </>
+            <Badge variant="info" icon={<CloudDownload style={{ fontSize: 13 }} />} label={`${dlCount} Download`} />
           )}
-        </Box>
+        </div>
 
-        {/* Action button — always visible at top */}
         {!order.finished && (
           <Button
-            variant="contained"
-            fullWidth
-            startIcon={finishing ? <CircularProgress size={16} color="inherit" /> : <Send />}
-            disabled={finishing}
+            variant="primary"
+            width="100%"
+            icon={<Send />}
+            isLoading={finishing}
+            isDisabled={finishing}
+            label="Bestellung abschicken"
             onClick={onFinish}
-          >
-            Bestellung abschicken
-          </Button>
+          />
         )}
-      </Box>
+      </div>
 
-      {/* Scrollable image grid */}
-      <Box sx={{ flex: 1, overflowY: "auto", p: { xs: 2, md: 3 } }}>
+      <div {...stylex.props(s.detailBody)}>
         {items.length === 0 ? (
-          <Typography color="text.secondary" variant="body2">
-            Keine Bilddetails verfügbar
-          </Typography>
+          <Text type="body" color="secondary">Keine Bilddetails verfügbar</Text>
         ) : (
-          <Grid container spacing={2}>
+          <div {...stylex.props(s.imgGrid)}>
             {items.map((item, idx) => (
-              <Grid item xs={12} sm={6} key={idx}>
-                <Card variant="outlined">
-                  {item.image && (
-                    <Box sx={{ height: 160, overflow: "hidden", bgcolor: "grey.100" }}>
-                      <img
-                        src={item.image}
-                        alt={`Bild ${idx + 1}`}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                      />
-                    </Box>
-                  )}
-                  <CardContent sx={{ py: 1.5 }}>
-                    {item.price.map(p => (
-                      <Box
-                        key={p.id}
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        mb={0.5}
-                      >
-                        <Box display="flex" alignItems="center" gap={0.5}>
-                          <Typography variant="body2">
-                            {p.quantity}× {p.title}
-                          </Typography>
-                          {p.isDownloadable && (
-                            <Chip label="DL" size="small" color="info" sx={{ height: 16, fontSize: "0.6rem" }} />
-                          )}
-                        </Box>
-                        <Typography variant="body2" fontWeight={600}>
-                          {(parseFloat(p.amount) * p.quantity).toFixed(2)}€
-                        </Typography>
-                      </Box>
-                    ))}
-                  </CardContent>
-                </Card>
-              </Grid>
+              <div key={idx} {...stylex.props(s.card)}>
+                {item.image && (
+                  <div {...stylex.props(s.cardThumb)}>
+                    <img
+                      src={item.image}
+                      alt={`Bild ${idx + 1}`}
+                      {...stylex.props(s.cardImg)}
+                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  </div>
+                )}
+                <div {...stylex.props(s.cardBody)}>
+                  {item.price.map(p => (
+                    <div key={p.id} {...stylex.props(s.cardLine)}>
+                      <div {...stylex.props(s.cardLineLeft)}>
+                        <Text type="body">{p.quantity}× {p.title}</Text>
+                        {p.isDownloadable && <Badge variant="info" label="DL" />}
+                      </div>
+                      <Text type="body" weight="semibold">
+                        {(parseFloat(p.amount) * p.quantity).toFixed(2)}€
+                      </Text>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ))}
-          </Grid>
+          </div>
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }
-
-/* ---- Main page ---- */
 
 export default function OrdersPage(): ReactElement {
   const isMobile = useMobileService();
@@ -477,7 +462,6 @@ export default function OrdersPage(): ReactElement {
     });
   }, [activeTab, tableOrders, downloadOrders, finishedTableOrders, search, sortKey, sortDir]);
 
-  /* Timeline groups for "Erledigt" tab */
   const groupedFinished = useMemo(() => {
     if (activeTab !== 2) return null;
     const groups: Record<"Heute" | "Diese Woche" | "Älter", TableOrderExtended[]> = {
@@ -494,178 +478,97 @@ export default function OrdersPage(): ReactElement {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
-      </Box>
+      <div {...stylex.props(s.loading)}>
+        <Spinner size="lg" />
+      </div>
     );
   }
 
   const SortIcon = sortDir === "asc" ? ArrowUpward : ArrowDownward;
+  const TABS = [
+    { icon: <Print style={{ fontSize: 15 }} />, label: `Druck (${tableOrders.length})` },
+    { icon: <CloudDownload style={{ fontSize: 15 }} />, label: `DL (${downloadOrders.length})` },
+    { icon: <CheckCircle style={{ fontSize: 15 }} />, label: `Erledigt (${finishedOrders.length})` },
+  ];
 
   return (
     <>
-      <Box sx={{ pt: 1 }}>
-        {/* Title */}
-        <Typography
-          variant="h5"
-          fontWeight={700}
-          mb={1.5}
-          sx={{ display: { xs: "none", md: "block" } }}
-        >
-          Bestellungen
-        </Typography>
+      <div {...stylex.props(s.root)}>
+        <div {...stylex.props(s.pageTitle)}>
+          <Heading level={5}>Bestellungen</Heading>
+        </div>
 
-        {/* Metric cards */}
-        <Grid container spacing={1.5} sx={{ mb: 0.5 }}>
-          <Grid item xs={6} md={3}>
-            <StatCard label="Gesamtumsatz"    value={`${totalIncome.toFixed(2)}€`} />
-          </Grid>
-          <Grid item xs={6} md={3}>
-            <StatCard label="Offen (Druck)"   value={tableOrders.length} />
-          </Grid>
-          <Grid item xs={6} md={3}>
-            <StatCard label="Downloads bereit" value={downloadOrders.length} />
-          </Grid>
-          <Grid item xs={6} md={3}>
-            <StatCard label="Abgeschlossen"   value={finishedOrders.length} />
-          </Grid>
-        </Grid>
+        <div {...stylex.props(s.statGrid)}>
+          <StatCard label="Gesamtumsatz"     value={`${totalIncome.toFixed(2)}€`} />
+          <StatCard label="Offen (Druck)"    value={tableOrders.length} />
+          <StatCard label="Downloads bereit" value={downloadOrders.length} />
+          <StatCard label="Abgeschlossen"    value={finishedOrders.length} />
+        </div>
 
-        {/* Kundenumsätze — secondary link below cards */}
-        <Box display="flex" justifyContent="flex-end" mb={1.5}>
-          <Button variant="text" size="small" onClick={() => setSummaryOpen(true)}>
-            Kundenumsätze anzeigen →
-          </Button>
-        </Box>
+        <div {...stylex.props(s.linkRow)}>
+          <Button variant="ghost" size="sm" label="Kundenumsätze anzeigen →" onClick={() => setSummaryOpen(true)} />
+        </div>
 
-        {/* Two-panel container */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", md: "row" },
-            border: "1px solid",
-            borderColor: "divider",
-            borderRadius: 2,
-            overflow: { xs: "visible", md: "hidden" },
-            height: { md: "calc(100vh - 295px)" },
-            minHeight: { md: 400 },
-            bgcolor: "background.paper",
-          }}
-        >
+        <div {...stylex.props(s.panels)}>
           {/* ===== LEFT PANEL ===== */}
-          <Box
-            sx={{
-              width: { md: 300 },
-              flexShrink: 0,
-              borderRight: { md: "1px solid" },
-              borderBottom: { xs: "1px solid", md: "none" },
-              borderColor: "divider",
-              display: { xs: hasSelection ? "none" : "flex", md: "flex" },
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
-          >
-            {/* Tabs with icons */}
-            <Tabs
-              value={activeTab}
-              onChange={(_, v) => {
-                setActiveTab(v as number);
-                setSearch("");
-                setSelectedOrder(undefined);
-              }}
-              variant="fullWidth"
-              sx={{ borderBottom: "1px solid", borderColor: "divider", flexShrink: 0, minHeight: 48 }}
-            >
-              <Tab
-                icon={<Print sx={{ fontSize: 15 }} />}
-                iconPosition="start"
-                label={`Druck (${tableOrders.length})`}
-                sx={{ fontSize: "0.68rem", minHeight: 48 }}
-              />
-              <Tab
-                icon={<CloudDownload sx={{ fontSize: 15 }} />}
-                iconPosition="start"
-                label={`DL (${downloadOrders.length})`}
-                sx={{ fontSize: "0.68rem", minHeight: 48 }}
-              />
-              <Tab
-                icon={<CheckCircle sx={{ fontSize: 15 }} />}
-                iconPosition="start"
-                label={`Erledigt (${finishedOrders.length})`}
-                sx={{ fontSize: "0.68rem", minHeight: 48 }}
-              />
-            </Tabs>
+          <div {...stylex.props(s.left, hasSelection && s.hideOnMobile)}>
+            <div {...stylex.props(s.tabs)}>
+              {TABS.map((t, i) => (
+                <button
+                  key={t.label}
+                  {...stylex.props(s.tab, activeTab === i && s.tabActive)}
+                  onClick={() => { setActiveTab(i); setSearch(""); setSelectedOrder(undefined); }}
+                >
+                  {t.icon}{t.label}
+                </button>
+              ))}
+            </div>
 
-            {/* Search + sort controls */}
-            <Box sx={{ p: 1.5, borderBottom: "1px solid", borderColor: "divider", flexShrink: 0 }}>
-              <TextField
-                fullWidth
-                size="small"
+            <div {...stylex.props(s.leftHead)}>
+              <TextInput
+                label="Suche"
+                isLabelHidden
+                width="100%"
+                size="sm"
+                startIcon={<Search />}
                 placeholder="Kunde oder Shooting…"
                 value={search}
-                onChange={e => setSearch(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ mb: 1 }}
+                onChange={(v) => setSearch(v)}
               />
-              <Box display="flex" gap={0.75}>
-                <Tooltip title="Nach Name sortieren">
-                  <Button
-                    size="small"
-                    variant={sortKey === "email" ? "contained" : "outlined"}
-                    onClick={() => toggleSort("email")}
-                    endIcon={sortKey === "email" ? <SortIcon sx={{ fontSize: "0.8rem !important" }} /> : undefined}
-                    sx={{ flex: 1, fontSize: "0.7rem", py: 0.4 }}
-                  >
-                    Name
-                  </Button>
-                </Tooltip>
-                <Tooltip title="Nach Preis sortieren">
-                  <Button
-                    size="small"
-                    variant={sortKey === "price" ? "contained" : "outlined"}
-                    onClick={() => toggleSort("price")}
-                    endIcon={sortKey === "price" ? <SortIcon sx={{ fontSize: "0.8rem !important" }} /> : undefined}
-                    sx={{ flex: 1, fontSize: "0.7rem", py: 0.4 }}
-                  >
-                    Preis
-                  </Button>
-                </Tooltip>
-              </Box>
-            </Box>
+              <div {...stylex.props(s.sortRow)}>
+                <Button
+                  xstyle={s.sortBtn}
+                  size="sm"
+                  variant={sortKey === "email" ? "primary" : "secondary"}
+                  endContent={sortKey === "email" ? <SortIcon style={{ fontSize: 14 }} /> : undefined}
+                  label="Name"
+                  onClick={() => toggleSort("email")}
+                />
+                <Button
+                  xstyle={s.sortBtn}
+                  size="sm"
+                  variant={sortKey === "price" ? "primary" : "secondary"}
+                  endContent={sortKey === "price" ? <SortIcon style={{ fontSize: 14 }} /> : undefined}
+                  label="Preis"
+                  onClick={() => toggleSort("price")}
+                />
+              </div>
+            </div>
 
-            {/* Order list */}
-            <Box sx={{ flex: 1, overflowY: "auto" }}>
+            <div {...stylex.props(s.list)}>
               {currentTabOrders.length === 0 ? (
-                <Typography color="text.secondary" variant="body2" sx={{ p: 2, textAlign: "center", pt: 4 }}>
-                  {search ? "Keine Ergebnisse" : "Keine Bestellungen"}
-                </Typography>
+                <div {...stylex.props(s.listEmpty)}>
+                  <Text type="body" color="secondary">{search ? "Keine Ergebnisse" : "Keine Bestellungen"}</Text>
+                </div>
               ) : activeTab === 2 && groupedFinished ? (
-                /* Timeline for finished orders */
                 (["Heute", "Diese Woche", "Älter"] as const).map(group => {
                   const items = groupedFinished[group];
                   if (!items.length) return null;
                   return (
-                    <Box key={group}>
-                      <Typography
-                        variant="caption"
-                        color="text.disabled"
-                        sx={{
-                          px: 1.5,
-                          py: 0.75,
-                          display: "block",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.07em",
-                          fontSize: "0.62rem",
-                        }}
-                      >
-                        {group}
-                      </Typography>
+                    <div key={group}>
+                      <span {...stylex.props(s.groupLabel)}>
+                        <Text type="supporting" color="disabled">{group}</Text>
+                      </span>
                       {items.map(order => (
                         <OrderListItem
                           key={order.id}
@@ -675,7 +578,7 @@ export default function OrdersPage(): ReactElement {
                         />
                       ))}
                       <Divider />
-                    </Box>
+                    </div>
                   );
                 })
               ) : (
@@ -688,99 +591,63 @@ export default function OrdersPage(): ReactElement {
                   />
                 ))
               )}
-            </Box>
-          </Box>
+            </div>
+          </div>
 
           {/* ===== RIGHT PANEL ===== */}
-          <Box
-            sx={{
-              flex: 1,
-              display: { xs: hasSelection ? "flex" : "none", md: "flex" },
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
-          >
+          <div {...stylex.props(s.right, !hasSelection && s.hideOnMobile)}>
             {!selectedOrder ? (
-              <Box
-                display="flex"
-                flexDirection="column"
-                alignItems="center"
-                justifyContent="center"
-                flex={1}
-                gap={1}
-              >
-                <Assignment sx={{ fontSize: 56, color: "text.disabled", opacity: 0.4 }} />
-                <Typography variant="body1" color="text.secondary">
-                  Bestellung auswählen
-                </Typography>
-              </Box>
+              <div {...stylex.props(s.rightEmpty)}>
+                <Assignment {...stylex.props(s.emptyIcon)} />
+                <Text type="body" color="secondary">Bestellung auswählen</Text>
+              </div>
             ) : (
-              <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              <div {...stylex.props(s.right)}>
                 {isMobile && (
-                  <Box sx={{ px: 2, pt: 1.5, pb: 0, flexShrink: 0 }}>
+                  <div {...stylex.props(s.mobileBack)}>
                     <Button
-                      startIcon={<ArrowBack />}
+                      variant="ghost"
+                      size="sm"
+                      icon={<ArrowBack />}
+                      label="Alle Bestellungen"
                       onClick={() => setSelectedOrder(undefined)}
-                      size="small"
-                    >
-                      Alle Bestellungen
-                    </Button>
-                  </Box>
+                    />
+                  </div>
                 )}
                 <OrderDetailPanel
                   order={selectedOrder}
                   finishing={finishing}
                   onFinish={() => void handleFinishOrder()}
                 />
-              </Box>
+              </div>
             )}
-          </Box>
-        </Box>
-      </Box>
+          </div>
+        </div>
+      </div>
 
       {/* Kundenumsätze Dialog */}
-      <Dialog open={summaryOpen} onClose={() => setSummaryOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          Kundenumsätze
-          <IconButton
-            onClick={() => setSummaryOpen(false)}
-            size="small"
-            sx={{ position: "absolute", right: 12, top: 12 }}
-          >
-            <Close />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {userOrderList.filter(u => u.orderValue > 0).length} von {userOrderList.length} Kunden
-            haben bestellt.
-          </Typography>
+      <Dialog isOpen={summaryOpen} onOpenChange={setSummaryOpen} width={520}>
+        <div {...stylex.props(s.dialogBody)}>
+          <div {...stylex.props(s.dialogHead)}>
+            <Heading level={5}>Kundenumsätze</Heading>
+            <IconButton variant="ghost" icon={<Close />} label="Schließen" onClick={() => setSummaryOpen(false)} />
+          </div>
+          <Text type="body" color="secondary">
+            {userOrderList.filter(u => u.orderValue > 0).length} von {userOrderList.length} Kunden haben bestellt.
+          </Text>
           {userOrderList.map(u => (
-            <Box
-              key={u.user}
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-              py={0.75}
-              sx={{
-                borderBottom: "1px solid",
-                borderColor: "divider",
-                "&:last-child": { borderBottom: "none" },
-              }}
-            >
-              <Typography variant="body2" sx={{ flex: 1, minWidth: 0, pr: 1 }} noWrap title={u.user}>
-                {u.user}
-              </Typography>
-              <Typography
-                variant="body2"
-                fontWeight={u.orderValue > 0 ? 600 : 400}
-                color={u.orderValue > 0 ? "text.primary" : "text.disabled"}
+            <div key={u.user} {...stylex.props(s.summaryRow)}>
+              <Text type="body" maxLines={1}>{u.user}</Text>
+              <Text
+                type="body"
+                weight={u.orderValue > 0 ? "semibold" : "normal"}
+                color={u.orderValue > 0 ? "primary" : "disabled"}
               >
                 {u.orderValue.toFixed(2)}€
-              </Typography>
-            </Box>
+              </Text>
+            </div>
           ))}
-        </DialogContent>
+        </div>
       </Dialog>
     </>
   );

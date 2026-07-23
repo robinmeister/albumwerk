@@ -1,12 +1,7 @@
 import { ReactElement } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  Container,
-  Grid,
-  Typography,
-} from "@mui/material";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
 
 import { Package } from "../../../../utils/types";
 
@@ -17,73 +12,55 @@ type Props = {
   setSelectedPackages: (packages: Package[]) => void;
 };
 
+const s = stylex.create({
+  container: { maxWidth: 900, margin: "0 auto" },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: {
+      default: "1fr",
+      "@media (min-width: 600px)": "1fr 1fr",
+      "@media (min-width: 900px)": "repeat(3, 1fr)",
+    },
+    gap: 24,
+    alignItems: "flex-end",
+  },
+  card: {
+    borderRadius: "var(--radius-container)",
+    border: "1px solid var(--color-border)",
+    overflow: "hidden",
+    backgroundColor: "var(--color-background-card)",
+  },
+  head: {
+    padding: 16,
+    textAlign: "center",
+    backgroundColor: "var(--color-background-muted)",
+  },
+  body: { padding: 16 },
+});
+
 export default function PackagesPreview(props: Props): ReactElement {
   const { packages } = props;
 
   return (
-    <Container maxWidth="md" component="main">
-      <Grid container spacing={5} alignItems="flex-end">
-        {packages.sort((a: Package, b: Package) => a?.title.localeCompare(b?.title))
-        .map((pkg: Package) => (
-          // Enterprise card is full width at sm breakpoint
-          <Grid
-            item
-            key={pkg?.title}
-            xs={12}
-            sm={pkg?.title === "Enterprise" ? 12 : 6}
-            md={4}
-          >
-            <Card sx={{ marginBottom: "15px" }}>
-              <CardHeader
-                title={pkg?.title}
-                subheader={`${pkg.totalPrice } €`}
-                titleTypographyProps={{ align: "center" }}
-                subheaderTypographyProps={{
-                  align: "center",
-                }}
-                sx={{
-                  backgroundColor: (theme) =>
-                    theme.palette.mode === "light"
-                      ? theme.palette.grey[200]
-                      : theme.palette.grey[700],
-                }}
-              />
-              <CardContent>
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1" color="text.primary">
-                      {pkg.numberOfImages} Bilder sind in dem Paket enthalten <br />
-                      Jedes weitere Bild kostet {pkg.singlePrice} €
-                    </Typography>
-                  </Grid>
-                  {/* <Grid item xs={12}>
-                    <Typography variant="h6" color="text.primary">
-                      Gesamtpreis: <br/> TODO
-                    </Typography>
-                  </Grid> */}
-                  {/* {selectedPackages && (
-                    <Grid item xs={12}>
-                      <Button
-                        onClick={() => {
-                          if (selectedPackages.map(x => x.id).includes(pkg.id)) {
-                            setSelectedPackages(selectedPackages.filter(x => x.id !== pkg.id))
-                          } else {
-                            setSelectedPackages([...selectedPackages, pkg])
-                          }
-                        }}
-                        variant={selectedPackages.map(x => x.id).includes(pkg.id) ? "contained" : "outlined"}
-                        fullWidth
-                      >
-                        {selectedPackages.map(x => x.id).includes(pkg.id) ? "Ausgewählt" : "Auswählen"}
-                      </Button>
-                    </Grid>
-                  )} */}
-                </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-    </Container>
+    <div {...stylex.props(s.container)}>
+      <div {...stylex.props(s.grid)}>
+        {packages
+          .sort((a: Package, b: Package) => a?.title.localeCompare(b?.title))
+          .map((pkg: Package) => (
+            <div key={pkg?.title} {...stylex.props(s.card)}>
+              <div {...stylex.props(s.head)}>
+                <Heading level={6}>{pkg?.title}</Heading>
+                <Text type="body" color="secondary">{`${pkg.totalPrice} €`}</Text>
+              </div>
+              <div {...stylex.props(s.body)}>
+                <Text type="body">
+                  {pkg.numberOfImages} Bilder sind in dem Paket enthalten. Jedes
+                  weitere Bild kostet {pkg.singlePrice} €
+                </Text>
+              </div>
+            </div>
+          ))}
+      </div>
+    </div>
   );
 }

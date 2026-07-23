@@ -1,17 +1,12 @@
 import { ReactElement, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Divider,
-  Grid,
-  Typography,
-} from "@mui/material";
-import { ArrowBack, Check, Send } from "@mui/icons-material";
+import { Badge } from "@astryxdesign/core/Badge";
+import { Button } from "@astryxdesign/core/Button";
+import { Divider } from "@astryxdesign/core/Divider";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
+import { ArrowLeft as ArrowBack, Check, Send } from "lucide-react";
 import { toast } from "react-toastify";
 import { addDoc, collection } from "../../config/firestore-compat";
 
@@ -22,6 +17,41 @@ function parseIPOL(val: unknown): ImagePriceObject[] {
   if (typeof val === "string") return JSON.parse(val);
   return (val as ImagePriceObject[]) ?? [];
 }
+
+const s = stylex.create({
+  bar: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 24,
+  },
+  summary: { marginBottom: 24 },
+  summaryRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  price: { display: "flex", alignItems: "center", gap: 12 },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: { default: "1fr", "@media (min-width: 600px)": "1fr 1fr" },
+    gap: 16,
+  },
+  card: {
+    overflow: "hidden",
+    borderRadius: "var(--radius-container)",
+    border: "1px solid var(--color-border)",
+    backgroundColor: "var(--color-background-card)",
+  },
+  thumb: { height: 200, overflow: "hidden", backgroundColor: "var(--color-background-muted)" },
+  thumbImg: { width: "100%", height: "100%", objectFit: "cover" },
+  cardBody: { padding: "12px 16px", display: "flex", flexDirection: "column", gap: 4 },
+  line: { display: "flex", justifyContent: "space-between", alignItems: "center" },
+  lineLeft: { display: "flex", alignItems: "center", gap: 6 },
+  divider: { marginBottom: 24 },
+});
 
 export default function OrderDetailsPage(): ReactElement {
   const navigate = useNavigate();
@@ -61,10 +91,13 @@ export default function OrderDetailsPage(): ReactElement {
   if (!order) {
     return (
       <Page title="Bestelldetails">
-        <Typography color="text.secondary">Bestellung nicht gefunden.</Typography>
-        <Button startIcon={<ArrowBack />} onClick={() => navigate("/orders")} sx={{ mt: 2 }}>
-          Zurück zu Bestellungen
-        </Button>
+        <Text type="body" color="secondary">Bestellung nicht gefunden.</Text>
+        <Button
+          variant="secondary"
+          icon={<ArrowBack />}
+          label="Zurück zu Bestellungen"
+          onClick={() => navigate("/orders")}
+        />
       </Page>
     );
   }
@@ -72,111 +105,82 @@ export default function OrderDetailsPage(): ReactElement {
   return (
     <Page title="Bestelldetails">
       {/* Top action bar */}
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+      <div {...stylex.props(s.bar)}>
         <Button
-          startIcon={<ArrowBack />}
-          variant="outlined"
-          color="inherit"
+          variant="secondary"
+          icon={<ArrowBack />}
+          label="Zurück"
           onClick={() => navigate(-1)}
-        >
-          Zurück
-        </Button>
+        />
         <Button
-          variant={order.finished ? "outlined" : "contained"}
-          disabled={order.finished || finishing}
-          startIcon={
-            finishing ? (
-              <CircularProgress size={16} color="inherit" />
-            ) : order.finished ? (
-              <Check />
-            ) : (
-              <Send />
-            )
-          }
+          variant={order.finished ? "secondary" : "primary"}
+          isDisabled={order.finished || finishing}
+          isLoading={finishing}
+          icon={order.finished ? <Check /> : <Send />}
+          label={order.finished ? "Erledigt" : "Abschicken"}
           onClick={() => void handleFinishOrder()}
-        >
-          {order.finished ? "Erledigt" : "Abschicken"}
-        </Button>
-      </Box>
+        />
+      </div>
 
       {/* Order summary */}
-      <Box mb={3}>
-        <Box display="flex" alignItems="flex-start" justifyContent="space-between" flexWrap="wrap" gap={1}>
-          <Box>
-            <Typography variant="h6" fontWeight={600}>
-              {order.userEmail}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {order.shootingTitle}
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1.5}>
-            <Typography variant="h6" fontWeight={700}>
-              {order.totalPrice.toFixed(2)}€
-            </Typography>
+      <div {...stylex.props(s.summary)}>
+        <div {...stylex.props(s.summaryRow)}>
+          <div>
+            <Heading level={6}>{order.userEmail}</Heading>
+            <Text type="body" color="secondary">{order.shootingTitle}</Text>
+          </div>
+          <div {...stylex.props(s.price)}>
+            <Heading level={6}>{order.totalPrice.toFixed(2)}€</Heading>
             {order.finished ? (
-              <Chip label="Erledigt" color="success" size="small" />
+              <Badge variant="success" label="Erledigt" />
             ) : (
-              <Chip label="Ausstehend" color="warning" size="small" />
+              <Badge variant="warning" label="Ausstehend" />
             )}
-          </Box>
-        </Box>
-      </Box>
+          </div>
+        </div>
+      </div>
 
-      <Divider sx={{ mb: 3 }} />
+      <div {...stylex.props(s.divider)}>
+        <Divider />
+      </div>
 
       {/* Image grid */}
       {items.length === 0 ? (
-        <Typography color="text.secondary">Keine Bilddetails verfügbar.</Typography>
+        <Text type="body" color="secondary">Keine Bilddetails verfügbar.</Text>
       ) : (
-        <Grid container spacing={2}>
+        <div {...stylex.props(s.grid)}>
           {items.map((item, idx) => (
-            <Grid item xs={12} sm={6} key={idx}>
-              <Card variant="outlined">
-                {item.image && (
-                  <Box sx={{ height: 200, overflow: "hidden", bgcolor: "grey.100" }}>
-                    <img
-                      src={item.image}
-                      alt={`Bild ${idx + 1}`}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      onError={e => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  </Box>
-                )}
-                <CardContent sx={{ py: 1.5 }}>
-                  {item.price.map((p: PriceWithQuantity) => (
-                    <Box
-                      key={p.id}
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      mb={0.5}
-                    >
-                      <Box display="flex" alignItems="center" gap={0.5}>
-                        <Typography variant="body2">
-                          {p.quantity}× {p.title}
-                        </Typography>
-                        {p.isDownloadable && (
-                          <Chip
-                            label="DL"
-                            size="small"
-                            color="info"
-                            sx={{ height: 16, fontSize: "0.6rem" }}
-                          />
-                        )}
-                      </Box>
-                      <Typography variant="body2" fontWeight={600}>
-                        {(parseFloat(p.amount) * p.quantity).toFixed(2)}€
-                      </Typography>
-                    </Box>
-                  ))}
-                </CardContent>
-              </Card>
-            </Grid>
+            <div key={idx} {...stylex.props(s.card)}>
+              {item.image && (
+                <div {...stylex.props(s.thumb)}>
+                  <img
+                    src={item.image}
+                    alt={`Bild ${idx + 1}`}
+                    {...stylex.props(s.thumbImg)}
+                    onError={e => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                </div>
+              )}
+              <div {...stylex.props(s.cardBody)}>
+                {item.price.map((p: PriceWithQuantity) => (
+                  <div key={p.id} {...stylex.props(s.line)}>
+                    <div {...stylex.props(s.lineLeft)}>
+                      <Text type="body">
+                        {p.quantity}× {p.title}
+                      </Text>
+                      {p.isDownloadable && <Badge variant="info" label="DL" />}
+                    </div>
+                    <Text type="body" weight="semibold">
+                      {(parseFloat(p.amount) * p.quantity).toFixed(2)}€
+                    </Text>
+                  </div>
+                ))}
+              </div>
+            </div>
           ))}
-        </Grid>
+        </div>
       )}
     </Page>
   );

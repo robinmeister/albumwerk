@@ -1,13 +1,9 @@
 import { ReactElement } from "react";
-import { Cancel, Delete, Edit, Save } from "@mui/icons-material";
-import {
-  Card,
-  CardContent,
-  Grid,
-  IconButton,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { CircleX as Cancel, Trash2 as Delete, Pencil as Edit, Save } from "lucide-react";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { Heading } from "@astryxdesign/core/Heading";
+import * as stylex from "@stylexjs/stylex";
 
 import { Package } from "../../../../utils/types";
 
@@ -26,6 +22,20 @@ type Props = {
   setEdit: (edit: boolean[]) => void;
 };
 
+const s = stylex.create({
+  card: {
+    borderRadius: "var(--radius-container)",
+    border: "1px solid var(--color-border)",
+    backgroundColor: "var(--color-background-card)",
+    padding: 16,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  },
+  head: { display: "flex", alignItems: "center", justifyContent: "space-between" },
+  actions: { display: "flex", gap: 4 },
+});
+
 export default function PackagesEdit(props: Props): ReactElement {
   const {
     packages,
@@ -35,128 +45,90 @@ export default function PackagesEdit(props: Props): ReactElement {
     handleEdit,
     edit,
     handleCancel,
-    setOpenDeleteModal
+    setOpenDeleteModal,
   } = props;
 
   return (
     <>
-      {packages.map((pkg: Package, index) => {
-        return (
-          <Grid item xs={12} md={4} lg={4} key={pkg.id}>
-            <form>
-              <Card>
-                <CardContent>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="h6">Paket {index + 1}</Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      {!edit[index] && (
-                        <IconButton
-                          sx={{ float: "right" }}
-                          onClick={() => handleEdit(index, "package")}
-                        >
-                          <Edit />
-                        </IconButton>
-                      )}
-                      {edit[index] && (
-                        <>
-                          <IconButton
-                            sx={{ float: "right" }}
-                            onClick={() => handleUpdate(pkg, index)}
-                          >
-                            <Save />
-                          </IconButton>
-                          <IconButton
-                            sx={{ float: "right" }}
-                            onClick={() => handleCancel(index, "package")}
-                          >
-                            <Cancel />
-                          </IconButton>
-                        </>
-                      )}
-                      <IconButton
-                        sx={{ float: "right" }}
-                        onClick={() => {
-                          setActivePackage(pkg);
-                          setOpenDeleteModal(true)
-                        }}
-                      >
-                        <Delete />
-                      </IconButton>
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Titel"
-                        name="title"
-                        required
-                        size="small"
-                        variant="outlined"
-                        value={pkg?.title}
-                        onChange={(e) => {
-                          const newPackages = [...packages];
-                          newPackages[index].title = e.target.value;
-                          setPackages(newPackages);
-                        }}
-                        disabled={!edit[index]}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Anzahl Bilder"
-                        name="numberOfImages"
-                        size="small"
-                        variant="outlined"
-                        onChange={(e) => {
-                          const newPackages = [...packages];
-                          newPackages[index].numberOfImages = parseInt(e.target.value);
-                          setPackages(newPackages);
-                        }}
-                        value={pkg.numberOfImages}
-                        disabled={!edit[index]}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Paketpreis"
-                        name="totalPriceText"
-                        size="small"
-                        variant="outlined"
-                        onChange={(e) => {
-                          const newPackages = [...packages];
-                          newPackages[index].totalPrice = e.target.value;
-                          setPackages(newPackages);
-                        }}
-                        value={pkg.totalPrice}
-                        disabled={!edit[index]}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Einzelner Preis"
-                        name="singlePriceText"
-                        size="small"
-                        variant="outlined"
-                        onChange={(e) => {
-                          const newPackages = [...packages];
-                          newPackages[index].singlePrice = e.target.value;
-                          setPackages(newPackages);
-                        }}
-                        value={pkg.singlePrice}
-                        disabled={!edit[index]}
-                      />
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-            </form>
-          </Grid>
-        );
-      })}
+      {packages.map((pkg: Package, index) => (
+        <div key={pkg.id} {...stylex.props(s.card)}>
+          <div {...stylex.props(s.head)}>
+            <Heading level={6}>Paket {index + 1}</Heading>
+            <div {...stylex.props(s.actions)}>
+              {!edit[index] && (
+                <IconButton variant="ghost" icon={<Edit />} label="Bearbeiten" onClick={() => handleEdit(index, "package")} />
+              )}
+              {edit[index] && (
+                <>
+                  <IconButton variant="ghost" icon={<Save />} label="Speichern" onClick={() => handleUpdate(pkg, index)} />
+                  <IconButton variant="ghost" icon={<Cancel />} label="Abbrechen" onClick={() => handleCancel(index, "package")} />
+                </>
+              )}
+              <IconButton
+                variant="ghost"
+                icon={<Delete />}
+                label="Löschen"
+                onClick={() => {
+                  setActivePackage(pkg);
+                  setOpenDeleteModal(true);
+                }}
+              />
+            </div>
+          </div>
+          <TextInput
+            width="100%"
+            size="sm"
+            label="Titel"
+            isRequired
+            isDisabled={!edit[index]}
+            value={pkg?.title ?? ""}
+            onChange={(v) => {
+              const newPackages = [...packages];
+              newPackages[index].title = v;
+              setPackages(newPackages);
+            }}
+          />
+          <TextInput
+            width="100%"
+            size="sm"
+           
+            label="Anzahl Bilder"
+            isDisabled={!edit[index]}
+            value={String(pkg.numberOfImages ?? "")}
+            onChange={(v) => {
+              const newPackages = [...packages];
+              newPackages[index].numberOfImages = parseInt(v);
+              setPackages(newPackages);
+            }}
+          />
+          <TextInput
+            width="100%"
+            size="sm"
+           
+            label="Paketpreis"
+            isDisabled={!edit[index]}
+            value={pkg.totalPrice ?? ""}
+            onChange={(v) => {
+              const newPackages = [...packages];
+              newPackages[index].totalPrice = v;
+              setPackages(newPackages);
+            }}
+          />
+          <TextInput
+            width="100%"
+            size="sm"
+           
+            label="Einzelner Preis"
+            isDisabled={!edit[index]}
+            value={pkg.singlePrice ?? ""}
+            onChange={(v) => {
+              const newPackages = [...packages];
+              newPackages[index].singlePrice = v;
+              setPackages(newPackages);
+            }}
+          />
+        </div>
+      ))}
     </>
   );
 }

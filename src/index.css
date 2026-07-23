@@ -1,7 +1,48 @@
-/* Global tweaks only — layout, colors and typography come from the MUI theme
-   (src/utils/theme.ts, built from the instance settings). */
-html {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+/* Astryx design system.
+ *
+ * Cascade layer order (must be declared before the @imports). Astryx itself
+ * declares `reset, astryx-base, astryx-theme`; we append `app` for any global
+ * app-level rules so they sit above the design system but below unlayered
+ * StyleX `xstyle` overrides. Our hand-written globals go in the LOWEST layer
+ * (`reset`) so they can never silently beat Astryx — the migration footgun. */
+@layer reset, astryx-base, astryx-theme, app;
+
+@import '@astryxdesign/core/reset.css';
+@import '@astryxdesign/core/astryx.css';
+@import '@astryxdesign/theme-neutral/theme.css';
+
+@layer reset {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+@layer app {
+  /* Lucide icons size via width/height attributes; make them scale with
+     font-size instead (MUI's model) so the existing `fontSize` rules in our
+     StyleX styles keep controlling icon size. 24px matches MUI's default. */
+  .lucide {
+    width: 1em;
+    height: 1em;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  /* Admin-authored HTML (imprint/privacy) — links follow the brand accent. */
+  .rich-text a {
+    color: var(--color-text-accent);
+  }
+
+  /* Album grid tile hover effects (StyleX can't express parent-hover-child). */
+  .album-tile:hover img {
+    transform: scale(1.03);
+  }
+  .album-tile:hover .album-tile-check {
+    opacity: 1;
+  }
+  .album-card:hover img {
+    transform: scale(1.04);
+  }
 }

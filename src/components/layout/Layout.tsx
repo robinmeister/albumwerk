@@ -1,6 +1,6 @@
 import { ReactElement } from "react";
 import { Outlet } from "react-router-dom";
-import { Box } from "@mui/material";
+import * as stylex from "@stylexjs/stylex";
 import { AuthUser } from "../../config/authUser";
 
 import {
@@ -31,10 +31,14 @@ export const Layout = (props: LayoutProps): ReactElement => {
     );
   };
 
+const empty = stylex.create({
+  root: { minHeight: "100vh", display: "flex", flexDirection: "column" },
+});
+
 export const EmptyLayout = (): ReactElement => {
     return (
-      <Box minHeight="100vh" display="flex" flexDirection="column">
+      <div {...stylex.props(empty.root)}>
         <Outlet />
-      </Box>
+      </div>
     );
   };

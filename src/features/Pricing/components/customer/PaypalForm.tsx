@@ -1,12 +1,7 @@
-import { Typography } from "@mui/material";
+import { Text } from "@astryxdesign/core/Text";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { toast } from "react-toastify";
 import { ReactElement } from "react";
-import {
-  CreateOrderData,
-  OnApproveData,
-  OnApproveActions,
-} from "@paypal/paypal-js";
 
 import { ImagePriceObject, User } from "../../../../utils/types";
 import { useSettings } from "../../../../context/SettingsContext";
@@ -42,20 +37,20 @@ export default function PaypalForm(props: Props): ReactElement {
 
   return (
     <PayPalScriptProvider options={{
-      "client-id": clientId,
-      "disable-funding": "bancontact,eps,ideal,mercadopago,mybank,p24,sepa",
-      "currency": settings.currency || "EUR",
-      "locale": "de_DE",
+      clientId,
+      disableFunding: "bancontact,eps,ideal,mercadopago,mybank,p24,sepa",
+      currency: settings.currency || "EUR",
+      locale: "de_DE",
     }}>
       {!disabled ? (<PayPalButtons
-        createOrder={async (_data: CreateOrderData): Promise<string> => {
+        createOrder={async (): Promise<string> => {
           const res = await pb.send("/api/custom/paypal/create-order", {
             method: "POST",
             body: { imagePriceObjectList, shootingId, userData },
           });
           return res.id as string;
         }}
-        onApprove={async (data: OnApproveData, _actions: OnApproveActions): Promise<void> => {
+        onApprove={async (data): Promise<void> => {
           const res = await pb.send("/api/custom/paypal/capture", {
             method: "POST",
             body: { orderID: data.orderID },
@@ -73,9 +68,11 @@ export default function PaypalForm(props: Props): ReactElement {
           console.error("Payment error: ", err);
         }}
       />) : (
-        <Typography variant="subtitle1" component="div" sx={{ p: 2 }}>
-          Bitte fülle alle oben stehenden Pflichtfelder aus, um fortzufahren.
-        </Typography>
+        <div style={{ padding: 16 }}>
+          <Text type="large">
+            Bitte fülle alle oben stehenden Pflichtfelder aus, um fortzufahren.
+          </Text>
+        </div>
       )}
     </PayPalScriptProvider>
   )

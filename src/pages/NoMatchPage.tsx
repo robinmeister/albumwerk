@@ -1,34 +1,40 @@
 import { useNavigate } from "react-router-dom";
 import { ReactElement } from "react";
-import { Box, Button, Typography } from "@mui/material";
-import { Home } from "@mui/icons-material";
+import { Button } from "@astryxdesign/core/Button";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
+import { House as Home } from "lucide-react";
+
+const s = stylex.create({
+  root: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "60vh",
+    gap: 16,
+    padding: 32,
+    textAlign: "center",
+  },
+});
 
 export default function NoMatchPage(): ReactElement {
   const navigate = useNavigate();
   return (
-    <Box
-      display="flex"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
-      minHeight="60vh"
-      gap={2}
-      p={4}
-    >
-      <Typography variant="h1" color="text.secondary" fontWeight="bold">
+    <div {...stylex.props(s.root)}>
+      <Heading level={1} type="display-1" color="secondary">
         404
-      </Typography>
-      <Typography variant="h5" color="text.secondary">
+      </Heading>
+      <Heading level={2} type="display-3" color="secondary">
         Diese Seite existiert nicht.
-      </Typography>
+      </Heading>
       <Button
-        variant="contained"
-        startIcon={<Home />}
+        variant="primary"
+        icon={<Home />}
+        label="Zur Startseite"
         onClick={() => navigate("/")}
-        sx={{ mt: 2 }}
-      >
-        Zur Startseite
-      </Button>
-    </Box>
+      />
+    </div>
   );
 }

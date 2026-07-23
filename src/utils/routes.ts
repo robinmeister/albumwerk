@@ -1,15 +1,5 @@
 import { ComponentType } from "react";
-import {
-  Download,
-  Image,
-  Palette,
-  Payments,
-  People,
-  Person,
-  PriceChange,
-  ReceiptLong,
-  SupportAgent,
-} from "@mui/icons-material";
+import { Download, Image, Palette, Wallet as Payments, Users as People, User as Person, Tag as PriceChange, ReceiptText as ReceiptLong, Headset as SupportAgent } from "lucide-react";
 
 // Single source for navigation: Header (desktop), TabBar (mobile) and the
 // user menu all render from these arrays — labels are no longer coupled to

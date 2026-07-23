@@ -1,21 +1,7 @@
 import { ReactElement, useState } from "react";
-import {
-  AppBar,
-  Box,
-  Container,
-  Divider,
-  Drawer,
-  IconButton,
-  Link as MuiLink,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Toolbar,
-  Typography,
-} from "@mui/material";
-import { Logout, Menu as MenuIcon } from "@mui/icons-material";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
+import { LogOut as Logout, Menu as MenuIcon } from "lucide-react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { pb } from "../../config/pocketbase";
@@ -25,16 +11,150 @@ import { NavItem } from "../../utils/routes";
 
 export const SIDEBAR_WIDTH = 240;
 
+// Content max-widths: admins get wide tables (xl), customers the tighter
+// reading width (lg). Mirrors MUI's old Container breakpoints.
+const CONTENT_MAX_WIDTH = { lg: 1200, xl: 1536 } as const;
+
 type Props = {
   navItems: NavItem[];
   menuItems: NavItem[];
-  // admins get wide tables (xl), customers the tighter reading width (lg)
   maxWidth: "lg" | "xl";
 };
 
 function isActive(item: NavItem, pathname: string): boolean {
   return item.exact ? item.path === pathname : pathname.startsWith(item.path);
 }
+
+const DESKTOP = "@media (min-width: 900px)";
+
+const s = stylex.create({
+  root: {
+    display: "flex",
+    minHeight: "100vh",
+    backgroundColor: "var(--color-background-body)",
+  },
+  sidebar: {
+    width: SIDEBAR_WIDTH,
+    display: "flex",
+    flexDirection: "column",
+    backgroundColor: "var(--color-background-surface)",
+  },
+  sidebarDesktop: {
+    display: { default: "none", [DESKTOP]: "flex" },
+    position: "sticky",
+    top: 0,
+    height: "100vh",
+    flexShrink: 0,
+    borderRight: "1px solid var(--color-border)",
+  },
+  brand: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    cursor: "pointer",
+    padding: "20px",
+    background: "none",
+    border: "none",
+    textAlign: "left",
+    width: "100%",
+    color: "inherit",
+  },
+  logo: { height: 32, width: 32, objectFit: "contain" },
+  navList: { display: "flex", flexDirection: "column", gap: 4, padding: "0 12px" },
+  navListBottom: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    padding: "8px 12px",
+    borderTop: "1px solid var(--color-border)",
+  },
+  navItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    width: "100%",
+    padding: "10px 12px",
+    borderRadius: "var(--radius-element)",
+    border: "none",
+    background: {
+      default: "none",
+      ":hover": "var(--color-overlay-hover)",
+    },
+    color: "var(--color-text-primary)",
+    cursor: "pointer",
+    font: "inherit",
+    textAlign: "left",
+  },
+  navItemActive: {
+    backgroundColor: "var(--color-background-muted)",
+    color: "var(--color-text-accent)",
+  },
+  navIcon: {
+    display: "inline-flex",
+    minWidth: 28,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  spacer: { flexGrow: 1 },
+  footer: { padding: "12px 20px", borderTop: "1px solid var(--color-border)" },
+  footerLink: { color: "inherit", textDecoration: "none" },
+  main: {
+    flexGrow: 1,
+    minWidth: 0,
+    display: "flex",
+    flexDirection: "column",
+  },
+  topbar: {
+    display: { default: "flex", [DESKTOP]: "none" },
+    position: "sticky",
+    top: 0,
+    zIndex: 10,
+    alignItems: "center",
+    gap: 8,
+    minHeight: 56,
+    padding: "0 12px",
+    backgroundColor: "var(--color-background-surface)",
+    borderBottom: "1px solid var(--color-border)",
+    backdropFilter: "blur(12px)",
+  },
+  iconButton: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 40,
+    height: 40,
+    border: "none",
+    borderRadius: "var(--radius-full)",
+    background: { default: "none", ":hover": "var(--color-overlay-hover)" },
+    color: "inherit",
+    cursor: "pointer",
+  },
+  content: {
+    flex: 1,
+    width: "100%",
+    margin: "0 auto",
+    padding: "16px",
+  },
+  // mobile overlay drawer
+  backdrop: {
+    display: { default: "block", [DESKTOP]: "none" },
+    position: "fixed",
+    inset: 0,
+    zIndex: 20,
+    backgroundColor: "var(--color-overlay)",
+  },
+  drawer: {
+    position: "fixed",
+    insetBlock: 0,
+    left: 0,
+    zIndex: 21,
+    display: { default: "flex", [DESKTOP]: "none" },
+    flexDirection: "column",
+    width: SIDEBAR_WIDTH,
+    backgroundColor: "var(--color-background-surface)",
+    boxShadow: "var(--shadow-overlay, 0 8px 32px rgba(0,0,0,0.24))",
+  },
+});
 
 // App shell for all signed-in users: permanent sidebar on desktop, overlay
 // drawer + slim top bar with hamburger on mobile.
@@ -61,168 +181,106 @@ export default function AppShell(props: Props): ReactElement {
     navigate("/login");
   };
 
-  const sidebar = (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <Box
-        onClick={() => go("/album")}
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 1.5,
-          cursor: "pointer",
-          px: 2.5,
-          py: 2.5,
-        }}
-      >
+  const navButton = (item: NavItem) => (
+    <button
+      key={item.key}
+      onClick={() => go(item.path)}
+      {...stylex.props(
+        s.navItem,
+        isActive(item, location.pathname) && s.navItemActive,
+      )}
+    >
+      <span {...stylex.props(s.navIcon)}>
+        <item.Icon />
+      </span>
+      <Text type="body" weight="medium">
+        {item.label}
+      </Text>
+    </button>
+  );
+
+  const sidebarContent = (
+    <>
+      <button onClick={() => go("/album")} {...stylex.props(s.brand)}>
         {logoUrl && (
-          <img
-            src={logoUrl}
-            alt={settings.businessName}
-            style={{ height: 32, width: 32, objectFit: "contain" }}
-          />
+          <img src={logoUrl} alt={settings.businessName} {...stylex.props(s.logo)} />
         )}
-        <Typography variant="h6" noWrap sx={{ fontWeight: 600 }}>
+        <Text type="label" weight="semibold">
           {settings.businessName}
-        </Typography>
-      </Box>
+        </Text>
+      </button>
 
-      <List sx={{ px: 1.5 }}>
-        {navItems.map((item) => (
-          <ListItem key={item.key} disablePadding>
-            <ListItemButton
-              selected={isActive(item, location.pathname)}
-              onClick={() => go(item.path)}
-              sx={{ borderRadius: 2, mb: 0.5 }}
-            >
-              <ListItemIcon sx={{ minWidth: 40 }}>
-                <item.Icon />
-              </ListItemIcon>
-              <ListItemText
-                primary={item.label}
-                primaryTypographyProps={{ fontWeight: 500 }}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
+      <nav {...stylex.props(s.navList)}>{navItems.map(navButton)}</nav>
 
-      <Box sx={{ flexGrow: 1 }} />
+      <div {...stylex.props(s.spacer)} />
 
-      <Divider />
-      <List sx={{ px: 1.5, py: 1 }}>
-        {menuItems.map((item) => (
-          <ListItem key={item.key} disablePadding>
-            <ListItemButton
-              selected={isActive(item, location.pathname)}
-              onClick={() => go(item.path)}
-              sx={{ borderRadius: 2 }}
-            >
-              <ListItemIcon sx={{ minWidth: 40 }}>
-                <item.Icon />
-              </ListItemIcon>
-              <ListItemText primary={item.label} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-        <ListItem disablePadding>
-          <ListItemButton onClick={handleSignOut} sx={{ borderRadius: 2 }}>
-            <ListItemIcon sx={{ minWidth: 40 }}>
-              <Logout />
-            </ListItemIcon>
-            <ListItemText primary="Ausloggen" />
-          </ListItemButton>
-        </ListItem>
-      </List>
+      <nav {...stylex.props(s.navListBottom)}>
+        {menuItems.map(navButton)}
+        <button onClick={handleSignOut} {...stylex.props(s.navItem)}>
+          <span {...stylex.props(s.navIcon)}>
+            <Logout />
+          </span>
+          <Text type="body" weight="medium">
+            Ausloggen
+          </Text>
+        </button>
+      </nav>
 
-      <Divider />
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ px: 2.5, py: 1.5 }}
-      >
-        © {new Date().getFullYear()} {settings.businessName}
-        {" · "}
-        <MuiLink component={Link} to="/imprint" color="inherit" underline="hover">
-          Impressum
-        </MuiLink>
-        {" · "}
-        <MuiLink component={Link} to="/privacy" color="inherit" underline="hover">
-          Datenschutz
-        </MuiLink>
-      </Typography>
-    </Box>
+      <div {...stylex.props(s.footer)}>
+        <Text type="supporting" color="secondary">
+          © {new Date().getFullYear()} {settings.businessName}
+          {" · "}
+          <Link to="/imprint" {...stylex.props(s.footerLink)}>
+            Impressum
+          </Link>
+          {" · "}
+          <Link to="/privacy" {...stylex.props(s.footerLink)}>
+            Datenschutz
+          </Link>
+        </Text>
+      </div>
+    </>
   );
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh" }}>
-      <Box
-        component="nav"
-        sx={{ width: { md: SIDEBAR_WIDTH }, flexShrink: { md: 0 } }}
-      >
-        {/* mobile: overlay drawer */}
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={() => setMobileOpen(false)}
-          ModalProps={{ keepMounted: true }}
-          sx={{
-            display: { xs: "block", md: "none" },
-            "& .MuiDrawer-paper": { width: SIDEBAR_WIDTH },
-          }}
-        >
-          {sidebar}
-        </Drawer>
-        {/* desktop: permanent sidebar */}
-        <Drawer
-          variant="permanent"
-          open
-          sx={{
-            display: { xs: "none", md: "block" },
-            "& .MuiDrawer-paper": {
-              width: SIDEBAR_WIDTH,
-              borderRight: "1px solid",
-              borderColor: "divider",
-            },
-          }}
-        >
-          {sidebar}
-        </Drawer>
-      </Box>
+    <div {...stylex.props(s.root)}>
+      {/* desktop: permanent sidebar */}
+      <aside {...stylex.props(s.sidebar, s.sidebarDesktop)}>{sidebarContent}</aside>
 
-      <Box
-        sx={{
-          flexGrow: 1,
-          minWidth: 0,
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
+      {/* mobile: overlay drawer */}
+      {mobileOpen && (
+        <>
+          <div
+            {...stylex.props(s.backdrop)}
+            onClick={() => setMobileOpen(false)}
+            aria-hidden
+          />
+          <aside {...stylex.props(s.drawer)}>{sidebarContent}</aside>
+        </>
+      )}
+
+      <div {...stylex.props(s.main)}>
         {/* mobile-only top bar; on desktop the page header carries the title */}
-        <AppBar
-          position="sticky"
-          color="default"
-          elevation={0}
-          sx={{ display: { md: "none" } }}
-        >
-          <Toolbar sx={{ minHeight: 56, gap: 1 }}>
-            <IconButton
-              edge="start"
-              color="inherit"
-              aria-label="Menü öffnen"
-              onClick={() => setMobileOpen(true)}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Typography variant="h6" noWrap sx={{ fontWeight: 600 }}>
-              {sectionLabel}
-            </Typography>
-          </Toolbar>
-        </AppBar>
+        <header {...stylex.props(s.topbar)}>
+          <button
+            aria-label="Menü öffnen"
+            onClick={() => setMobileOpen(true)}
+            {...stylex.props(s.iconButton)}
+          >
+            <MenuIcon />
+          </button>
+          <Text type="label" weight="semibold">
+            {sectionLabel}
+          </Text>
+        </header>
 
-        <Container component="main" maxWidth={maxWidth} sx={{ flex: 1, py: 2 }}>
+        <main
+          {...stylex.props(s.content)}
+          style={{ maxWidth: CONTENT_MAX_WIDTH[maxWidth] }}
+        >
           <Outlet />
-        </Container>
-      </Box>
-    </Box>
+        </main>
+      </div>
+    </div>
   );
 }

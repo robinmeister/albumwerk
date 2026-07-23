@@ -1,31 +1,34 @@
-import { HTMLAttributes, ReactElement, SyntheticEvent } from "react";
-import {
-  Autocomplete, AutocompleteRenderInputParams,
-  Box,
-  Button,
-  CardContent,
-  Dialog,
-  FormControl,
-  FormControlLabel,
-  Grid,
-  IconButton,
-  InputLabel,
-  ListItem,
-  ListItemText,
-  MenuItem,
-  Select,
-  Switch,
-  TextField,
-  Typography
-} from "@mui/material";
+import { ReactElement } from "react";
+import { Dialog } from "@astryxdesign/core/Dialog";
+import { Button } from "@astryxdesign/core/Button";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { Selector } from "@astryxdesign/core/Selector";
+import { MultiSelector } from "@astryxdesign/core/MultiSelector";
+import { Switch } from "@astryxdesign/core/Switch";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { TextArea } from "@astryxdesign/core/TextArea";
+import { Heading } from "@astryxdesign/core/Heading";
+import * as stylex from "@stylexjs/stylex";
 import { addDoc, collection, doc, getDoc, updateDoc } from "../../../config/firestore-compat";
 import { toast } from "react-toastify";
-import { Close } from "@mui/icons-material";
+import { X as Close } from "lucide-react";
 
 import { useAlbumContext } from "../utils/context";
 import { Package, Price, Shooting, User } from "../../../utils/types";
 import { emptyShooting } from "../utils/functions";
-import useMobileService from "../../../hooks/useMobileService";
+
+const s = stylex.create({
+  header: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  form: { display: "flex", flexDirection: "column", gap: 16 },
+  toggleRow: { display: "flex", gap: 8 },
+  toggleBtn: { flex: 1 },
+  actions: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8 },
+});
 
 export default function ShootingModal(): ReactElement {
     const {
@@ -33,7 +36,6 @@ export default function ShootingModal(): ReactElement {
         setOpenEditModal,
         selectedShooting,
         setSelectedShooting,
-        selectedUsers,
         setSelectedUsers,
         selectedPrices,
         setSelectedPrices,
@@ -47,7 +49,6 @@ export default function ShootingModal(): ReactElement {
         addPackage,
         setAddPackage,
     } = useAlbumContext()
-    const isMobile = useMobileService()
 
   const updateUserShootings = async (shooting: Shooting) => {
     if (!shooting.userIds?.length) { return; }
@@ -125,8 +126,7 @@ export default function ShootingModal(): ReactElement {
         }
     }
 
-    const handleSaveShooting = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-        event.preventDefault()
+    const handleSaveShooting = () => {
         if(selectedShooting?.id === ""){
             void createShooting(selectedShooting)
         } else {
@@ -135,288 +135,184 @@ export default function ShootingModal(): ReactElement {
         setOpenEditModal(false)
     }
 
+    const userOptions = users
+      .filter((user: User) => !user.isAdmin)
+      .map((u: User) => ({ value: u.uid, label: `${u.firstName} ${u.lastName} (${u.email})` }));
+    const priceOptions = prices.map((p: Price) => ({ value: p.id, label: `${p.title}, ${p.amount} €` }));
+    const packageOptions = packages.map((p: Package) => ({
+      value: p.id,
+      label: `${p.title}, ${p.numberOfImages} Stk., Gesamt: ${p.totalPrice} €, Einzel: ${p.singlePrice} €/Stk.`,
+    }));
+    const allPricesSelected =
+      selectedShooting?.priceIds?.length === prices.length && prices.length > 0;
 
-    const renderOption = (
-      props: HTMLAttributes<HTMLLIElement>,
-      option: User,
-    ) => {
-      return (
-        <ListItem {...props} key={option.uid} style={{ display: 'flex', alignItems: 'center', }}>
-          <ListItemText primary={`${option.firstName} ${option.lastName} (${option.email})`} />
-        </ListItem>
-      )
-    }
+    return (
+      <Dialog isOpen={openEditModal} onOpenChange={setOpenEditModal} width={560}>
+        <div {...stylex.props(s.header)}>
+          <Heading level={6}>
+            {selectedShooting?.id ? "Shooting bearbeiten" : "Shooting erstellen"}
+          </Heading>
+          <IconButton
+            icon={<Close />}
+            label="Schließen"
+            variant="ghost"
+            onClick={() => setOpenEditModal(false)}
+          />
+        </div>
 
-    const renderModalContent = () => {
-      return (
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              id="title"
-              label="Titel"
-              name="title"
-              value={selectedShooting?.title}
-              onChange={(e) => {
-                if (selectedShooting) {
-                  setSelectedShooting({...selectedShooting, title: e.target.value})
-                }
-              }}
-              autoComplete="title"
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              id="description"
-              label="Beschreibung"
-              name="description"
-              multiline
-              rows={4}
-              value={selectedShooting?.description}
-              onChange={(e) => selectedShooting && setSelectedShooting({...selectedShooting, description: e.target.value})}
-              autoComplete="description"
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Autocomplete
-              sx={{zIndex: 9999}}
-              id="name"
-              openOnFocus
-              multiple
-              options={users.filter((user: User) => !user.isAdmin)}
-              value={selectedUsers}
-              getOptionLabel={(option: User) => `${option?.firstName} ${option?.lastName}`}
-              renderOption={(props: HTMLAttributes<HTMLLIElement>, option: User) => renderOption(props, option)}
-              disablePortal /* List of suggestions will not be rendered on top of everything */
-              onChange={(_: SyntheticEvent<Element, Event>, option: User[]) => {
-                setSelectedUsers(option)
-                if (selectedShooting) {
-                  setSelectedShooting({...selectedShooting, userIds: option.map((user: User) => user.uid)})
-                }
-              }}
-                renderInput={(params: AutocompleteRenderInputParams) => (
-                <TextField
-                  {...params}
-                  variant="outlined"
-                  label="Kunde(n)"
-                />
-              )}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <FormControl fullWidth>
-              <InputLabel id="shooting-type">Shooting Typ</InputLabel>
-              <Select
-                labelId="shooting-type"
-                value={selectedShooting?.type}
-                label="Shooting Typ"
-                onChange={(e) => {
-                  if (selectedShooting) {
-                    setSelectedShooting({
-                      ...selectedShooting,
-                      packageId: "",
-                      priceIds: [],
-                      type: e.target.value,
-                      withUserSelection: false
-                    })
-                    setSelectedPrices([])
-                    setSelectedPackage(undefined)
-                  }
-                }}
-                >
-                  <MenuItem value={"paid"}>Bezahlt</MenuItem>
-                  <MenuItem value={"public"}>Öffentlich</MenuItem>
-                  <MenuItem value={"sale"}>Verkauf</MenuItem>
-                </Select>
-            </FormControl>
-          </Grid>
+        <div {...stylex.props(s.form)}>
+          <TextInput
+            width="100%"
+            label="Titel"
+            value={selectedShooting?.title ?? ""}
+            onChange={(v) => selectedShooting && setSelectedShooting({ ...selectedShooting, title: v })}
+          />
+          <TextArea
+            width="100%"
+            label="Beschreibung"
+            rows={4}
+            value={selectedShooting?.description ?? ""}
+            onChange={(v) => selectedShooting && setSelectedShooting({ ...selectedShooting, description: v })}
+          />
+          <MultiSelector
+            width="100%"
+            label="Kunde(n)"
+            options={userOptions}
+            value={selectedShooting?.userIds ?? []}
+            onChange={(ids) => {
+              setSelectedUsers(users.filter((u: User) => ids.includes(u.uid)));
+              if (selectedShooting) {
+                setSelectedShooting({ ...selectedShooting, userIds: ids });
+              }
+            }}
+          />
+          <Selector
+            width="100%"
+            label="Shooting Typ"
+            options={[
+              { value: "paid", label: "Bezahlt" },
+              { value: "public", label: "Öffentlich" },
+              { value: "sale", label: "Verkauf" },
+            ]}
+            value={selectedShooting?.type ?? ""}
+            onChange={(value) => {
+              if (selectedShooting && value) {
+                setSelectedShooting({
+                  ...selectedShooting,
+                  packageId: "",
+                  priceIds: [],
+                  type: value,
+                  withUserSelection: false,
+                });
+                setSelectedPrices([]);
+                setSelectedPackage(undefined);
+              }
+            }}
+          />
+
           {selectedShooting?.type === "sale" && (
             <>
-              <Grid item xs={6}>
+              <div {...stylex.props(s.toggleRow)}>
                 <Button
-                  fullWidth
-                  variant={addPackage ? "outlined" : "contained"}
+                  xstyle={s.toggleBtn}
+                  variant={addPackage ? "secondary" : "primary"}
+                  label="Preise"
                   onClick={() => {
-                    setSelectedShooting({...selectedShooting, packageId: "", priceIds: []})
-                    setSelectedPackage(undefined)
-                    setSelectedPrices([])
-                    setAddPackage(false)
+                    setSelectedShooting({ ...selectedShooting, packageId: "", priceIds: [] });
+                    setSelectedPackage(undefined);
+                    setSelectedPrices([]);
+                    setAddPackage(false);
                   }}
-                >
-                  Preise
-                </Button>
-              </Grid>
-              <Grid item xs={6}>
+                />
                 <Button
-                  fullWidth
-                  variant={!addPackage ? "outlined" : "contained"}
+                  xstyle={s.toggleBtn}
+                  variant={!addPackage ? "secondary" : "primary"}
+                  label="Paket"
                   onClick={() => {
-                    setSelectedShooting({...selectedShooting, packageId: "", priceIds: []})
-                    setSelectedPackage(undefined)
-                    setSelectedPrices([])
-                    setAddPackage(true)
+                    setSelectedShooting({ ...selectedShooting, packageId: "", priceIds: [] });
+                    setSelectedPackage(undefined);
+                    setSelectedPrices([]);
+                    setAddPackage(true);
                   }}
-                >
-                  Paket
-                </Button>
-              </Grid>
+                />
+              </div>
               {!addPackage && (
                 <>
-                  <Grid item xs={12}>
-                    <Autocomplete
-                      id="prices"
-                      openOnFocus
-                      multiple
-                      options={prices}
-                      value={selectedPrices}
-                      getOptionLabel={(option: Price) => option?.title}
-                      renderOption={(props: HTMLAttributes<HTMLLIElement>, option: any) => {
-                        return (
-                          <>
-                            <ListItem {...props} key={option.id} style={{ display: 'flex', alignItems: 'center', }}>
-                              <ListItemText primary={`${option?.title}, ${option.amount} €`} />
-                            </ListItem>
-                          </>
-                        )
-                      }}
-                      onChange={(_: SyntheticEvent<Element, Event>, option: Price[]) => {
-                        setSelectedPrices(option)
+                  <MultiSelector
+                    width="100%"
+                    label="Preise"
+                    options={priceOptions}
+                    value={selectedShooting?.priceIds ?? []}
+                    onChange={(ids) => {
+                      setSelectedPrices(prices.filter((p: Price) => ids.includes(p.id)));
+                      if (selectedShooting) {
+                        setSelectedShooting({ ...selectedShooting, priceIds: ids, packageId: "" });
+                      }
+                    }}
+                  />
+                  <Switch
+                    label={allPricesSelected ? "Alle Preise abwählen" : "Alle Preise auswählen"}
+                    value={allPricesSelected}
+                    onChange={() => {
+                      if (allPricesSelected) {
+                        if (selectedShooting) setSelectedShooting({ ...selectedShooting, priceIds: [] });
+                        setSelectedPrices([]);
+                      } else {
                         if (selectedShooting) {
-                          setSelectedShooting({...selectedShooting, priceIds: option.map((price: Price) => price.id), packageId: ""})
+                          setSelectedShooting({ ...selectedShooting, priceIds: prices.map((p: Price) => p.id) });
                         }
-                      }}
-                      renderInput={(params: AutocompleteRenderInputParams) => (
-                        <TextField
-                          {...params}
-                          variant="outlined"
-                          label="Preise"
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={selectedShooting?.priceIds?.length === prices.length}
-                          onChange={() => {
-                            if (selectedShooting?.priceIds?.length === prices.length) {
-                              if (selectedShooting) {
-                                setSelectedShooting({...selectedShooting, priceIds: []})
-                              }
-                              setSelectedPrices([])
-                            } else {
-                              if (selectedShooting) {
-                                setSelectedShooting({...selectedShooting, priceIds: prices.map((price: Price) => price.id)})
-                              }
-                              setSelectedPrices(prices)
-                            }
-                          }}
-                        />
+                        setSelectedPrices(prices);
                       }
-                      label={
-                        selectedShooting?.priceIds?.length === prices.length
-                          ? "Alle Preise abwählen"
-                          : "Alle Preise auswählen"
-                      }
-                    />
-                  </Grid>
+                    }}
+                  />
                 </>
               )}
               {addPackage && (
-                <Grid item xs={12}>
-                  <Autocomplete
-                    id="packages"
-                    openOnFocus
-                    options={packages}
-                    renderOption={(props: HTMLAttributes<HTMLLIElement>, option: Package) => {
-                        return (
-                          <>
-                            <ListItem {...props} key={option.id} style={{ display: 'flex', alignItems: 'center', }}>
-                              <ListItemText primary={`${option?.title}, ${option.numberOfImages} Stk., Gesamt: ${option.totalPrice} €, Einzel: ${option.singlePrice} €/Stk.`} />
-                            </ListItem>
-                          </>
-                        )
-                    }}
-                    value={selectedPackage}
-                    getOptionLabel={(option: Package) => option?.title}
-                    onChange={(_: SyntheticEvent<Element, Event>, option: Package | null) => {
-                      if (!option) return;
-                      setSelectedPackage(option)
-                      if (selectedShooting) {
-                        setSelectedShooting({...selectedShooting, packageId: option.id, priceIds: []})
-                      }
-                    }}
-                    renderInput={(params: AutocompleteRenderInputParams) => (
-                      <TextField
-                        {...params}
-                        variant="outlined"
-                        label="Paket"
-                      />
-                    )}
-                  />
-                </Grid>
-              )}
-            </>
-          )}
-          {(selectedShooting?.type === "paid" || selectedShooting?.type === "sale") && (<Grid item xs ={12}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={selectedShooting?.withUserSelection}
-                  onChange={() => {
+                <Selector
+                  width="100%"
+                  label="Paket"
+                  options={packageOptions}
+                  value={selectedPackage?.id ?? ""}
+                  onChange={(value) => {
+                    const option = packages.find((p: Package) => p.id === value);
+                    if (!option) return;
+                    setSelectedPackage(option);
                     if (selectedShooting) {
-                      setSelectedShooting({...selectedShooting, withUserSelection: !selectedShooting.withUserSelection})
+                      setSelectedShooting({ ...selectedShooting, packageId: option.id, priceIds: [] });
                     }
                   }}
                 />
-              }
-              label="Kunden können eine Vorabauswahl treffen"
-            />
-          </Grid>)}
-          <Grid item xs={12}>
-            <Box display="flex" justifyContent="flex-end" gap={1} sx={{ mt: 0.5 }}>
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  setOpenEditModal(false);
-                  setSelectedShooting(emptyShooting);
-                }}
-              >
-                Abbrechen
-              </Button>
-              <Button
-                variant="contained"
-                onClick={(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => handleSaveShooting(event)}
-              >
-                Speichern
-              </Button>
-            </Box>
-          </Grid>
-        </Grid>
-      )
-    }
+              )}
+            </>
+          )}
 
-    return (
-      <Dialog
-        open={openEditModal}
-        onClose={() => setOpenEditModal(false)}
-        maxWidth="sm"
-        fullWidth
-        fullScreen={isMobile}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, pt: 2.5, pb: 0 }}>
-          <Typography variant="h6">
-            {selectedShooting?.id ? "Shooting bearbeiten" : "Shooting erstellen"}
-          </Typography>
-          <IconButton onClick={() => setOpenEditModal(false)} size="small">
-            <Close />
-          </IconButton>
-        </Box>
-        <CardContent>
-          {renderModalContent()}
-        </CardContent>
+          {(selectedShooting?.type === "paid" || selectedShooting?.type === "sale") && (
+            <Switch
+              label="Kunden können eine Vorabauswahl treffen"
+              value={selectedShooting?.withUserSelection ?? false}
+              onChange={() => {
+                if (selectedShooting) {
+                  setSelectedShooting({
+                    ...selectedShooting,
+                    withUserSelection: !selectedShooting.withUserSelection,
+                  });
+                }
+              }}
+            />
+          )}
+
+          <div {...stylex.props(s.actions)}>
+            <Button
+              variant="secondary"
+              label="Abbrechen"
+              onClick={() => {
+                setOpenEditModal(false);
+                setSelectedShooting(emptyShooting);
+              }}
+            />
+            <Button variant="primary" label="Speichern" onClick={handleSaveShooting} />
+          </div>
+        </div>
       </Dialog>
     );
   }

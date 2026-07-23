@@ -1,15 +1,17 @@
-import { Theme, createTheme } from "@mui/material/styles";
-import { red } from "@mui/material/colors";
+import { defineTheme, type DefinedTheme, type ThemeMode } from "@astryxdesign/core";
+import { neutralTheme } from "@astryxdesign/theme-neutral";
 
 import { AppSettings, DEFAULT_SETTINGS, FontKey } from "../config/settings";
 
 // Self-hosted font stacks; the families are loaded via @fontsource imports in
-// main.tsx so no external font CDN is contacted (DSGVO).
-const FONT_STACKS: Record<FontKey, string> = {
-  inter: '"Inter", "Helvetica", "Arial", sans-serif',
-  lora: '"Lora", "Georgia", serif',
-  playfair: '"Playfair Display", "Georgia", serif',
-  montserrat: '"Montserrat", "Helvetica", "Arial", sans-serif',
+// main.tsx so no external font CDN is contacted (DSGVO). Split into primary
+// family + fallbacks for Astryx's typography config.
+type FontStack = { family: string; fallbacks: string };
+const FONT_STACKS: Record<FontKey, FontStack> = {
+  inter: { family: "Inter", fallbacks: '"Helvetica", "Arial", sans-serif' },
+  lora: { family: "Lora", fallbacks: '"Georgia", serif' },
+  playfair: { family: "Playfair Display", fallbacks: '"Georgia", serif' },
+  montserrat: { family: "Montserrat", fallbacks: '"Helvetica", "Arial", sans-serif' },
 };
 
 const HEX_COLOR = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
@@ -18,10 +20,11 @@ function safeColor(value: string, fallback: string): string {
   return HEX_COLOR.test(value) ? value : fallback;
 }
 
+// Concrete light/dark for callers that need a resolved value (e.g. the
+// theme-color meta tag in useBranding). `auto` follows the OS preference.
 export function resolveMode(settings: AppSettings): "light" | "dark" {
   if (settings.themeMode === "dark") return "dark";
   if (settings.themeMode === "light") return "light";
-  // auto → follow the OS preference
   if (typeof window !== "undefined" && window.matchMedia) {
     return window.matchMedia("(prefers-color-scheme: dark)").matches
       ? "dark"
@@ -30,142 +33,77 @@ export function resolveMode(settings: AppSettings): "light" | "dark" {
   return "light";
 }
 
-// Builds the MUI theme from the instance settings. Photography-first look:
+// The mode passed to Astryx's <Theme>. `auto` maps to `system` so the tokens'
+// light-dark() values and `color-scheme` follow the OS without extra JS.
+export function themeModeProp(settings: AppSettings): ThemeMode {
+  return settings.themeMode === "auto" ? "system" : settings.themeMode;
+}
+
+// Builds the Astryx theme from the instance settings. Photography-first look:
 // near-monochrome chrome, the brand colors only appear as accents; images do
 // the talking. Used by App.tsx and the branding page's live preview.
-export function buildTheme(settings: AppSettings): Theme {
-  const fontFamily =
-    FONT_STACKS[settings.fontFamily] ?? FONT_STACKS[DEFAULT_SETTINGS.fontFamily];
-  const borderRadius = Number.isFinite(settings.borderRadius)
+//
+// The brand primary drives Astryx's full accent scale (HCT-derived). The brand
+// secondary is exposed as a custom `--color-brand-secondary` token for the few
+// spots that reference it. Editorial identity (light headlines, pill buttons,
+// flat hairline cards) is applied as component overrides.
+export function buildAstryxTheme(settings: AppSettings): DefinedTheme {
+  const primary = safeColor(settings.primaryColor, DEFAULT_SETTINGS.primaryColor);
+  const secondary = safeColor(
+    settings.secondaryColor,
+    DEFAULT_SETTINGS.secondaryColor,
+  );
+  const font = FONT_STACKS[settings.fontFamily] ?? FONT_STACKS[DEFAULT_SETTINGS.fontFamily];
+  const radiusPx = Number.isFinite(settings.borderRadius)
     ? Math.min(Math.max(settings.borderRadius, 0), 32)
     : DEFAULT_SETTINGS.borderRadius;
-  const mode = resolveMode(settings);
-  const dark = mode === "dark";
 
-  return createTheme({
-    palette: {
-      mode,
-      primary: {
-        main: safeColor(settings.primaryColor, DEFAULT_SETTINGS.primaryColor),
-      },
-      secondary: {
-        main: safeColor(settings.secondaryColor, DEFAULT_SETTINGS.secondaryColor),
-      },
-      error: {
-        main: red.A400,
-      },
-      background: dark
-        ? { default: "#0e0e0e", paper: "#161616" }
-        : { default: "#fafafa", paper: "#ffffff" },
-      divider: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
-    },
-    shape: {
-      borderRadius,
-    },
+  // Custom / non-core token names aren't in Astryx's TokenName union, so the
+  // token map is built loosely and cast at the call site.
+  const tokens: Record<string, string | [string, string]> = {
+    // brand secondary accent (custom token consumed by a handful of components)
+    "--color-brand-secondary": secondary,
+    // instance corner radius drives interactive elements + containers
+    "--radius-element": `${radiusPx}px`,
+    "--radius-container": `${radiusPx}px`,
+    // near-monochrome surfaces matching the current editorial palette [light, dark]
+    "--color-background-body": ["#fafafa", "#0e0e0e"],
+    "--color-background-surface": ["#ffffff", "#161616"],
+    "--color-background-card": ["#ffffff", "#161616"],
+  };
+
+  return defineTheme({
+    name: "albumwerk",
+    extends: neutralTheme,
+    color: { accent: primary },
     typography: {
-      fontFamily,
-      // large, light headlines with tight tracking — editorial/portfolio look
-      h1: { fontWeight: 300, letterSpacing: "-0.02em" },
-      h2: { fontWeight: 300, letterSpacing: "-0.02em" },
-      h3: { fontWeight: 300, letterSpacing: "-0.01em" },
-      h4: { fontWeight: 400, letterSpacing: "-0.01em" },
-      h5: { fontWeight: 600 },
-      h6: { fontWeight: 600 },
-      subtitle2: {
-        textTransform: "uppercase",
-        letterSpacing: "0.12em",
-        fontSize: "0.75rem",
-        fontWeight: 600,
-      },
-      overline: { letterSpacing: "0.16em", fontWeight: 600 },
-      button: { textTransform: "none", fontWeight: 600, letterSpacing: "0.02em" },
+      body: { family: font.family, fallbacks: font.fallbacks },
+      heading: { family: font.family, fallbacks: font.fallbacks },
     },
+    tokens: tokens as DefineThemeTokens,
     components: {
-      MuiButton: {
-        defaultProps: {
-          disableElevation: true,
-        },
-        styleOverrides: {
-          // pill buttons
-          root: {
-            borderRadius: 999,
-            paddingLeft: 20,
-            paddingRight: 20,
-          },
-          sizeLarge: {
-            paddingTop: 10,
-            paddingBottom: 10,
-          },
-        },
+      // large, light headlines with tight tracking — editorial/portfolio look
+      heading: {
+        base: { fontWeight: "300", letterSpacing: "-0.02em" },
       },
-      // chrome stays neutral: flat app bar on paper with a hairline divider,
-      // text follows the palette instead of the brand color
-      MuiAppBar: {
-        defaultProps: {
-          elevation: 0,
-        },
-        styleOverrides: {
-          root: ({ theme }) => ({
-            backgroundColor: dark
-              ? "rgba(22,22,22,0.85)"
-              : "rgba(255,255,255,0.85)",
-            color: theme.palette.text.primary,
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            borderBottom: `1px solid ${theme.palette.divider}`,
-          }),
-          // the color-variant classes would otherwise win over root
-          colorPrimary: {
-            backgroundColor: dark
-              ? "rgba(22,22,22,0.85)"
-              : "rgba(255,255,255,0.85)",
-          },
-          colorDefault: {
-            backgroundColor: dark
-              ? "rgba(22,22,22,0.85)"
-              : "rgba(255,255,255,0.85)",
-          },
-        },
+      // pill buttons, flat (no elevation)
+      button: {
+        base: { borderRadius: "9999px", paddingInline: "20px", boxShadow: "none" },
       },
-      MuiCard: {
-        defaultProps: {
-          elevation: 0,
-        },
-        styleOverrides: {
-          root: ({ theme }) => ({
-            border: `1px solid ${theme.palette.divider}`,
-            backgroundImage: "none",
-          }),
-        },
-      },
-      MuiPaper: {
-        styleOverrides: {
-          root: {
-            backgroundImage: "none",
-          },
-        },
-      },
-      MuiBottomNavigation: {
-        styleOverrides: {
-          root: {
-            backgroundColor: dark ? "#161616" : "#ffffff",
-          },
-        },
-      },
-      MuiCssBaseline: {
-        styleOverrides: {
-          img: {
-            // photos fade in as they load (paired with the album components)
-            transition: "opacity 0.3s ease",
-          },
-        },
+      // flat, hairline-bordered cards
+      card: {
+        base: { boxShadow: "none", borderWidth: "1px" },
       },
     },
   });
 }
 
-// Legacy static theme for modules that still import a default theme; built
-// from the neutral defaults. New code should use buildTheme + SettingsContext.
-const theme = buildTheme(DEFAULT_SETTINGS);
+// The tokens map includes a custom property name, so we widen the type for the
+// defineTheme call (Astryx only types core token names).
+type DefineThemeTokens = Parameters<typeof defineTheme>[0]["tokens"];
+
+// Legacy static theme for modules that still import a default; built from the
+// neutral defaults. New code should use buildAstryxTheme + SettingsContext.
+const theme = buildAstryxTheme(DEFAULT_SETTINGS);
 
 export default theme;

@@ -1,12 +1,7 @@
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Step,
-  StepLabel,
-  Stepper,
-  Typography,
-} from "@mui/material";
+import { Button } from "@astryxdesign/core/Button";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
 import { currentUser } from "../../config/currentUser";
 import { ReactElement, useEffect, useState } from "react";
 import { Location, useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -15,6 +10,7 @@ import { doc, getDoc } from "../../config/firestore-compat";
 import { pb } from "../../config/pocketbase";
 
 import Page from "../../components/layout/Page";
+import PageLoader from "../../components/feedback/PageLoader";
 import DownloadForm from "../../features/Pricing/components/customer/DownloadForm";
 import {
   ImagePriceObject,
@@ -29,6 +25,35 @@ import PackageForm from "../../features/Pricing/components/customer/PackageForm"
 import { fetchShootingPackage } from "../../utils/functions";
 
 const steps = ["Preise auswählen", "Bezahlen", "Download"];
+
+const s = stylex.create({
+  stepper: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 24,
+    flexWrap: "wrap",
+  },
+  step: { display: "flex", alignItems: "center", gap: 8 },
+  dot: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 26,
+    height: 26,
+    borderRadius: "var(--radius-full)",
+    fontSize: 13,
+    fontWeight: 600,
+    backgroundColor: "var(--color-background-muted)",
+    color: "var(--color-text-secondary)",
+  },
+  dotActive: {
+    backgroundColor: "var(--color-accent)",
+    color: "var(--color-on-accent)",
+  },
+  sep: { width: 24, height: 1, backgroundColor: "var(--color-border)" },
+  empty: { textAlign: "center", padding: "64px 16px", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" },
+});
 
 // Draft cart per browser: survives reloads and lets the customer go back to
 // the album without losing the price assignment.
@@ -238,28 +263,20 @@ export default function PricingPage(): ReactElement {
   }
 
   if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
-      </Box>
-    );
+    return <PageLoader />;
   }
 
   /* ── Nothing to order (direct visit without album selection or draft) ── */
   if (!shootingId) {
     return (
       <Page title="Bestellung" showTitleOnMobile>
-        <Box textAlign="center" py={8}>
-          <Typography variant="h6" gutterBottom>
-            Keine Bestellung in Bearbeitung
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        <div {...stylex.props(s.empty)}>
+          <Heading level={6}>Keine Bestellung in Bearbeitung</Heading>
+          <Text type="body" color="secondary">
             Wähle im Album Bilder aus und klicke auf „Kaufen", um eine Bestellung zu starten.
-          </Typography>
-          <Button variant="contained" onClick={() => navigate("/album")}>
-            Zum Album
-          </Button>
-        </Box>
+          </Text>
+          <Button variant="primary" label="Zum Album" onClick={() => navigate("/album")} />
+        </div>
       </Page>
     );
   }
@@ -267,13 +284,19 @@ export default function PricingPage(): ReactElement {
   return (
     <Page title={shooting?.title ?? "Bestellung"} showTitleOnMobile>
       {selected.length > 0 && (
-        <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
-          {steps.map(label => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
+        <div {...stylex.props(s.stepper)}>
+          {steps.map((label, idx) => (
+            <div key={label} {...stylex.props(s.step)}>
+              {idx > 0 && <span {...stylex.props(s.sep)} />}
+              <span {...stylex.props(s.dot, idx <= activeStep && s.dotActive)}>
+                {idx + 1}
+              </span>
+              <Text type="supporting" color={idx <= activeStep ? "primary" : "secondary"}>
+                {label}
+              </Text>
+            </div>
           ))}
-        </Stepper>
+        </div>
       )}
 
       {activeStep === 0 && !shootingPackage && (

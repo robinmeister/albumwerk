@@ -1,5 +1,6 @@
-import { Box, Card, Typography } from "@mui/material";
-import { alpha, useTheme } from "@mui/material/styles";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
 import { ReactElement, ReactNode, useEffect, useState } from "react";
 
 import BrandLogo from "../widgets/BrandLogo";
@@ -11,12 +12,53 @@ type Props = {
   maxWidth?: number;
 };
 
+const SM = "@media (min-width: 600px)";
+
+const s = stylex.create({
+  root: {
+    minHeight: "100vh",
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+    background: "linear-gradient(160deg, var(--color-accent) 0%, #111 85%)",
+  },
+  bg: (loaded: boolean) => ({
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    opacity: loaded ? 1 : 0,
+    transition: "opacity 0.6s ease",
+  }),
+  overlay: { position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.55)" },
+  card: {
+    position: "relative",
+    width: "100%",
+    paddingInline: { default: 24, [SM]: 40 },
+    paddingBlock: { default: 32, [SM]: 40 },
+    borderRadius: "var(--radius-container)",
+    backgroundColor:
+      "color-mix(in srgb, var(--color-background-surface) 92%, transparent)",
+    backdropFilter: "blur(10px)",
+  },
+  head: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+    textAlign: "center",
+  },
+});
+
 // Shared hero layout for the auth pages: fullscreen background image (one of
 // the loginImages, faded in once loaded) with a dark overlay and a floating
 // glass card. Renders instantly — no image, no spinner, just the gradient.
 export default function AuthHero({ children, maxWidth = 420 }: Props): ReactElement {
   const { settings } = useSettings();
-  const theme = useTheme();
   const [imageUrl, setImageUrl] = useState<string>("");
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -28,63 +70,31 @@ export default function AuthHero({ children, maxWidth = 420 }: Props): ReactElem
   }, []);
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        position: "relative",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        p: 2,
-        background: `linear-gradient(160deg, ${theme.palette.primary.main} 0%, #111 85%)`,
-      }}
-    >
+    <div {...stylex.props(s.root)}>
       {imageUrl && (
-        <Box
-          component="img"
+        <img
           src={imageUrl}
           alt=""
           onLoad={() => setImageLoaded(true)}
-          sx={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            opacity: imageLoaded ? 1 : 0,
-            transition: "opacity 0.6s ease",
-          }}
+          {...stylex.props(s.bg(imageLoaded))}
         />
       )}
-      <Box sx={{ position: "absolute", inset: 0, bgcolor: "rgba(0,0,0,0.55)" }} />
+      <div {...stylex.props(s.overlay)} />
 
-      <Card
-        elevation={0}
-        sx={{
-          position: "relative",
-          width: "100%",
-          maxWidth,
-          px: { xs: 3, sm: 5 },
-          py: { xs: 4, sm: 5 },
-          bgcolor: alpha(theme.palette.background.paper, 0.92),
-          backdropFilter: "blur(10px)",
-          WebkitBackdropFilter: "blur(10px)",
-          border: "none",
-        }}
-      >
-        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 2 }}>
+      <div {...stylex.props(s.card)} style={{ maxWidth }}>
+        <div {...stylex.props(s.head)}>
           <BrandLogo size={56} />
-          <Typography variant="h4" component="h1" sx={{ mt: 2, textAlign: "center" }}>
+          <Heading level={4} accessibilityLevel={1}>
             {settings.businessName}
-          </Typography>
+          </Heading>
           {settings.tagline && (
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 1, textAlign: "center" }}>
+            <Text type="supporting" color="secondary">
               {settings.tagline}
-            </Typography>
+            </Text>
           )}
-        </Box>
+        </div>
         {children}
-      </Card>
-    </Box>
+      </div>
+    </div>
   );
 }

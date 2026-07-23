@@ -1,16 +1,10 @@
-import {
-  Box,
-  Button,
-  Card,
-  CardMedia,
-  Chip,
-  CircularProgress,
-  Divider,
-  Grid,
-  TextField,
-  Typography,
-} from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
+import { Badge } from "@astryxdesign/core/Badge";
+import { Button } from "@astryxdesign/core/Button";
+import { Divider } from "@astryxdesign/core/Divider";
+import { Text } from "@astryxdesign/core/Text";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import * as stylex from "@stylexjs/stylex";
+import { ArrowLeft as ArrowBack } from "lucide-react";
 import { toast } from "react-toastify";
 import { currentUser } from "../../../../config/currentUser";
 import { doc, getDoc, updateDoc } from "../../../../config/firestore-compat";
@@ -23,6 +17,7 @@ import { useSettings } from "../../../../context/SettingsContext";
 import PaypalForm from "./PaypalForm";
 import StripeForm from "./StripeForm";
 import PaymentUnavailable from "../../../../components/feedback/PaymentUnavailable";
+import PageLoader from "../../../../components/feedback/PageLoader";
 import { thumbUrl } from "../../../Album/components/AlbumImage";
 
 type Props = {
@@ -39,15 +34,44 @@ type Props = {
   onPaid: (orderId: string) => void;
 };
 
+const s = stylex.create({
+  section: { marginBottom: 24 },
+  sectionLabel: { letterSpacing: "0.08em", fontSize: "0.7rem" },
+  divider: { marginBottom: 12, marginTop: 4 },
+  summaryGrid: {
+    display: "grid",
+    gridTemplateColumns: {
+      default: "1fr 1fr",
+      "@media (min-width: 600px)": "repeat(3, 1fr)",
+      "@media (min-width: 900px)": "repeat(4, 1fr)",
+    },
+    gap: 12,
+    marginBottom: 12,
+  },
+  card: {
+    overflow: "hidden",
+    borderRadius: "var(--radius-element)",
+    border: "1px solid var(--color-border)",
+  },
+  cardImg: { width: "100%", height: 100, objectFit: "cover", display: "block" },
+  cardBody: { padding: "6px 8px" },
+  cardLine: { display: "flex", justifyContent: "space-between", gap: 8 },
+  totalRow: { display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8 },
+  formGrid: {
+    display: "grid",
+    gridTemplateColumns: { default: "1fr", "@media (min-width: 600px)": "1fr 1fr" },
+    gap: 16,
+  },
+  full: { gridColumn: "1 / -1" },
+  orRow: { marginBlock: 16 },
+  back: { marginTop: 16 },
+});
+
 function SectionHeader({ title }: { title: string }) {
   return (
-    <Typography
-      variant="overline"
-      color="text.secondary"
-      sx={{ letterSpacing: "0.08em", fontSize: "0.7rem" }}
-    >
+    <Text type="supporting" color="secondary" xstyle={s.sectionLabel}>
       {title}
-    </Typography>
+    </Text>
   );
 }
 
@@ -143,24 +167,16 @@ export default function PaymentForm(props: Props): ReactElement {
     }
   }
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const { name, value } = e.target;
-    setUserData((prev: any) => ({ ...prev, [name]: value }));
-  }
-
-  function handleBlur(e: React.FocusEvent<HTMLInputElement>) {
-    setTouched((prev) => ({ ...prev, [e.target.name]: true }));
-  }
-
   const showError = (name: string) => Boolean(touched[name]) && !userData[name];
 
-  const requiredFieldProps = (name: string) => ({
-    name,
-    required: true,
-    onChange: handleChange,
-    onBlur: handleBlur,
-    error: showError(name),
-    helperText: showError(name) ? "Pflichtfeld" : "",
+  // Adapts Astryx TextInput to the old required-field behaviour: value-first
+  // onChange, blur marks the field touched, error status shows "Pflichtfeld".
+  const req = (name: string) => ({
+    isRequired: true,
+    value: userData[name] ?? "",
+    onChange: (v: string) => setUserData((prev: any) => ({ ...prev, [name]: v })),
+    onBlur: () => setTouched((prev) => ({ ...prev, [name]: true })),
+    status: showError(name) ? ({ type: "error", message: "Pflichtfeld" } as const) : undefined,
   });
 
   const totalPrice = shootingPackage && calculateTotalPrice(imagePriceObjectList) === 0
@@ -168,169 +184,110 @@ export default function PaymentForm(props: Props): ReactElement {
     : calculateTotalPrice(imagePriceObjectList);
 
   if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" p={6}>
-        <CircularProgress />
-      </Box>
-    );
+    return <PageLoader />;
   }
 
   return (
-    <Box>
+    <div>
       {/* ── Order summary ── */}
-      <Box mb={3}>
+      <div {...stylex.props(s.section)}>
         <SectionHeader title="Bestellübersicht" />
-        <Divider sx={{ mb: 1.5 }} />
+        <div {...stylex.props(s.divider)}><Divider /></div>
 
         {!shootingPackage && imagePriceObjectList.length > 0 && (
-          <Grid container spacing={1.5} sx={{ mb: 1.5 }}>
+          <div {...stylex.props(s.summaryGrid)}>
             {imagePriceObjectList.map((obj, idx) => (
-              <Grid item xs={6} sm={4} md={3} key={obj.image}>
-                <Card variant="outlined" sx={{ overflow: "hidden" }}>
-                  <CardMedia
-                    component="img"
-                    image={thumbUrl(obj.image)}
-                    alt={`Bild ${idx + 1}`}
-                    sx={{ height: 100, objectFit: "cover" }}
-                  />
-                  <Box sx={{ px: 1, py: 0.75 }}>
-                    {obj.price.map((p: PriceWithQuantity) => (
-                      <Box key={p.id} display="flex" justifyContent="space-between">
-                        <Typography variant="caption" noWrap sx={{ maxWidth: "60%" }}>
-                          {p.quantity}× {p.title}
-                        </Typography>
-                        <Typography variant="caption" fontWeight={600}>
-                          {(parseFloat(p.amount) * p.quantity).toFixed(2)}€
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                </Card>
-              </Grid>
+              <div key={obj.image} {...stylex.props(s.card)}>
+                <img src={thumbUrl(obj.image)} alt={`Bild ${idx + 1}`} {...stylex.props(s.cardImg)} />
+                <div {...stylex.props(s.cardBody)}>
+                  {obj.price.map((p: PriceWithQuantity) => (
+                    <div key={p.id} {...stylex.props(s.cardLine)}>
+                      <Text type="supporting" maxLines={1}>
+                        {p.quantity}× {p.title}
+                      </Text>
+                      <Text type="supporting" weight="semibold">
+                        {(parseFloat(p.amount) * p.quantity).toFixed(2)}€
+                      </Text>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ))}
-          </Grid>
+          </div>
         )}
 
         {shootingPackage && (
-          <Box mb={1.5}>
-            <Typography variant="body2">
+          <div style={{ marginBottom: 12 }}>
+            <Text type="body">
               {shootingPackage.title} · {selectedImages.length} Bilder
-            </Typography>
-          </Box>
+            </Text>
+          </div>
         )}
 
-        <Box display="flex" justifyContent="flex-end" alignItems="center" gap={1}>
-          <Typography variant="body2" color="text.secondary">Gesamtpreis</Typography>
-          <Chip
+        <div {...stylex.props(s.totalRow)}>
+          <Text type="body" color="secondary">Gesamtpreis</Text>
+          <Badge
+            variant="info"
             label={`${typeof totalPrice === "number" ? totalPrice.toFixed(2) : totalPrice} €`}
-            color="primary"
-            size="small"
-            sx={{ fontWeight: 700, fontSize: "0.85rem", height: 28 }}
           />
-        </Box>
-      </Box>
+        </div>
+      </div>
 
       {/* ── Contact ── */}
-      <Box mb={3}>
+      <div {...stylex.props(s.section)}>
         <SectionHeader title="Kontakt" />
-        <Divider sx={{ mb: 1.5 }} />
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Vorname"
-              value={userData.firstName ?? ""}
-              {...requiredFieldProps("firstName")}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Nachname"
-              value={userData.lastName ?? ""}
-              {...requiredFieldProps("lastName")}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="E-Mail"
-              value={userData.email ?? ""}
-              {...requiredFieldProps("email")}
-            />
-          </Grid>
-          {hasPhysical && (
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Telefon"
-                value={userData.phone ?? ""}
-                {...requiredFieldProps("phone")}
-              />
-            </Grid>
-          )}
-        </Grid>
-      </Box>
+        <div {...stylex.props(s.divider)}><Divider /></div>
+        <div {...stylex.props(s.formGrid)}>
+          <TextInput width="100%" label="Vorname" {...req("firstName")} />
+          <TextInput width="100%" label="Nachname" {...req("lastName")} />
+          <TextInput width="100%" label="E-Mail" {...req("email")} />
+          {hasPhysical && <TextInput width="100%" label="Telefon" {...req("phone")} />}
+        </div>
+      </div>
 
       {/* ── Address — only when something has to be shipped ── */}
       {hasPhysical ? (
-        <Box mb={3}>
+        <div {...stylex.props(s.section)}>
           <SectionHeader title="Lieferadresse" />
-          <Divider sx={{ mb: 1.5 }} />
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Straße & Hausnummer"
-                value={userData.street ?? ""}
-                {...requiredFieldProps("street")}
-              />
-            </Grid>
-            <Grid item xs={5} sm={3}>
-              <TextField
-                fullWidth
-                label="PLZ"
-                value={userData.zip ?? ""}
-                {...requiredFieldProps("zip")}
-              />
-            </Grid>
-            <Grid item xs={7} sm={5}>
-              <TextField
-                fullWidth
-                label="Stadt"
-                value={userData.city ?? ""}
-                {...requiredFieldProps("city")}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                fullWidth
+          <div {...stylex.props(s.divider)}><Divider /></div>
+          <div {...stylex.props(s.formGrid)}>
+            <div {...stylex.props(s.full)}>
+              <TextInput width="100%" label="Straße & Hausnummer" {...req("street")} />
+            </div>
+            <TextInput width="100%" label="PLZ" {...req("zip")} />
+            <TextInput width="100%" label="Stadt" {...req("city")} />
+            <div {...stylex.props(s.full)}>
+              <TextInput
+                width="100%"
                 label="Bundesland"
-                name="state"
                 value={userData.state ?? ""}
-                onChange={handleChange}
+                onChange={(v) => setUserData((prev: any) => ({ ...prev, state: v }))}
               />
-            </Grid>
-          </Grid>
-        </Box>
+            </div>
+          </div>
+        </div>
       ) : (
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Deine Bestellung enthält nur digitale Produkte — eine Lieferadresse ist nicht nötig.
-        </Typography>
+        <div style={{ marginBottom: 24 }}>
+          <Text type="body" color="secondary">
+            Deine Bestellung enthält nur digitale Produkte — eine Lieferadresse ist nicht nötig.
+          </Text>
+        </div>
       )}
 
       {/* ── Payment ── */}
-      <Box mb={2}>
+      <div {...stylex.props(s.section)}>
         <SectionHeader title="Zahlung" />
-        <Divider sx={{ mb: 1.5 }} />
+        <div {...stylex.props(s.divider)}><Divider /></div>
         {paymentDisabled && (
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-            Bitte fülle alle Pflichtfelder aus, um die Zahlung fortzusetzen.
-          </Typography>
+          <div style={{ marginBottom: 12 }}>
+            <Text type="body" color="secondary">
+              Bitte fülle alle Pflichtfelder aus, um die Zahlung fortzusetzen.
+            </Text>
+          </div>
         )}
         {!paypalAvailable && !stripeAvailable && <PaymentUnavailable />}
         {stripeAvailable && (
-          <Box sx={{ mb: paypalAvailable ? 2 : 0 }}>
+          <div style={{ marginBottom: paypalAvailable ? 16 : 0 }}>
             <StripeForm
               description={`Fotobestellung (${selectedImages.length} Bilder)`}
               disabled={paymentDisabled}
@@ -338,12 +295,12 @@ export default function PaymentForm(props: Props): ReactElement {
               shootingId={shootingId}
               userData={userData}
             />
-          </Box>
+          </div>
         )}
         {paypalAvailable && stripeAvailable && (
-          <Divider sx={{ my: 2 }}>
-            <Typography variant="caption" color="text.secondary">oder</Typography>
-          </Divider>
+          <div {...stylex.props(s.orRow)}>
+            <Divider label="oder" />
+          </div>
         )}
         {paypalAvailable && (
           <PaypalForm
@@ -356,14 +313,12 @@ export default function PaymentForm(props: Props): ReactElement {
             onPaid={onPaid}
           />
         )}
-      </Box>
+      </div>
 
       {/* ── Back button ── */}
-      <Box mt={2}>
-        <Button variant="outlined" startIcon={<ArrowBack />} onClick={handleBack}>
-          Zurück
-        </Button>
-      </Box>
-    </Box>
+      <div {...stylex.props(s.back)}>
+        <Button variant="secondary" icon={<ArrowBack />} label="Zurück" onClick={handleBack} />
+      </div>
+    </div>
   );
 }

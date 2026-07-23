@@ -1,13 +1,10 @@
 import { ReactElement } from "react";
-import { Cancel, Delete, Edit, Save } from "@mui/icons-material";
-import {
-  Card,
-  CardContent,
-  Grid,
-  IconButton,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { CircleX as Cancel, Trash2 as Delete, Pencil as Edit, Save } from "lucide-react";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { TextArea } from "@astryxdesign/core/TextArea";
+import { Heading } from "@astryxdesign/core/Heading";
+import * as stylex from "@stylexjs/stylex";
 
 import { Price } from "../../../../utils/types";
 
@@ -26,6 +23,20 @@ type Props = {
   setEdit: (edit: boolean[]) => void;
 };
 
+const s = stylex.create({
+  card: {
+    borderRadius: "var(--radius-container)",
+    border: "1px solid var(--color-border)",
+    backgroundColor: "var(--color-background-card)",
+    padding: 16,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  },
+  head: { display: "flex", alignItems: "center", justifyContent: "space-between" },
+  actions: { display: "flex", gap: 4 },
+});
+
 export default function PriceEdit(props: Props): ReactElement {
   const {
     prices,
@@ -39,111 +50,72 @@ export default function PriceEdit(props: Props): ReactElement {
   } = props;
   return (
     <>
-      {prices.map((tier: Price, index) => {
-        return (
-          <Grid key={tier.id} item xs={12} md={4} lg={4}>
-            <form>
-              <Card>
-                <CardContent>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="h6">Preis {index + 1}</Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      {!edit[index] && (
-                        <IconButton
-                          sx={{ float: "right" }}
-                          onClick={() => handleEdit(index, "price")}
-                        >
-                          <Edit />
-                        </IconButton>
-                      )}
-                      {edit[index] && (
-                        <>
-                          <IconButton
-                            sx={{ float: "right" }}
-                            onClick={() => handleUpdate(tier, index)}
-                          >
-                            <Save />
-                          </IconButton>
-                          <IconButton
-                            sx={{ float: "right" }}
-                            onClick={() => handleCancel(index, "price")}
-                          >
-                            <Cancel />
-                          </IconButton>
-                        </>
-                      )}
-                      <IconButton
-                        sx={{ float: "right" }}
-                        onClick={() => {
-                          setActivePrice(tier)
-                          setOpenDeleteModal(true)
-                        }}
-                      >
-                        <Delete />
-                      </IconButton>
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Titel"
-                        name="title"
-                        required
-                        size="small"
-                        variant="outlined"
-                        value={tier?.title}
-                        onChange={(e) => {
-                          const newPrice = [...prices];
-                          newPrice[index].title = e.target.value;
-                          setPrices(newPrice);
-                        }}
-                        disabled={!edit[index]}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        type={"number"}
-                        label="Preis"
-                        name="price"
-                        required
-                        size="small"
-                        variant="outlined"
-                        onChange={(e) => {
-                          const newPrice = [...prices];
-                          newPrice[index].amount = e.target.value;
-                          setPrices(newPrice);
-                        }}
-                        value={tier.amount}
-                        disabled={!edit[index]}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Beschreibung"
-                        name="description"
-                        required
-                        multiline
-                        size="small"
-                        variant="outlined"
-                        onChange={(e) => {
-                          const newPrice = [...prices];
-                          newPrice[index].description = e.target.value;
-                          setPrices(newPrice);
-                        }}
-                        value={tier.description}
-                        disabled={!edit[index]}
-                      />
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-            </form>
-          </Grid>
-        );
-      })}
+      {prices.map((tier: Price, index) => (
+        <div key={tier.id} {...stylex.props(s.card)}>
+          <div {...stylex.props(s.head)}>
+            <Heading level={6}>Preis {index + 1}</Heading>
+            <div {...stylex.props(s.actions)}>
+              {!edit[index] && (
+                <IconButton variant="ghost" icon={<Edit />} label="Bearbeiten" onClick={() => handleEdit(index, "price")} />
+              )}
+              {edit[index] && (
+                <>
+                  <IconButton variant="ghost" icon={<Save />} label="Speichern" onClick={() => handleUpdate(tier, index)} />
+                  <IconButton variant="ghost" icon={<Cancel />} label="Abbrechen" onClick={() => handleCancel(index, "price")} />
+                </>
+              )}
+              <IconButton
+                variant="ghost"
+                icon={<Delete />}
+                label="Löschen"
+                onClick={() => {
+                  setActivePrice(tier);
+                  setOpenDeleteModal(true);
+                }}
+              />
+            </div>
+          </div>
+          <TextInput
+            width="100%"
+            size="sm"
+            label="Titel"
+            isRequired
+            isDisabled={!edit[index]}
+            value={tier?.title ?? ""}
+            onChange={(v) => {
+              const newPrice = [...prices];
+              newPrice[index].title = v;
+              setPrices(newPrice);
+            }}
+          />
+          <TextInput
+            width="100%"
+            size="sm"
+           
+            label="Preis"
+            isRequired
+            isDisabled={!edit[index]}
+            value={tier.amount ?? ""}
+            onChange={(v) => {
+              const newPrice = [...prices];
+              newPrice[index].amount = v;
+              setPrices(newPrice);
+            }}
+          />
+          <TextArea
+            width="100%"
+            label="Beschreibung"
+            isRequired
+            isDisabled={!edit[index]}
+            value={tier.description ?? ""}
+            onChange={(v) => {
+              const newPrice = [...prices];
+              newPrice[index].description = v;
+              setPrices(newPrice);
+            }}
+          />
+        </div>
+      ))}
     </>
   );
 }

@@ -1,5 +1,5 @@
-import { Check, RadioButtonUnchecked } from "@mui/icons-material";
-import { Box } from "@mui/material";
+import { Check, Circle as RadioButtonUnchecked } from "lucide-react";
+import * as stylex from "@stylexjs/stylex";
 import { ReactElement, useState } from "react";
 
 type Props = {
@@ -17,6 +17,55 @@ export function thumbUrl(image: string, size = "400x0"): string {
   return image + (image.includes("?") ? "&" : "?") + "thumb=" + size;
 }
 
+const s = stylex.create({
+  tile: {
+    position: "relative",
+    overflow: "hidden",
+    cursor: "pointer",
+    backgroundColor: "var(--color-background-muted)",
+    borderRadius: "var(--radius-element)",
+  },
+  img: (loaded: boolean, selected: boolean) => ({
+    display: "block",
+    width: "100%",
+    opacity: loaded ? (selected ? 0.75 : 1) : 0,
+    transition: "opacity 0.3s ease, transform 0.35s ease",
+  }),
+  check: (visible: boolean, selected: boolean) => ({
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 26,
+    height: 26,
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "opacity 0.2s ease",
+    opacity: visible ? 1 : 0,
+    color: "#fff",
+    backgroundColor: selected ? "var(--color-accent)" : "rgba(0,0,0,0.35)",
+    border: selected ? "none" : "1.5px solid rgba(255,255,255,0.9)",
+  }),
+  badge: {
+    position: "absolute",
+    left: 8,
+    bottom: 8,
+    padding: "2px 8px",
+    borderRadius: 999,
+    fontSize: "0.7rem",
+    fontWeight: 600,
+    letterSpacing: "0.06em",
+    color: "#fff",
+    backgroundColor: "rgba(0,0,0,0.55)",
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+  },
+  smallIcon: { fontSize: 18 },
+  tinyIcon: { fontSize: 13 },
+});
+
 // One tile of the album grid: fades in on load, zooms slightly on hover,
 // shows an instagram-like check bubble in select mode.
 export default function AlbumImage(props: Props): ReactElement {
@@ -24,82 +73,33 @@ export default function AlbumImage(props: Props): ReactElement {
   const [loaded, setLoaded] = useState(false);
 
   return (
-    <Box
-      onClick={onClick}
-      sx={{
-        position: "relative",
-        overflow: "hidden",
-        cursor: "pointer",
-        bgcolor: "action.hover",
-        borderRadius: 0.5,
-        "&:hover img": { transform: "scale(1.03)" },
-        "&:hover .tileCheck": { opacity: 1 },
-      }}
-    >
-      <Box
-        component="img"
+    <div className="album-tile" onClick={onClick} {...stylex.props(s.tile)}>
+      <img
         src={thumbUrl(image)}
         alt=""
         loading="lazy"
         onLoad={() => setLoaded(true)}
-        sx={{
-          display: "block",
-          width: "100%",
-          opacity: loaded ? (isSelected ? 0.75 : 1) : 0,
-          transition: "opacity 0.3s ease, transform 0.35s ease",
-        }}
+        {...stylex.props(s.img(loaded, isSelected))}
       />
 
       {/* select bubble: always in select mode, on hover otherwise */}
-      <Box
-        className="tileCheck"
-        sx={{
-          position: "absolute",
-          top: 8,
-          right: 8,
-          width: 26,
-          height: 26,
-          borderRadius: "50%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          transition: "opacity 0.2s ease",
-          opacity: selectMode || isSelected ? 1 : 0,
-          color: "#fff",
-          bgcolor: isSelected ? "primary.main" : "rgba(0,0,0,0.35)",
-          border: isSelected ? "none" : "1.5px solid rgba(255,255,255,0.9)",
-        }}
+      <div
+        className="album-tile-check"
+        {...stylex.props(s.check(selectMode || isSelected, isSelected))}
       >
         {isSelected ? (
-          <Check sx={{ fontSize: 18 }} />
+          <Check {...stylex.props(s.smallIcon)} />
         ) : (
-          <RadioButtonUnchecked sx={{ fontSize: 18, opacity: 0.01 }} />
+          <RadioButtonUnchecked style={{ fontSize: 18, opacity: 0.01 }} />
         )}
-      </Box>
+      </div>
 
       {/* customer's submitted selection */}
       {isInUserSelection && (
-        <Box
-          sx={{
-            position: "absolute",
-            left: 8,
-            bottom: 8,
-            px: 1,
-            py: 0.25,
-            borderRadius: 999,
-            fontSize: "0.7rem",
-            fontWeight: 600,
-            letterSpacing: "0.06em",
-            color: "#fff",
-            bgcolor: "rgba(0,0,0,0.55)",
-            display: "flex",
-            alignItems: "center",
-            gap: 0.5,
-          }}
-        >
-          <Check sx={{ fontSize: 13 }} /> AUSGEWÄHLT
-        </Box>
+        <div {...stylex.props(s.badge)}>
+          <Check {...stylex.props(s.tinyIcon)} /> AUSGEWÄHLT
+        </div>
       )}
-    </Box>
+    </div>
   );
 }

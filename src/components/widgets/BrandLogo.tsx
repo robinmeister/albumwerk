@@ -1,5 +1,4 @@
-import { Avatar } from "@mui/material";
-import { PhotoCamera } from "@mui/icons-material";
+import { Camera as PhotoCamera } from "lucide-react";
 import { ReactElement } from "react";
 
 import { settingsFileUrl } from "../../config/settings";
@@ -21,8 +20,19 @@ export default function BrandLogo({ size = 64 }: { size?: number }): ReactElemen
     );
   }
   return (
-    <Avatar sx={{ width: size, height: size, bgcolor: "primary.main" }}>
-      <PhotoCamera sx={{ fontSize: size * 0.55 }} />
-    </Avatar>
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        backgroundColor: "var(--color-accent)",
+        color: "var(--color-on-accent)",
+      }}
+    >
+      <PhotoCamera style={{ fontSize: size * 0.55 }} />
+    </span>
   );
 }

@@ -1,25 +1,12 @@
 import { ReactElement, useEffect, useMemo, useState } from "react";
-import {
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Divider,
-  IconButton,
-  InputAdornment,
-  TextField,
-  Tooltip,
-  Typography,
-} from "@mui/material";
-import {
-  Add,
-  ArrowBack,
-  Delete,
-  Edit,
-  PhotoCamera,
-  Search,
-  Upload,
-} from "@mui/icons-material";
+import { Badge } from "@astryxdesign/core/Badge";
+import { Button } from "@astryxdesign/core/Button";
+import { Spinner } from "@astryxdesign/core/Spinner";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
+import { Plus as Add, ArrowLeft as ArrowBack, Trash2 as Delete, Pencil as Edit, Camera as PhotoCamera, Search, Upload } from "lucide-react";
 import { toast } from "react-toastify";
 import {
   collection,
@@ -44,201 +31,213 @@ import { getUsersSnapshot } from "../../utils/functions";
 import { pb } from "../../config/pocketbase";
 import { getShootingCoverUrl } from "../../config/storage-compat";
 
-const TYPE_LABELS: Record<string, { label: string; color: "default" | "primary" | "success" | "warning" | "info" | "error" | "secondary" }> = {
-  paid:   { label: "Bezahlt",    color: "default" },
-  sale:   { label: "Verkauf",    color: "primary" },
+type BadgeVariant = "neutral" | "info" | "success";
+const TYPE_LABELS: Record<string, { label: string; color: BadgeVariant }> = {
+  paid:   { label: "Bezahlt",    color: "neutral" },
+  sale:   { label: "Verkauf",    color: "info" },
   public: { label: "Öffentlich", color: "success" },
 };
 
-/* ---- Left-panel list item (extracted to avoid re-mounting on every render) ---- */
+const MD = "@media (min-width: 900px)";
 
-type ShootingListItemProps = {
-  shooting: Shooting;
-  isSelected: boolean;
-  thumbnail?: string;
-  onClick: () => void;
-};
+const s = stylex.create({
+  loading: { display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" },
+  root: { paddingTop: 8 },
+  pageTitle: { marginBottom: 12, display: { default: "none", [MD]: "block" } },
+  panels: {
+    display: "flex",
+    flexDirection: { default: "column", [MD]: "row" },
+    border: "1px solid var(--color-border)",
+    borderRadius: "var(--radius-container)",
+    overflow: { default: "visible", [MD]: "hidden" },
+    height: { [MD]: "calc(100vh - 160px)" },
+    minHeight: { [MD]: 500 },
+    backgroundColor: "var(--color-background-card)",
+  },
+  left: {
+    width: { [MD]: 280 },
+    flexShrink: 0,
+    borderRight: { [MD]: "1px solid var(--color-border)" },
+    borderBottom: { default: "1px solid var(--color-border)", [MD]: "none" },
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+  },
+  right: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+  },
+  // hide on mobile, always show from md up
+  hideOnMobile: { display: { default: "none", [MD]: "flex" } },
+  leftHead: { padding: 12, borderBottom: "1px solid var(--color-border)", flexShrink: 0, display: "flex", flexDirection: "column", gap: 10 },
+  list: { flex: 1, overflowY: "auto" },
+  listEmpty: { padding: 16, textAlign: "center", paddingTop: 32 },
+  item: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    padding: "8px 12px",
+    cursor: "pointer",
+    borderLeftWidth: 3,
+    borderLeftStyle: "solid",
+    transition: "background-color 0.15s",
+    backgroundColor: { default: "transparent", ":hover": "var(--color-overlay-hover)" },
+    borderLeftColor: "transparent",
+  },
+  itemSelected: {
+    borderLeftColor: "var(--color-accent)",
+    backgroundColor: "var(--color-background-muted)",
+  },
+  thumb: {
+    width: 52,
+    height: 52,
+    borderRadius: "var(--radius-element)",
+    overflow: "hidden",
+    flexShrink: 0,
+    backgroundColor: "var(--color-background-muted)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  thumbImg: { width: "100%", height: "100%", objectFit: "cover" },
+  placeholderIcon: { color: "var(--color-icon-disabled)", fontSize: 18 },
+  itemMain: { flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" },
+  rightEmpty: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 8 },
+  emptyIcon: { fontSize: 56, color: "var(--color-icon-disabled)", opacity: 0.5 },
+  rightScroll: { flex: 1, overflowY: "auto", padding: { default: 16, [MD]: 24 } },
+  cover: {
+    width: "100%",
+    height: 200,
+    backgroundColor: "var(--color-background-muted)",
+    borderRadius: "var(--radius-container)",
+    overflow: "hidden",
+    position: "relative",
+    marginBottom: 16,
+  },
+  coverPlaceholder: { display: "flex", alignItems: "center", justifyContent: "center", height: "100%" },
+  coverIcon: { fontSize: 48, color: "var(--color-icon-disabled)" },
+  overlayActions: { position: "absolute", top: 8, right: 8, display: "flex", gap: 4 },
+  overlayBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 34,
+    height: 34,
+    border: "none",
+    borderRadius: "var(--radius-full)",
+    cursor: "pointer",
+    color: "#111",
+    backgroundColor: { default: "rgba(255,255,255,0.92)", ":hover": "#fff" },
+  },
+  overlayBtnDanger: { color: "var(--color-error)" },
+  detailHead: { marginBottom: 24 },
+  titleRow: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 8, flexWrap: "wrap" },
+  titleMain: { flex: 1, minWidth: 0 },
+  chips: { display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 },
+  divider: { marginTop: 12, borderTop: "1px solid var(--color-border)" },
+  backBtn: { marginBottom: 16 },
+});
 
-function ShootingListItem({ shooting, isSelected, thumbnail, onClick }: ShootingListItemProps) {
-  const typeInfo = TYPE_LABELS[shooting.type] ?? { label: shooting.type, color: "default" as const };
+function ShootingListItem({
+  shooting, isSelected, thumbnail, onClick,
+}: { shooting: Shooting; isSelected: boolean; thumbnail?: string; onClick: () => void }) {
+  const typeInfo = TYPE_LABELS[shooting.type] ?? { label: shooting.type, color: "neutral" as const };
   return (
-    <Box
-      onClick={onClick}
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        gap: 1.5,
-        px: 1.5,
-        py: 1,
-        cursor: "pointer",
-        borderLeft: "3px solid",
-        borderLeftColor: isSelected ? "primary.main" : "transparent",
-        bgcolor: isSelected ? "action.selected" : "transparent",
-        "&:hover": { bgcolor: isSelected ? "action.selected" : "action.hover" },
-        transition: "background-color 0.15s",
-      }}
-    >
-      <Box
-        sx={{
-          width: 52,
-          height: 52,
-          borderRadius: 1,
-          overflow: "hidden",
-          flexShrink: 0,
-          bgcolor: "grey.100",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
+    <div onClick={onClick} {...stylex.props(s.item, isSelected && s.itemSelected)}>
+      <div {...stylex.props(s.thumb)}>
         {thumbnail ? (
-          <img src={thumbnail} alt={shooting.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={thumbnail} alt={shooting.title} {...stylex.props(s.thumbImg)} />
         ) : (
-          <PhotoCamera sx={{ color: "grey.400", fontSize: 18 }} />
+          <PhotoCamera {...stylex.props(s.placeholderIcon)} />
         )}
-      </Box>
-      <Box flex={1} minWidth={0}>
-        <Typography variant="body2" fontWeight={isSelected ? 600 : 400} noWrap title={shooting.title}>
+      </div>
+      <div {...stylex.props(s.itemMain)}>
+        <Text type="body" weight={isSelected ? "semibold" : "normal"} maxLines={1}>
           {shooting.title}
-        </Typography>
-        <Chip
-          label={typeInfo.label}
-          color={typeInfo.color}
-          size="small"
-          sx={{ mt: 0.25, height: 18, fontSize: "0.65rem" }}
-        />
-      </Box>
-    </Box>
+        </Text>
+        <Badge variant={typeInfo.color} label={typeInfo.label} />
+      </div>
+    </div>
   );
 }
 
-/* ---- Right-panel detail header ---- */
-
-type ShootingDetailHeaderProps = {
-  shooting: Shooting;
-  thumbnail?: string;
-  users: User[];
-  prices: Price[];
-  packages: Package[];
-  onEdit: () => void;
-  onUpload: () => void;
-  onDelete: () => void;
-};
-
-function ShootingDetailHeader({ shooting, thumbnail, users, prices, packages, onEdit, onUpload, onDelete }: ShootingDetailHeaderProps) {
-  const typeInfo = TYPE_LABELS[shooting.type] ?? { label: shooting.type, color: "default" as const };
+function ShootingDetailHeader({
+  shooting, thumbnail, users, prices, packages, onEdit, onUpload, onDelete,
+}: {
+  shooting: Shooting; thumbnail?: string; users: User[]; prices: Price[]; packages: Package[];
+  onEdit: () => void; onUpload: () => void; onDelete: () => void;
+}) {
+  const typeInfo = TYPE_LABELS[shooting.type] ?? { label: shooting.type, color: "neutral" as const };
   const assignedUsers   = users.filter(u => (shooting.userIds  ?? []).includes(u.uid));
   const assignedPrices  = prices.filter(p => (shooting.priceIds ?? []).includes(p.id));
   const assignedPackage = packages.find(pk => pk.id === shooting.packageId);
 
   return (
-    <Box sx={{ mb: 3 }}>
-      {/* Cover image */}
-      <Box
-        sx={{
-          width: "100%",
-          height: 200,
-          bgcolor: "grey.100",
-          borderRadius: 2,
-          overflow: "hidden",
-          position: "relative",
-          mb: 2,
-        }}
-      >
+    <div {...stylex.props(s.detailHead)}>
+      <div {...stylex.props(s.cover)}>
         {thumbnail ? (
-          <img src={thumbnail} alt={shooting.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={thumbnail} alt={shooting.title} {...stylex.props(s.thumbImg)} />
         ) : (
-          <Box display="flex" alignItems="center" justifyContent="center" height="100%">
-            <PhotoCamera sx={{ fontSize: 48, color: "grey.400" }} />
-          </Box>
+          <div {...stylex.props(s.coverPlaceholder)}>
+            <PhotoCamera {...stylex.props(s.coverIcon)} />
+          </div>
         )}
-        {/* Action buttons overlay */}
-        <Box sx={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 0.5 }}>
-          <Tooltip title="Bearbeiten">
-            <IconButton
-              size="small"
-              sx={{ bgcolor: "rgba(255,255,255,0.92)", "&:hover": { bgcolor: "white" } }}
-              onClick={onEdit}
-            >
-              <Edit fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Bilder hochladen">
-            <IconButton
-              size="small"
-              sx={{ bgcolor: "rgba(255,255,255,0.92)", "&:hover": { bgcolor: "white" } }}
-              onClick={onUpload}
-            >
-              <Upload fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Shooting löschen">
-            <IconButton
-              size="small"
-              sx={{ bgcolor: "rgba(255,255,255,0.92)", "&:hover": { bgcolor: "white" }, color: "error.main" }}
-              onClick={onDelete}
-            >
-              <Delete fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      </Box>
+        <div {...stylex.props(s.overlayActions)}>
+          <button aria-label="Bearbeiten" title="Bearbeiten" onClick={onEdit} {...stylex.props(s.overlayBtn)}>
+            <Edit />
+          </button>
+          <button aria-label="Bilder hochladen" title="Bilder hochladen" onClick={onUpload} {...stylex.props(s.overlayBtn)}>
+            <Upload />
+          </button>
+          <button aria-label="Shooting löschen" title="Shooting löschen" onClick={onDelete} {...stylex.props(s.overlayBtn, s.overlayBtnDanger)}>
+            <Delete />
+          </button>
+        </div>
+      </div>
 
-      {/* Title + type */}
-      <Box display="flex" alignItems="flex-start" justifyContent="space-between" gap={1} mb={1} flexWrap="wrap">
-        <Box flex={1} minWidth={0}>
-          <Typography variant="h6" fontWeight={600} noWrap title={shooting.title}>
-            {shooting.title}
-          </Typography>
+      <div {...stylex.props(s.titleRow)}>
+        <div {...stylex.props(s.titleMain)}>
+          <Heading level={6} maxLines={1}>{shooting.title}</Heading>
           {shooting.description && (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-              {shooting.description}
-            </Typography>
+            <Text type="body" color="secondary">{shooting.description}</Text>
           )}
-        </Box>
-        <Chip label={typeInfo.label} color={typeInfo.color} sx={{ flexShrink: 0 }} />
-      </Box>
+        </div>
+        <Badge variant={typeInfo.color} label={typeInfo.label} />
+      </div>
 
-      {/* Assigned users */}
       {assignedUsers.length > 0 && (
-        <Box display="flex" flexWrap="wrap" gap={0.5} mb={0.75}>
+        <div {...stylex.props(s.chips)}>
           {assignedUsers.map(u => (
-            <Chip key={u.uid} label={`${u.firstName} ${u.lastName}`} size="small" variant="outlined" />
+            <Badge key={u.uid} variant="neutral" label={`${u.firstName} ${u.lastName}`} />
           ))}
-        </Box>
+        </div>
       )}
-
-      {/* Assigned prices */}
       {assignedPrices.length > 0 && (
-        <Box display="flex" flexWrap="wrap" gap={0.5} mb={0.75}>
+        <div {...stylex.props(s.chips)}>
           {assignedPrices.map(p => (
-            <Chip key={p.id} label={`${p.title} – ${p.amount}€`} size="small" variant="outlined" />
+            <Badge key={p.id} variant="neutral" label={`${p.title} – ${p.amount}€`} />
           ))}
-        </Box>
+        </div>
       )}
-
-      {/* Assigned package */}
       {assignedPackage && (
-        <Box mb={0.75}>
-          <Chip
+        <div {...stylex.props(s.chips)}>
+          <Badge
+            variant="neutral"
             label={`${assignedPackage.title} – ${assignedPackage.numberOfImages} Stk. – ${assignedPackage.totalPrice}€`}
-            size="small"
-            variant="outlined"
           />
-        </Box>
+        </div>
       )}
 
-      <Divider sx={{ mt: 1.5 }} />
-    </Box>
+      <div {...stylex.props(s.divider)} />
+    </div>
   );
 }
-
-/* ---- Main page ---- */
 
 export default function AdminAlbumPage(): ReactElement {
   const isMobile = useMobileService();
 
-  /* modal / flag states */
   const [openDeleteModal, setOpenDeleteModal]   = useState(false);
   const [openEditModal,   setOpenEditModal]     = useState(false);
   const [reload,          setReload]            = useState(0);
@@ -247,10 +246,8 @@ export default function AdminAlbumPage(): ReactElement {
   const [selectMode,      setSelectMode]        = useState(false);
   const [loading,         setLoading]           = useState(false);
 
-  /* image selection */
   const [selected, setSelected] = useState<string[]>([]);
 
-  /* data */
   const [shootings,       setShootings]       = useState<Shooting[]>([]);
   const [selectedShooting,setSelectedShooting]= useState<Shooting | undefined>();
   const [users,           setUsers]           = useState<User[]>([]);
@@ -260,7 +257,6 @@ export default function AdminAlbumPage(): ReactElement {
   const [selectedPrices,  setSelectedPrices]  = useState<Price[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<Package | undefined>();
 
-  /* left panel */
   const [search,     setSearch]     = useState("");
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
 
@@ -366,86 +362,37 @@ export default function AdminAlbumPage(): ReactElement {
 
   if (loading && shootings.length === 0) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
-      </Box>
+      <div {...stylex.props(s.loading)}>
+        <Spinner size="lg" />
+      </div>
     );
   }
 
   return (
     <AlbumContext.Provider value={{
-      selectedShooting,
-      setSelectedShooting,
-      selectedUsers,
-      setSelectedUsers,
-      selectedPrices,
-      setSelectedPrices,
-      selectedPackage,
-      setSelectedPackage,
-      shootings,
-      setShootings,
-      users,
-      setUsers,
-      prices,
-      setPrices,
-      packages,
-      setPackages,
-      reload,
-      setReload,
-      openEditModal,
-      setOpenEditModal,
-      openDeleteModal,
-      setOpenDeleteModal,
-      selectMode,
-      setSelectMode,
-      selected,
-      setSelected,
-      openUploadModal,
-      setOpenUploadModal,
-      handleDeleteShooting,
-      setShowShooting: () => {},
-      addPackage,
-      setAddPackage,
+      selectedShooting, setSelectedShooting, selectedUsers, setSelectedUsers,
+      selectedPrices, setSelectedPrices, selectedPackage, setSelectedPackage,
+      shootings, setShootings, users, setUsers, prices, setPrices, packages, setPackages,
+      reload, setReload, openEditModal, setOpenEditModal, openDeleteModal, setOpenDeleteModal,
+      selectMode, setSelectMode, selected, setSelected, openUploadModal, setOpenUploadModal,
+      handleDeleteShooting, setShowShooting: () => {}, addPackage, setAddPackage,
     }}>
-      <Box sx={{ pt: 1 }}>
-        <Typography variant="h5" fontWeight={700} sx={{ mb: 1.5, display: { xs: "none", md: "block" } }}>
-          Album
-        </Typography>
+      <div {...stylex.props(s.root)}>
+        <div {...stylex.props(s.pageTitle)}>
+          <Heading level={5}>Album</Heading>
+        </div>
 
         {/* ===== Two-panel container ===== */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", md: "row" },
-            border: "1px solid",
-            borderColor: "divider",
-            borderRadius: 2,
-            overflow: { xs: "visible", md: "hidden" },
-            height: { md: "calc(100vh - 160px)" },
-            minHeight: { md: 500 },
-            bgcolor: "background.paper",
-          }}
-        >
+        <div {...stylex.props(s.panels)}>
           {/* ===== LEFT PANEL ===== */}
-          <Box
-            sx={{
-              width: { md: 280 },
-              flexShrink: 0,
-              borderRight: { md: "1px solid" },
-              borderBottom: { xs: "1px solid", md: "none" },
-              borderColor: "divider",
-              display: { xs: selectedShooting ? "none" : "flex", md: "flex" },
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
-          >
-            {/* Left header */}
-            <Box sx={{ p: 1.5, borderBottom: "1px solid", borderColor: "divider", flexShrink: 0 }}>
+          <div {...stylex.props(s.left, selectedShooting && s.hideOnMobile)}>
+            <div {...stylex.props(s.leftHead)}>
               <Button
-                variant="contained"
-                fullWidth
-                size="small"
-                startIcon={<Add />}
+                variant="primary"
+                width="100%"
+                size="sm"
+                icon={<Add />}
+                label="Neues Shooting"
                 onClick={() => {
                   setSelectedShooting(emptyShooting);
                   setSelectedUsers([]);
@@ -453,75 +400,59 @@ export default function AdminAlbumPage(): ReactElement {
                   setSelectedPackage(undefined);
                   setOpenEditModal(true);
                 }}
-              >
-                Neues Shooting
-              </Button>
-              <TextField
-                fullWidth
-                size="small"
+              />
+              <TextInput
+                label="Suche"
+                isLabelHidden
+                width="100%"
+                size="sm"
+                startIcon={<Search />}
                 placeholder="Suche…"
                 value={search}
-                onChange={e => setSearch(e.target.value)}
-                sx={{ mt: 1.25 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
+                onChange={(v) => setSearch(v)}
               />
-            </Box>
+            </div>
 
-            {/* Shooting list */}
-            <Box sx={{ flex: 1, overflowY: "auto" }}>
+            <div {...stylex.props(s.list)}>
               {filteredShootings.length === 0 ? (
-                <Typography color="text.secondary" variant="body2" sx={{ p: 2, textAlign: "center", pt: 4 }}>
-                  {search ? "Keine Ergebnisse" : "Keine Shootings"}
-                </Typography>
+                <div {...stylex.props(s.listEmpty)}>
+                  <Text type="body" color="secondary">
+                    {search ? "Keine Ergebnisse" : "Keine Shootings"}
+                  </Text>
+                </div>
               ) : (
-                filteredShootings.map(s => (
+                filteredShootings.map(sh => (
                   <ShootingListItem
-                    key={s.id}
-                    shooting={s}
-                    isSelected={selectedShooting?.id === s.id}
-                    thumbnail={thumbnails[s.id]}
-                    onClick={() => setSelectedShooting(s)}
+                    key={sh.id}
+                    shooting={sh}
+                    isSelected={selectedShooting?.id === sh.id}
+                    thumbnail={thumbnails[sh.id]}
+                    onClick={() => setSelectedShooting(sh)}
                   />
                 ))
               )}
-            </Box>
-          </Box>
+            </div>
+          </div>
 
           {/* ===== RIGHT PANEL ===== */}
-          <Box
-            sx={{
-              flex: 1,
-              display: { xs: selectedShooting ? "flex" : "none", md: "flex" },
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
-          >
+          <div {...stylex.props(s.right, !selectedShooting && s.hideOnMobile)}>
             {!selectedShooting ? (
-              /* Desktop empty state */
-              <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" flex={1} gap={1}>
-                <PhotoCamera sx={{ fontSize: 56, color: "text.disabled", opacity: 0.5 }} />
-                <Typography variant="body1" color="text.secondary">
-                  Shooting auswählen
-                </Typography>
-              </Box>
+              <div {...stylex.props(s.rightEmpty)}>
+                <PhotoCamera {...stylex.props(s.emptyIcon)} />
+                <Text type="body" color="secondary">Shooting auswählen</Text>
+              </div>
             ) : (
-              <Box sx={{ flex: 1, overflowY: "auto", p: { xs: 2, md: 3 } }}>
-                {/* Mobile: back to list */}
+              <div {...stylex.props(s.rightScroll)}>
                 {isMobile && (
-                  <Button
-                    startIcon={<ArrowBack />}
-                    onClick={() => setSelectedShooting(undefined)}
-                    sx={{ mb: 2 }}
-                    size="small"
-                  >
-                    Alle Shootings
-                  </Button>
+                  <div {...stylex.props(s.backBtn)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<ArrowBack />}
+                      label="Alle Shootings"
+                      onClick={() => setSelectedShooting(undefined)}
+                    />
+                  </div>
                 )}
 
                 <ShootingDetailHeader
@@ -544,11 +475,11 @@ export default function AdminAlbumPage(): ReactElement {
                   selectMode={selectMode}
                   setSelectMode={setSelectMode}
                 />
-              </Box>
+              </div>
             )}
-          </Box>
-        </Box>
-      </Box>
+          </div>
+        </div>
+      </div>
 
       {/* Modals */}
       <UploadComponent />

@@ -1,23 +1,14 @@
-import {
-  Alert,
-  AppBar,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  Divider,
-  Grid,
-  MenuItem,
-  Slider,
-  Step,
-  StepLabel,
-  Stepper,
-  TextField,
-  Toolbar,
-  Typography,
-} from "@mui/material";
-import { ThemeProvider } from "@mui/material/styles";
+import { Banner } from "@astryxdesign/core/Banner";
+import { Button } from "@astryxdesign/core/Button";
+import { Divider } from "@astryxdesign/core/Divider";
+import { Selector } from "@astryxdesign/core/Selector";
+import { Slider } from "@astryxdesign/core/Slider";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { TextArea } from "@astryxdesign/core/TextArea";
+import { Theme } from "@astryxdesign/core";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
 import { ReactElement, ReactNode, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useDropzone } from "react-dropzone";
@@ -33,7 +24,7 @@ import {
   settingsFileUrl,
 } from "../../config/settings";
 import { useSettings } from "../../context/SettingsContext";
-import { buildTheme } from "../../utils/theme";
+import { buildAstryxTheme, themeModeProp } from "../../utils/theme";
 import PaymentSettings from "../../features/Settings/components/PaymentSettings";
 
 const FONT_OPTIONS: { value: FontKey; label: string }[] = [
@@ -55,6 +46,69 @@ type FileFields = {
   watermarkLogo: File | null;
 };
 
+const f = stylex.create({
+  card: {
+    borderRadius: "var(--radius-container)",
+    border: "1px solid var(--color-border)",
+    backgroundColor: "var(--color-background-card)",
+    overflow: "hidden",
+  },
+  cardHead: { padding: "16px", borderBottom: "1px solid var(--color-border)", display: "flex", flexDirection: "column", gap: 2 },
+  cardBody: { padding: 16 },
+  grid2: { display: "grid", gridTemplateColumns: { default: "1fr", "@media (min-width: 600px)": "1fr 1fr" }, gap: 16 },
+  grid1: { display: "grid", gridTemplateColumns: "1fr", gap: 16 },
+  full: { gridColumn: "1 / -1" },
+  drop: {
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderRadius: "var(--radius-element)",
+    padding: 16,
+    textAlign: "center",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: 16,
+    minHeight: 72,
+  },
+  dropImg: { height: 48, width: 48, objectFit: "contain" },
+  dropPlaceholder: { height: 48, width: 48, backgroundColor: "var(--color-background-muted)", borderRadius: "var(--radius-element)" },
+  colorField: { display: "flex", flexDirection: "column", gap: 4 },
+  colorInput: { width: "100%", height: 40, borderRadius: "var(--radius-element)", border: "1px solid var(--color-border)", background: "none", cursor: "pointer", padding: 2 },
+  sliderWrap: { display: "flex", flexDirection: "column", gap: 6 },
+  ol: { paddingLeft: 20, margin: "8px 0 0", display: "flex", flexDirection: "column", gap: 6 },
+  layout: { display: "grid", gridTemplateColumns: { default: "1fr", "@media (min-width: 900px)": "8fr 4fr" }, gap: 16, alignItems: "start" },
+  sections: { display: "flex", flexDirection: "column", gap: 16 },
+  wizardNav: { display: "flex", justifyContent: "space-between", marginTop: 16 },
+  saveRow: { display: "flex", justifyContent: "flex-end" },
+  stepper: { display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" },
+  step: { display: "flex", alignItems: "center", gap: 6 },
+  dot: { display: "inline-flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: "var(--radius-full)", fontSize: 12, fontWeight: 600, backgroundColor: "var(--color-background-muted)", color: "var(--color-text-secondary)" },
+  dotActive: { backgroundColor: "var(--color-accent)", color: "var(--color-on-accent)" },
+  preview: { position: { "@media (min-width: 900px)": "sticky" }, top: 16, display: "flex", flexDirection: "column", gap: 8 },
+  regenRow: { display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" },
+});
+
+function SectionCard({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
+  return (
+    <div {...stylex.props(f.card)}>
+      <div {...stylex.props(f.cardHead)}>
+        <Heading level={6}>{title}</Heading>
+        <Text type="supporting" color="secondary">{subtitle}</Text>
+      </div>
+      <div {...stylex.props(f.cardBody)}>{children}</div>
+    </div>
+  );
+}
+
+function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <label {...stylex.props(f.colorField)}>
+      <Text type="supporting" color="secondary">{label}</Text>
+      <input type="color" value={value} onChange={(e) => onChange(e.target.value)} {...stylex.props(f.colorInput)} />
+    </label>
+  );
+}
+
 function ImageDrop(props: {
   label: string;
   currentUrl: string;
@@ -70,81 +124,82 @@ function ImageDrop(props: {
   const previewUrl = file ? URL.createObjectURL(file) : currentUrl;
 
   return (
-    <Box
+    <div
       {...getRootProps()}
-      sx={{
-        border: "2px dashed",
-        borderColor: isDragActive ? "primary.main" : "grey.400",
-        borderRadius: 1,
-        p: 2,
-        textAlign: "center",
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        gap: 2,
-        minHeight: 72,
-      }}
+      {...stylex.props(f.drop)}
+      style={{ borderColor: isDragActive ? "var(--color-accent)" : "var(--color-border)" }}
     >
       <input {...getInputProps()} />
       {previewUrl ? (
-        <img
-          src={previewUrl}
-          alt={label}
-          style={{ height: 48, width: 48, objectFit: "contain" }}
-        />
+        <img src={previewUrl} alt={label} {...stylex.props(f.dropImg)} />
       ) : (
-        <Box sx={{ height: 48, width: 48, bgcolor: "grey.200", borderRadius: 1 }} />
+        <div {...stylex.props(f.dropPlaceholder)} />
       )}
-      <Typography variant="body2" color="text.secondary">
+      <Text type="body" color="secondary">
         {label} — Bild hierher ziehen oder klicken
-      </Typography>
-    </Box>
+      </Text>
+    </div>
   );
 }
 
+const preview = stylex.create({
+  card: {
+    overflow: "hidden",
+    borderRadius: "var(--radius-container)",
+    border: "1px solid var(--color-border)",
+    backgroundColor: "var(--color-background-body)",
+  },
+  bar: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "10px 16px",
+    borderBottom: "1px solid var(--color-border)",
+    backgroundColor: "var(--color-background-surface)",
+  },
+  spacer: { flexGrow: 1 },
+  body: { padding: 20, display: "flex", flexDirection: "column", gap: 12 },
+  actions: { display: "flex", gap: 8 },
+  grid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4 },
+  swatch: {
+    paddingTop: "100%",
+    backgroundColor: "var(--color-accent)",
+    borderRadius: "var(--radius-element)",
+  },
+});
+
 function ThemePreview({ draft }: { draft: AppSettings }): ReactElement {
-  const previewTheme = useMemo(() => buildTheme(draft), [draft]);
+  const previewTheme = useMemo(() => buildAstryxTheme(draft), [draft]);
   return (
-    <ThemeProvider theme={previewTheme}>
-      <Card sx={{ bgcolor: "background.default", overflow: "hidden" }}>
-        <AppBar position="static" color="default">
-          <Toolbar variant="dense">
-            <Typography variant="h6" sx={{ fontSize: "1rem", fontWeight: 600 }}>
-              {draft.businessName || "Fotogalerie"}
-            </Typography>
-            <Box sx={{ flexGrow: 1 }} />
-            <Typography variant="subtitle2" color="text.secondary">
-              Album
-            </Typography>
-          </Toolbar>
-        </AppBar>
-        <CardContent>
-          <Typography variant="h4" gutterBottom>
-            {draft.tagline || "So sieht dein Album aus"}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" paragraph>
+    <Theme theme={previewTheme} mode={themeModeProp(draft)}>
+      <div {...stylex.props(preview.card)}>
+        <div {...stylex.props(preview.bar)}>
+          <Text type="label" weight="semibold">
+            {draft.businessName || "Fotogalerie"}
+          </Text>
+          <div {...stylex.props(preview.spacer)} />
+          <Text type="supporting" color="secondary">
+            Album
+          </Text>
+        </div>
+        <div {...stylex.props(preview.body)}>
+          <Heading level={4}>{draft.tagline || "So sieht dein Album aus"}</Heading>
+          <Text type="body" color="secondary">
             Überschriften, Schrift, Farben und Hell/Dunkel folgen deinen
             Einstellungen.
-          </Typography>
-          <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
-            <Button variant="contained" color="primary">Primär</Button>
-            <Button variant="outlined" color="secondary">Sekundär</Button>
-          </Box>
-          <Grid container spacing={0.5}>
+          </Text>
+          <div {...stylex.props(preview.actions)}>
+            <Button variant="primary" label="Primär" />
+            <Button variant="secondary" label="Sekundär" />
+          </div>
+          <div {...stylex.props(preview.grid)}>
             {[0.9, 0.75, 0.6].map((op) => (
-              <Grid item xs={4} key={op}>
-                <Box sx={{
-                  paddingTop: "100%",
-                  bgcolor: "primary.main",
-                  opacity: op * 0.35,
-                  borderRadius: 0.5,
-                }} />
-              </Grid>
+              <div key={op} {...stylex.props(preview.swatch)} style={{ opacity: op * 0.35 }} />
             ))}
-          </Grid>
-        </CardContent>
-      </Card>
-    </ThemeProvider>
+          </div>
+        </div>
+      </div>
+    </Theme>
   );
 }
 
@@ -155,11 +210,7 @@ export default function BrandingPage(): ReactElement {
   const setupMode = searchParams.get("setup") === "1";
 
   const [draft, setDraft] = useState<AppSettings>(settings);
-  const [files, setFiles] = useState<FileFields>({
-    logo: null,
-    favicon: null,
-    watermarkLogo: null,
-  });
+  const [files, setFiles] = useState<FileFields>({ logo: null, favicon: null, watermarkLogo: null });
   const [saving, setSaving] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
@@ -171,8 +222,7 @@ export default function BrandingPage(): ReactElement {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded]);
 
-  const set = (patch: Partial<AppSettings>) =>
-    setDraft((d) => ({ ...d, ...patch }));
+  const set = (patch: Partial<AppSettings>) => setDraft((d) => ({ ...d, ...patch }));
 
   const save = async (markCompleted = false) => {
     setSaving(true);
@@ -184,7 +234,7 @@ export default function BrandingPage(): ReactElement {
         "websiteUrl", "customDomain", "currency",
         "imprintHtml", "privacyHtml", "watermarkText",
       ];
-      textFields.forEach((f) => fd.append(f, String(draft[f] ?? "")));
+      textFields.forEach((k) => fd.append(k, String(draft[k] ?? "")));
       fd.append("borderRadius", String(draft.borderRadius ?? 8));
       fd.append("watermarkOpacity", String(draft.watermarkOpacity ?? 40));
       fd.append("previewMaxSize", String(draft.previewMaxSize ?? 1200));
@@ -209,10 +259,7 @@ export default function BrandingPage(): ReactElement {
   const regeneratePreviews = async () => {
     setRegenerating(true);
     try {
-      const result = await pb.send("/api/custom/regenerate-previews", {
-        method: "POST",
-        body: {},
-      });
+      const result = await pb.send("/api/custom/regenerate-previews", { method: "POST", body: {} });
       toast.success(
         `Vorschauen neu erzeugt: ${result.generated ?? 0}` +
           (result.failed ? `, fehlgeschlagen: ${result.failed}` : ""),
@@ -225,28 +272,19 @@ export default function BrandingPage(): ReactElement {
     }
   };
 
-  // Persist the current draft (without marking setup complete) before moving to
-  // the next wizard step, so progress survives a reload or abort mid-setup.
   const goNext = async () => {
     await save(false);
     setActiveStep((s) => s + 1);
   };
 
-  // Client-side reachability check: if the browser can reach the domain over
-  // HTTPS, DNS resolves and Caddy has a valid certificate for it. no-cors keeps
-  // the request from failing on the cross-origin response (we only care whether
-  // it resolves at all).
   const checkDomain = async () => {
     const domain = draft.customDomain.trim().toLowerCase();
     if (!domain) return;
     setCheckingDomain(true);
     setDomainStatus("idle");
     try {
-      await save(false); // make sure the ask-endpoint knows this domain
-      await fetch(`https://${domain}/api/health`, {
-        mode: "no-cors",
-        cache: "no-store",
-      });
+      await save(false);
+      await fetch(`https://${domain}/api/health`, { mode: "no-cors", cache: "no-store" });
       setDomainStatus("ok");
     } catch (_) {
       setDomainStatus("fail");
@@ -256,236 +294,125 @@ export default function BrandingPage(): ReactElement {
   };
 
   const brandingSection = (
-    <Card>
-      <CardHeader title="Branding" subheader="Name, Logo, Farben und Schrift" />
-      <CardContent>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField fullWidth label="Name des Geschäfts" value={draft.businessName}
-              onChange={(e) => set({ businessName: e.target.value })} />
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <TextField fullWidth label="Kurzname (App)" inputProps={{ maxLength: 12 }}
-              value={draft.shortName} onChange={(e) => set({ shortName: e.target.value })} />
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <TextField fullWidth select label="Schriftart" value={draft.fontFamily}
-              onChange={(e) => set({ fontFamily: e.target.value as FontKey })}>
-              {FONT_OPTIONS.map((o) => (
-                <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField fullWidth select label="Erscheinungsbild" value={draft.themeMode}
-              onChange={(e) => set({ themeMode: e.target.value as ThemeMode })}>
-              {MODE_OPTIONS.map((o) => (
-                <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid item xs={12}>
-            <TextField fullWidth label="Slogan / Untertitel" value={draft.tagline}
-              onChange={(e) => set({ tagline: e.target.value })} />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <ImageDrop label="Logo" file={files.logo}
-              currentUrl={settingsFileUrl(settings, "logo")}
-              onFile={(f) => setFiles((s) => ({ ...s, logo: f }))} />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <ImageDrop label="Favicon (optional)" file={files.favicon}
-              currentUrl={settingsFileUrl(settings, "favicon")}
-              onFile={(f) => setFiles((s) => ({ ...s, favicon: f }))} />
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <TextField fullWidth type="color" label="Primärfarbe" value={draft.primaryColor}
-              onChange={(e) => set({ primaryColor: e.target.value })}
-              InputLabelProps={{ shrink: true }} />
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <TextField fullWidth type="color" label="Sekundärfarbe" value={draft.secondaryColor}
-              onChange={(e) => set({ secondaryColor: e.target.value })}
-              InputLabelProps={{ shrink: true }} />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Eckenradius: {draft.borderRadius}px
-            </Typography>
-            <Slider size="small" min={0} max={24} value={draft.borderRadius}
-              onChange={(_, v) => set({ borderRadius: v as number })} />
-          </Grid>
-        </Grid>
-      </CardContent>
-    </Card>
+    <SectionCard title="Branding" subtitle="Name, Logo, Farben und Schrift">
+      <div {...stylex.props(f.grid2)}>
+        <div {...stylex.props(f.full)}>
+          <TextInput width="100%" label="Name des Geschäfts" value={draft.businessName}
+            onChange={(v) => set({ businessName: v })} />
+        </div>
+        <TextInput width="100%" label="Kurzname (App)" value={draft.shortName}
+          onChange={(v) => set({ shortName: v.slice(0, 12) })} />
+        <Selector width="100%" label="Schriftart" value={draft.fontFamily}
+          options={FONT_OPTIONS} onChange={(v) => v && set({ fontFamily: v as FontKey })} />
+        <Selector width="100%" label="Erscheinungsbild" value={draft.themeMode}
+          options={MODE_OPTIONS} onChange={(v) => v && set({ themeMode: v as ThemeMode })} />
+        <div {...stylex.props(f.full)}>
+          <TextInput width="100%" label="Slogan / Untertitel" value={draft.tagline}
+            onChange={(v) => set({ tagline: v })} />
+        </div>
+        <ImageDrop label="Logo" file={files.logo}
+          currentUrl={settingsFileUrl(settings, "logo")}
+          onFile={(file) => setFiles((s) => ({ ...s, logo: file }))} />
+        <ImageDrop label="Favicon (optional)" file={files.favicon}
+          currentUrl={settingsFileUrl(settings, "favicon")}
+          onFile={(file) => setFiles((s) => ({ ...s, favicon: file }))} />
+        <ColorField label="Primärfarbe" value={draft.primaryColor} onChange={(v) => set({ primaryColor: v })} />
+        <ColorField label="Sekundärfarbe" value={draft.secondaryColor} onChange={(v) => set({ secondaryColor: v })} />
+        <div {...stylex.props(f.sliderWrap, f.full)}>
+          <Text type="supporting" color="secondary">Eckenradius: {draft.borderRadius}px</Text>
+          <Slider label="Eckenradius" isLabelHidden min={0} max={24}
+            value={draft.borderRadius} onChange={(v) => set({ borderRadius: v })} />
+        </div>
+      </div>
+    </SectionCard>
   );
 
   const contactSection = (
-    <Card>
-      <CardHeader title="Kontakt & Geschäft" subheader="E-Mail-Adressen und Website" />
-      <CardContent>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField fullWidth label="Kontakt-E-Mail (Support)" type="email"
-              value={draft.contactEmail}
-              onChange={(e) => set({ contactEmail: e.target.value })} />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField fullWidth label="Bestell-Benachrichtigungen an" type="email"
-              helperText="Hier gehen neue Bestellungen ein"
-              value={draft.orderNotificationEmail}
-              onChange={(e) => set({ orderNotificationEmail: e.target.value })} />
-          </Grid>
-          <Grid item xs={12} sm={8}>
-            <TextField fullWidth label="Website (optional)" type="url"
-              value={draft.websiteUrl}
-              onChange={(e) => set({ websiteUrl: e.target.value })} />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField fullWidth label="Währung" inputProps={{ maxLength: 3 }}
-              helperText="ISO-Code, z. B. EUR"
-              value={draft.currency}
-              onChange={(e) => set({ currency: e.target.value.toUpperCase() })} />
-          </Grid>
-        </Grid>
-      </CardContent>
-    </Card>
+    <SectionCard title="Kontakt & Geschäft" subtitle="E-Mail-Adressen und Website">
+      <div {...stylex.props(f.grid2)}>
+        <TextInput width="100%" type="email" label="Kontakt-E-Mail (Support)"
+          value={draft.contactEmail} onChange={(v) => set({ contactEmail: v })} />
+        <TextInput width="100%" type="email" label="Bestell-Benachrichtigungen an"
+          description="Hier gehen neue Bestellungen ein"
+          value={draft.orderNotificationEmail} onChange={(v) => set({ orderNotificationEmail: v })} />
+        <TextInput width="100%" label="Website (optional)"
+          value={draft.websiteUrl} onChange={(v) => set({ websiteUrl: v })} />
+        <TextInput width="100%" label="Währung" description="ISO-Code, z. B. EUR"
+          value={draft.currency} onChange={(v) => set({ currency: v.toUpperCase().slice(0, 3) })} />
+      </div>
+    </SectionCard>
   );
 
   const domainSection = (
-    <Card>
-      <CardHeader title="Eigene Domain"
-        subheader="Unter welcher Adresse soll dein Album erreichbar sein?" />
-      <CardContent>
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <TextField fullWidth label="Domain" placeholder="fotos.deine-domain.de"
-              value={draft.customDomain}
-              onChange={(e) => {
-                setDomainStatus("idle");
-                set({ customDomain: e.target.value.trim().toLowerCase() });
-              }}
-              helperText="Ohne https:// — z. B. fotos.deine-domain.de. Leer lassen, wenn (noch) keine eigene Domain." />
-          </Grid>
-          <Grid item xs={12}>
-            <Alert severity="info" sx={{ mb: 1 }}>
-              <Typography variant="body2" gutterBottom>
-                <strong>So richtest du deine Domain ein:</strong>
-              </Typography>
-              <Box component="ol" sx={{ pl: 2.5, m: 0, "& li": { mb: 0.75 } }}>
-                <Typography component="li" variant="body2">
-                  Lege bei deinem Domain-Anbieter einen <strong>A-Record</strong> (und
-                  optional AAAA für IPv6) an, der auf die <strong>IP-Adresse deines
-                  Servers</strong> zeigt.
-                </Typography>
-                <Typography component="li" variant="body2">
-                  Trage die Domain oben ein und speichere.
-                </Typography>
-                <Typography component="li" variant="body2">
-                  Das HTTPS-Zertifikat wird beim ersten Aufruf <strong>automatisch</strong>
-                  {" "}von Let's Encrypt geholt — du musst nichts weiter konfigurieren.
-                </Typography>
-              </Box>
-            </Alert>
-          </Grid>
-          <Grid item xs={12}>
-            <Button variant="outlined" disabled={checkingDomain || !draft.customDomain.trim()}
-              onClick={() => void checkDomain()}>
-              Domain prüfen
-            </Button>
-            {domainStatus === "ok" && (
-              <Alert severity="success" sx={{ mt: 2 }}>
-                Deine Domain ist erreichbar und per HTTPS gesichert.
-              </Alert>
-            )}
-            {domainStatus === "fail" && (
-              <Alert severity="warning" sx={{ mt: 2 }}>
-                Noch nicht erreichbar. Das ist direkt nach dem Anlegen des
-                DNS-Eintrags normal — es kann einige Minuten bis Stunden dauern,
-                bis die Änderung überall aktiv ist. Später erneut prüfen.
-              </Alert>
-            )}
-          </Grid>
-        </Grid>
-      </CardContent>
-    </Card>
+    <SectionCard title="Eigene Domain" subtitle="Unter welcher Adresse soll dein Album erreichbar sein?">
+      <div {...stylex.props(f.grid1)}>
+        <TextInput width="100%" label="Domain" placeholder="fotos.deine-domain.de"
+          description="Ohne https:// — z. B. fotos.deine-domain.de. Leer lassen, wenn (noch) keine eigene Domain."
+          value={draft.customDomain}
+          onChange={(v) => { setDomainStatus("idle"); set({ customDomain: v.trim().toLowerCase() }); }} />
+        <Banner status="info" title="So richtest du deine Domain ein:">
+          <ol {...stylex.props(f.ol)}>
+            <li><Text type="body">Lege bei deinem Domain-Anbieter einen <strong>A-Record</strong> (und optional AAAA für IPv6) an, der auf die <strong>IP-Adresse deines Servers</strong> zeigt.</Text></li>
+            <li><Text type="body">Trage die Domain oben ein und speichere.</Text></li>
+            <li><Text type="body">Das HTTPS-Zertifikat wird beim ersten Aufruf <strong>automatisch</strong> von Let's Encrypt geholt — du musst nichts weiter konfigurieren.</Text></li>
+          </ol>
+        </Banner>
+        <div {...stylex.props(f.regenRow)}>
+          <Button variant="secondary" label="Domain prüfen" isLoading={checkingDomain}
+            isDisabled={checkingDomain || !draft.customDomain.trim()} onClick={() => void checkDomain()} />
+          {domainStatus === "ok" && (
+            <Banner status="success" title="Deine Domain ist erreichbar und per HTTPS gesichert." />
+          )}
+          {domainStatus === "fail" && (
+            <Banner status="warning" title="Noch nicht erreichbar. Das ist direkt nach dem Anlegen des DNS-Eintrags normal — es kann einige Minuten bis Stunden dauern, bis die Änderung überall aktiv ist. Später erneut prüfen." />
+          )}
+        </div>
+      </div>
+    </SectionCard>
   );
 
   const paymentSection = (
-    <Card>
-      <CardHeader title="Zahlung"
-        subheader="PayPal und Kartenzahlung (Stripe) — optional, jederzeit änderbar" />
-      <CardContent>
-        <PaymentSettings compact />
-      </CardContent>
-    </Card>
+    <SectionCard title="Zahlung" subtitle="PayPal und Kartenzahlung (Stripe) — optional, jederzeit änderbar">
+      <PaymentSettings compact />
+    </SectionCard>
   );
 
   const legalSection = (
-    <Card>
-      <CardHeader title="Rechtliches"
-        subheader="Wird öffentlich unter /imprint und /privacy angezeigt (HTML erlaubt)" />
-      <CardContent>
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <TextField fullWidth multiline minRows={6} label="Impressum"
-              value={draft.imprintHtml}
-              onChange={(e) => set({ imprintHtml: e.target.value })} />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField fullWidth multiline minRows={6} label="Datenschutzerklärung"
-              value={draft.privacyHtml}
-              onChange={(e) => set({ privacyHtml: e.target.value })} />
-          </Grid>
-        </Grid>
-      </CardContent>
-    </Card>
+    <SectionCard title="Rechtliches" subtitle="Wird öffentlich unter /imprint und /privacy angezeigt (HTML erlaubt)">
+      <div {...stylex.props(f.grid1)}>
+        <TextArea width="100%" rows={6} label="Impressum" value={draft.imprintHtml}
+          onChange={(v) => set({ imprintHtml: v })} />
+        <TextArea width="100%" rows={6} label="Datenschutzerklärung" value={draft.privacyHtml}
+          onChange={(v) => set({ privacyHtml: v })} />
+      </div>
+    </SectionCard>
   );
 
   const watermarkSection = (
-    <Card>
-      <CardHeader title="Wasserzeichen & Vorschau"
-        subheader="Für die automatisch erzeugten Vorschaubilder in Alben" />
-      <CardContent>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField fullWidth label="Wasserzeichen-Text"
-              helperText="Leer lassen, um den Geschäftsnamen zu verwenden"
-              value={draft.watermarkText}
-              onChange={(e) => set({ watermarkText: e.target.value })} />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <ImageDrop label="Wasserzeichen-Logo (optional, statt Text)"
-              file={files.watermarkLogo}
-              currentUrl={settingsFileUrl(settings, "watermarkLogo")}
-              onFile={(f) => setFiles((s) => ({ ...s, watermarkLogo: f }))} />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Deckkraft: {draft.watermarkOpacity}%
-            </Typography>
-            <Slider size="small" min={5} max={100} value={draft.watermarkOpacity}
-              onChange={(_, v) => set({ watermarkOpacity: v as number })} />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField fullWidth type="number" label="Max. Vorschaugröße (px)"
-              inputProps={{ min: 200, max: 4000 }}
-              value={draft.previewMaxSize}
-              onChange={(e) => set({ previewMaxSize: Number(e.target.value) })} />
-          </Grid>
-          <Grid item xs={12}>
-            <Button variant="outlined" disabled={regenerating}
-              onClick={() => void regeneratePreviews()}>
-              Vorschauen neu erzeugen
-            </Button>
-            <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-              Nach Änderungen am Wasserzeichen für alle Alben neu generieren
-              (kann einige Minuten dauern).
-            </Typography>
-          </Grid>
-        </Grid>
-      </CardContent>
-    </Card>
+    <SectionCard title="Wasserzeichen & Vorschau" subtitle="Für die automatisch erzeugten Vorschaubilder in Alben">
+      <div {...stylex.props(f.grid2)}>
+        <TextInput width="100%" label="Wasserzeichen-Text"
+          description="Leer lassen, um den Geschäftsnamen zu verwenden"
+          value={draft.watermarkText} onChange={(v) => set({ watermarkText: v })} />
+        <ImageDrop label="Wasserzeichen-Logo (optional, statt Text)" file={files.watermarkLogo}
+          currentUrl={settingsFileUrl(settings, "watermarkLogo")}
+          onFile={(file) => setFiles((s) => ({ ...s, watermarkLogo: file }))} />
+        <div {...stylex.props(f.sliderWrap)}>
+          <Text type="supporting" color="secondary">Deckkraft: {draft.watermarkOpacity}%</Text>
+          <Slider label="Deckkraft" isLabelHidden min={5} max={100}
+            value={draft.watermarkOpacity} onChange={(v) => set({ watermarkOpacity: v })} />
+        </div>
+        <TextInput width="100%" label="Max. Vorschaugröße (px)"
+          value={String(draft.previewMaxSize)} onChange={(v) => set({ previewMaxSize: Number(v) })} />
+        <div {...stylex.props(f.regenRow, f.full)}>
+          <Button variant="secondary" label="Vorschauen neu erzeugen" isLoading={regenerating}
+            isDisabled={regenerating} onClick={() => void regeneratePreviews()} />
+          <Text type="supporting" color="secondary">
+            Nach Änderungen am Wasserzeichen für alle Alben neu generieren (kann einige Minuten dauern).
+          </Text>
+        </div>
+      </div>
+    </SectionCard>
   );
 
   const steps: { label: string; content: ReactNode }[] = [
@@ -499,43 +426,37 @@ export default function BrandingPage(): ReactElement {
   return (
     <Page title={setupMode ? "Einrichtung" : "Branding & Einstellungen"}>
       {setupMode && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          Willkommen! Richte dein Album in wenigen Schritten ein. Alles
-          lässt sich später unter „Branding“ ändern.
-        </Alert>
+        <div style={{ marginBottom: 16 }}>
+          <Banner status="info" title="Willkommen! Richte dein Album in wenigen Schritten ein. Alles lässt sich später unter „Branding“ ändern." />
+        </div>
       )}
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={7} lg={8}>
+      <div {...stylex.props(f.layout)}>
+        <div>
           {setupMode ? (
-            <Box>
-              <Stepper activeStep={activeStep} sx={{ mb: 2 }} alternativeLabel>
-                {steps.map((s) => (
-                  <Step key={s.label}>
-                    <StepLabel>{s.label}</StepLabel>
-                  </Step>
+            <div>
+              <div {...stylex.props(f.stepper)}>
+                {steps.map((st, idx) => (
+                  <div key={st.label} {...stylex.props(f.step)}>
+                    <span {...stylex.props(f.dot, idx <= activeStep && f.dotActive)}>{idx + 1}</span>
+                    <Text type="supporting" color={idx <= activeStep ? "primary" : "secondary"}>{st.label}</Text>
+                  </div>
                 ))}
-              </Stepper>
+              </div>
               {steps[activeStep].content}
-              <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-                <Button disabled={activeStep === 0}
-                  onClick={() => setActiveStep((s) => s - 1)}>
-                  Zurück
-                </Button>
+              <div {...stylex.props(f.wizardNav)}>
+                <Button variant="secondary" label="Zurück" isDisabled={activeStep === 0}
+                  onClick={() => setActiveStep((s) => s - 1)} />
                 {activeStep < steps.length - 1 ? (
-                  <Button variant="contained" disabled={saving}
-                    onClick={() => void goNext()}>
-                    Weiter
-                  </Button>
+                  <Button variant="primary" label="Weiter" isDisabled={saving} isLoading={saving}
+                    onClick={() => void goNext()} />
                 ) : (
-                  <Button variant="contained" disabled={saving}
-                    onClick={() => void save(true)}>
-                    Einrichtung abschließen
-                  </Button>
+                  <Button variant="primary" label="Einrichtung abschließen" isDisabled={saving} isLoading={saving}
+                    onClick={() => void save(true)} />
                 )}
-              </Box>
-            </Box>
+              </div>
+            </div>
           ) : (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <div {...stylex.props(f.sections)}>
               {brandingSection}
               {domainSection}
               {contactSection}
@@ -543,24 +464,18 @@ export default function BrandingPage(): ReactElement {
               {watermarkSection}
               {legalSection}
               <Divider />
-              <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                <Button variant="contained" size="large" disabled={saving}
-                  onClick={() => void save(false)}>
-                  Speichern
-                </Button>
-              </Box>
-            </Box>
+              <div {...stylex.props(f.saveRow)}>
+                <Button variant="primary" size="lg" label="Speichern" isDisabled={saving} isLoading={saving}
+                  onClick={() => void save(false)} />
+              </div>
+            </div>
           )}
-        </Grid>
-        <Grid item xs={12} md={5} lg={4}>
-          <Box sx={{ position: { md: "sticky" }, top: { md: 16 } }}>
-            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-              Live-Vorschau
-            </Typography>
-            <ThemePreview draft={draft} />
-          </Box>
-        </Grid>
-      </Grid>
+        </div>
+        <div {...stylex.props(f.preview)}>
+          <Text type="label" weight="semibold" color="secondary">Live-Vorschau</Text>
+          <ThemePreview draft={draft} />
+        </div>
+      </div>
     </Page>
   );
 }

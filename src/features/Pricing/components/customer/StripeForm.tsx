@@ -1,5 +1,7 @@
-import { Box, Button, CircularProgress, Typography } from "@mui/material";
-import { CreditCard } from "@mui/icons-material";
+import { Button } from "@astryxdesign/core/Button";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
+import { CreditCard } from "lucide-react";
 import { ReactElement, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -13,6 +15,10 @@ type Props = {
   shootingId?: string;
   userData: User;
 };
+
+const s = stylex.create({
+  root: { display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" },
+});
 
 // Card payment via Stripe Checkout: the server hook prices the selection,
 // creates a session and stores a payment intent. We redirect to Stripe's hosted
@@ -44,20 +50,20 @@ export default function StripeForm(props: Props): ReactElement {
   };
 
   return (
-    <Box display="flex" flexDirection="column" gap={1}>
+    <div {...stylex.props(s.root)}>
       <Button
-        variant="contained"
-        size="large"
-        startIcon={redirecting ? <CircularProgress size={18} color="inherit" /> : <CreditCard />}
-        disabled={disabled || redirecting}
+        variant="primary"
+        size="lg"
+        icon={<CreditCard />}
+        isLoading={redirecting}
+        isDisabled={disabled || redirecting}
+        label={redirecting ? "Weiterleitung zu Stripe …" : "Mit Karte zahlen"}
         onClick={() => void startCheckout()}
-      >
-        {redirecting ? "Weiterleitung zu Stripe …" : "Mit Karte zahlen"}
-      </Button>
-      <Typography variant="caption" color="text.secondary">
+      />
+      <Text type="supporting" color="secondary">
         Du wirst zur sicheren Bezahlseite von Stripe weitergeleitet
         (Kreditkarte, Apple Pay, Google Pay u. a.).
-      </Typography>
-    </Box>
+      </Text>
+    </div>
   );
 }

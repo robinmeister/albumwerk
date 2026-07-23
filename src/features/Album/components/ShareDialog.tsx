@@ -1,17 +1,11 @@
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  InputAdornment,
-  TextField,
-  Tooltip,
-  Typography,
-} from "@mui/material";
-import { ContentCopy, Download, IosShare } from "@mui/icons-material";
-import QRCodeCanvas from "qrcode.react";
+import { Dialog } from "@astryxdesign/core/Dialog";
+import { Button } from "@astryxdesign/core/Button";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
+import { Copy as ContentCopy, Download, Share as IosShare } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
 import { ReactElement, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -20,6 +14,23 @@ import { Shooting } from "../../../utils/types";
 type Props = {
   shooting: Shooting;
 };
+
+const s = stylex.create({
+  body: { display: "flex", flexDirection: "column", gap: 16, padding: 8 },
+  linkRow: { display: "flex", alignItems: "center", gap: 8 },
+  linkInput: {
+    flex: 1,
+    minWidth: 0,
+    padding: "8px 12px",
+    borderRadius: "var(--radius-element)",
+    border: "1px solid var(--color-border)",
+    backgroundColor: "var(--color-background-muted)",
+    color: "var(--color-text-primary)",
+    fontSize: 14,
+  },
+  qrWrap: { display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 12 },
+  qrBox: { padding: 12, backgroundColor: "#fff", borderRadius: "var(--radius-element)" },
+});
 
 // "Teilen" button + dialog: share link, copy to clipboard, QR code download.
 // Public shootings link straight to the album, everything else to the
@@ -56,56 +67,43 @@ export default function ShareDialog({ shooting }: Props): ReactElement {
   return (
     <>
       <Button
-        variant="outlined"
-        size="small"
-        startIcon={<IosShare />}
+        variant="secondary"
+        size="sm"
+        icon={<IosShare />}
+        label="Teilen"
         onClick={() => setOpen(true)}
-      >
-        Teilen
-      </Button>
+      />
 
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Album teilen</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+      <Dialog isOpen={open} onOpenChange={setOpen} width={380}>
+        <div {...stylex.props(s.body)}>
+          <Heading level={5}>Album teilen</Heading>
+          <Text type="body" color="secondary">
             {shooting.type === "public"
               ? "Jeder mit diesem Link kann das Album ansehen."
               : "Kunden registrieren sich über diesen Link und werden automatisch mit dem Album verknüpft."}
-          </Typography>
-          <TextField
-            fullWidth
-            size="small"
-            value={link}
-            InputProps={{
-              readOnly: true,
-              endAdornment: (
-                <InputAdornment position="end">
-                  <Tooltip title="Link kopieren">
-                    <IconButton onClick={() => void copyLink()} edge="end">
-                      <ContentCopy fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </InputAdornment>
-              ),
-            }}
-          />
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 1.5,
-              mt: 3,
-            }}
-          >
-            <Box sx={{ p: 1.5, bgcolor: "#fff", borderRadius: 1 }}>
+          </Text>
+          <div {...stylex.props(s.linkRow)}>
+            <input readOnly value={link} {...stylex.props(s.linkInput)} />
+            <IconButton
+              icon={<ContentCopy />}
+              label="Link kopieren"
+              tooltip="Link kopieren"
+              variant="secondary"
+              onClick={() => void copyLink()}
+            />
+          </div>
+          <div {...stylex.props(s.qrWrap)}>
+            <div {...stylex.props(s.qrBox)}>
               <QRCodeCanvas id="share-qr-code" value={link} size={168} />
-            </Box>
-            <Button startIcon={<Download />} onClick={downloadQRCode}>
-              QR-Code herunterladen
-            </Button>
-          </Box>
-        </DialogContent>
+            </div>
+            <Button
+              variant="secondary"
+              icon={<Download />}
+              label="QR-Code herunterladen"
+              onClick={downloadQRCode}
+            />
+          </div>
+        </div>
       </Dialog>
     </>
   );

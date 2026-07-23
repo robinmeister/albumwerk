@@ -1,23 +1,17 @@
 import { ReactElement, useEffect, useState } from "react";
-import {
-  Autocomplete,
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Divider,
-  FormControlLabel,
-  IconButton,
-  InputAdornment,
-  MenuItem,
-  Switch,
-  Tab,
-  Tabs,
-  TextField,
-  Tooltip,
-  Typography,
-} from "@mui/material";
-import { Add, ArrowBack, AutoAwesome, Delete, Euro, LocalOffer, Search } from "@mui/icons-material";
+import { Badge } from "@astryxdesign/core/Badge";
+import { Button } from "@astryxdesign/core/Button";
+import { Divider } from "@astryxdesign/core/Divider";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { Selector } from "@astryxdesign/core/Selector";
+import { Spinner } from "@astryxdesign/core/Spinner";
+import { Switch } from "@astryxdesign/core/Switch";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import { TextArea } from "@astryxdesign/core/TextArea";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
+import { Plus as Add, ArrowLeft as ArrowBack, Sparkles as AutoAwesome, Trash2 as Delete, Euro, Tag as LocalOffer, Search } from "lucide-react";
 import { toast } from "react-toastify";
 import {
   addDoc,
@@ -44,8 +38,6 @@ import {
   priceTitle,
 } from "../../features/Pricing/utils/catalog";
 
-/* ---- Types ---- */
-
 type PriceForm = {
   title: string;
   amount: string;
@@ -55,7 +47,7 @@ type PriceForm = {
   size: string;
 };
 
-type PackageForm = {
+type PackageFormType = {
   title: string;
   numberOfImages: string;
   totalPrice: string;
@@ -67,110 +59,120 @@ const EMPTY_PRICE_FORM: PriceForm = {
   title: "", amount: "", description: "", isDownloadable: false,
   category: "print", size: "",
 };
-const EMPTY_PKG_FORM: PackageForm  = { title: "", numberOfImages: "", totalPrice: "", singlePrice: "", description: "" };
+const EMPTY_PKG_FORM: PackageFormType = { title: "", numberOfImages: "", totalPrice: "", singlePrice: "", description: "" };
 
-/* ---- Shared sx helpers (module-level to avoid re-creation) ---- */
+const MD = "@media (min-width: 900px)";
 
-const listItemSx = (isSelected: boolean) => ({
-  display: "flex",
-  alignItems: "center",
-  gap: 1.5,
-  px: 1.5,
-  py: 1.25,
-  cursor: "pointer",
-  borderLeft: "3px solid",
-  borderLeftColor: isSelected ? "primary.main" : "transparent",
-  bgcolor: isSelected ? "action.selected" : "transparent",
-  "&:hover": { bgcolor: isSelected ? "action.selected" : "action.hover" },
-  transition: "background-color 0.15s",
-} as const);
+const s = stylex.create({
+  loading: { display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" },
+  root: { paddingTop: 8 },
+  pageTitle: { marginBottom: 12, display: { default: "none", [MD]: "block" } },
+  panels: {
+    display: "flex",
+    flexDirection: { default: "column", [MD]: "row" },
+    border: "1px solid var(--color-border)",
+    borderRadius: "var(--radius-container)",
+    overflow: { default: "visible", [MD]: "hidden" },
+    height: { [MD]: "calc(100vh - 160px)" },
+    minHeight: { [MD]: 500 },
+    backgroundColor: "var(--color-background-card)",
+  },
+  left: {
+    width: { [MD]: 280 },
+    flexShrink: 0,
+    borderRight: { [MD]: "1px solid var(--color-border)" },
+    borderBottom: { default: "1px solid var(--color-border)", [MD]: "none" },
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+  },
+  right: { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" },
+  hideOnMobile: { display: { default: "none", [MD]: "flex" } },
+  tabs: { display: "flex", borderBottom: "1px solid var(--color-border)", flexShrink: 0 },
+  tab: {
+    flex: 1,
+    padding: "12px 8px",
+    border: "none",
+    background: "none",
+    cursor: "pointer",
+    fontSize: "0.78rem",
+    fontWeight: 600,
+    color: "var(--color-text-secondary)",
+    borderBottomWidth: 2,
+    borderBottomStyle: "solid",
+    borderBottomColor: "transparent",
+  },
+  tabActive: { color: "var(--color-text-accent)", borderBottomColor: "var(--color-accent)" },
+  leftHead: { padding: 12, borderBottom: "1px solid var(--color-border)", flexShrink: 0, display: "flex", flexDirection: "column", gap: 10 },
+  list: { flex: 1, overflowY: "auto" },
+  listEmpty: { padding: 16, textAlign: "center", paddingTop: 32 },
+  groupLabel: { display: "block", padding: "12px 12px 2px", fontSize: "0.65rem", letterSpacing: "0.08em" },
+  item: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    padding: "10px 12px",
+    cursor: "pointer",
+    borderLeftWidth: 3,
+    borderLeftStyle: "solid",
+    borderLeftColor: "transparent",
+    transition: "background-color 0.15s",
+    backgroundColor: { default: "transparent", ":hover": "var(--color-overlay-hover)" },
+  },
+  itemSelected: { borderLeftColor: "var(--color-accent)", backgroundColor: "var(--color-background-muted)" },
+  itemIcon: (selected: boolean) => ({
+    width: 36,
+    height: 36,
+    borderRadius: "var(--radius-element)",
+    backgroundColor: selected ? "var(--color-accent)" : "var(--color-background-muted)",
+    color: selected ? "var(--color-on-accent)" : "var(--color-icon-secondary)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  }),
+  itemMain: { flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2, alignItems: "flex-start" },
+  itemSub: { display: "flex", gap: 4, alignItems: "center" },
+  rightEmpty: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 8 },
+  emptyIcon: { fontSize: 56, color: "var(--color-icon-disabled)", opacity: 0.4 },
+  rightScroll: { flex: 1, overflowY: "auto", padding: { default: 16, [MD]: 32 } },
+  formHead: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 },
+  form: { display: "flex", flexDirection: "column", gap: 20 },
+  formActions: { display: "flex", gap: 8, justifyContent: "flex-end" },
+  backBtn: { marginBottom: 16 },
+});
 
-const listIconSx = (isSelected: boolean) => ({
-  width: 36,
-  height: 36,
-  borderRadius: 1,
-  bgcolor: isSelected ? "primary.main" : "grey.100",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexShrink: 0,
-} as const);
-
-/* ---- Left-panel list items ---- */
-
-function PriceListItem({ price, isSelected, onClick }: { price: Price; isSelected: boolean; onClick: () => void }) {
+function ListItem({
+  icon, title, subtitle, badge, isSelected, onClick,
+}: { icon: ReactElement; title: string; subtitle: ReactElement; badge?: ReactElement; isSelected: boolean; onClick: () => void }) {
   return (
-    <Box onClick={onClick} sx={listItemSx(isSelected)}>
-      <Box sx={listIconSx(isSelected)}>
-        <Euro sx={{ fontSize: 18, color: isSelected ? "primary.contrastText" : "grey.500" }} />
-      </Box>
-      <Box flex={1} minWidth={0}>
-        <Typography variant="body2" fontWeight={isSelected ? 600 : 400} noWrap title={price.title}>
-          {price.title || "Unbenannt"}
-        </Typography>
-        <Box display="flex" gap={0.5} alignItems="center" mt={0.25}>
-          <Typography
-            variant="caption"
-            fontWeight={isSelected ? 600 : 400}
-            color={isSelected ? "primary.main" : "text.secondary"}
-          >
-            {price.amount}€{price.size ? ` · ${price.size}` : ""}
-          </Typography>
-          {price.isDownloadable && (
-            <Chip label="Download" size="small" color="info" sx={{ height: 16, fontSize: "0.6rem" }} />
-          )}
-        </Box>
-      </Box>
-    </Box>
+    <div onClick={onClick} {...stylex.props(s.item, isSelected && s.itemSelected)}>
+      <div {...stylex.props(s.itemIcon(isSelected))}>{icon}</div>
+      <div {...stylex.props(s.itemMain)}>
+        <Text type="body" weight={isSelected ? "semibold" : "normal"} maxLines={1}>{title}</Text>
+        <div {...stylex.props(s.itemSub)}>{subtitle}{badge}</div>
+      </div>
+    </div>
   );
 }
-
-function PackageListItem({ pkg, isSelected, onClick }: { pkg: Package; isSelected: boolean; onClick: () => void }) {
-  return (
-    <Box onClick={onClick} sx={listItemSx(isSelected)}>
-      <Box sx={listIconSx(isSelected)}>
-        <LocalOffer sx={{ fontSize: 18, color: isSelected ? "primary.contrastText" : "grey.500" }} />
-      </Box>
-      <Box flex={1} minWidth={0}>
-        <Typography variant="body2" fontWeight={isSelected ? 600 : 400} noWrap title={pkg.title}>
-          {pkg.title || "Unbenannt"}
-        </Typography>
-        <Typography
-          variant="caption"
-          fontWeight={isSelected ? 600 : 400}
-          color={isSelected ? "primary.main" : "text.secondary"}
-        >
-          {pkg.numberOfImages} Bilder · {pkg.totalPrice}€ · +{pkg.singlePrice}€/Bild
-        </Typography>
-      </Box>
-    </Box>
-  );
-}
-
-/* ---- Main page ---- */
 
 export default function AdminPricingPage(): ReactElement {
   const isMobile = useMobileService();
 
-  /* ---- data ---- */
   const [prices,   setPrices]   = useState<Price[]>([]);
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [saving,   setSaving]   = useState(false);
 
-  /* ---- navigation ---- */
   const [activeTab, setActiveTab] = useState(0); // 0 = prices, 1 = packages
   const [search,    setSearch]    = useState("");
 
-  /* ---- selection: undefined = nothing, "" = creating new, "<id>" = editing ---- */
   const [selectedPriceId,   setSelectedPriceId]   = useState<string | undefined>();
   const [selectedPackageId, setSelectedPackageId] = useState<string | undefined>();
 
-  /* ---- forms ---- */
   const [priceForm,   setPriceForm]   = useState<PriceForm>(EMPTY_PRICE_FORM);
-  const [packageForm, setPackageForm] = useState<PackageForm>(EMPTY_PKG_FORM);
+  const [packageForm, setPackageForm] = useState<PackageFormType>(EMPTY_PKG_FORM);
 
-  /* ---- modals ---- */
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
   const hasSelection = activeTab === 0 ? selectedPriceId !== undefined : selectedPackageId !== undefined;
@@ -179,8 +181,6 @@ export default function AdminPricingPage(): ReactElement {
     setLoading(true);
     void Promise.all([fetchPrices(), fetchPackages()]).finally(() => setLoading(false));
   }, []);
-
-  /* ---- data fetching ---- */
 
   async function fetchPrices() {
     const snap = await getDocs(collection("prices"));
@@ -191,8 +191,6 @@ export default function AdminPricingPage(): ReactElement {
     const snap = await getDocs(collection("packages"));
     setPackages(snap.docs.map((d: any) => ({ ...d.data(), id: d.id } as Package)));
   }
-
-  /* ---- price actions ---- */
 
   function selectPrice(price: Price) {
     setSelectedPriceId(price.id);
@@ -211,7 +209,6 @@ export default function AdminPricingPage(): ReactElement {
     setPriceForm(EMPTY_PRICE_FORM);
   }
 
-  // category drives the sensible defaults: digital ⇒ download, no size
   function setPriceCategory(category: PriceCategory) {
     setPriceForm(f => ({
       ...f,
@@ -221,7 +218,6 @@ export default function AdminPricingPage(): ReactElement {
     }));
   }
 
-  // add every catalog entry that doesn't exist yet (matched on category+size)
   async function insertStandardCatalog() {
     setSaving(true);
     try {
@@ -292,8 +288,6 @@ export default function AdminPricingPage(): ReactElement {
     setOpenDeleteModal(false);
   }
 
-  /* ---- package actions ---- */
-
   function selectPackage(pkg: Package) {
     setSelectedPackageId(pkg.id);
     setPackageForm({
@@ -310,7 +304,6 @@ export default function AdminPricingPage(): ReactElement {
     setPackageForm(EMPTY_PKG_FORM);
   }
 
-  // add every standard package whose image count doesn't exist yet
   async function insertStandardPackages() {
     setSaving(true);
     try {
@@ -319,7 +312,6 @@ export default function AdminPricingPage(): ReactElement {
       );
       for (const entry of missing) {
         await addDoc(collection("packages"), {
-          // `name` is a required legacy duplicate of title in the schema
           name:           entry.title,
           title:          entry.title,
           numberOfImages: entry.numberOfImages,
@@ -345,8 +337,6 @@ export default function AdminPricingPage(): ReactElement {
     try {
       const title = packageForm.title.trim() || packageTitle(packageForm.numberOfImages);
       const data = {
-        // `name` is a required legacy duplicate of title in the schema —
-        // without it, creating a package fails with "name: cannot be blank"
         name:           title,
         title:          title,
         numberOfImages: Number(packageForm.numberOfImages),
@@ -385,8 +375,6 @@ export default function AdminPricingPage(): ReactElement {
     setOpenDeleteModal(false);
   }
 
-  /* ---- filtered lists ---- */
-
   const filteredPrices = [...prices]
     .filter(p => (p.title ?? "").toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => (a.title ?? "").localeCompare(b.title ?? ""));
@@ -395,8 +383,6 @@ export default function AdminPricingPage(): ReactElement {
     .filter(p => (p.title ?? "").toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => Number(a.numberOfImages) - Number(b.numberOfImages));
 
-  /* ---- delete modal helpers ---- */
-
   const deleteLabel =
     activeTab === 0
       ? (prices.find(p => p.id === selectedPriceId)?.title ?? "Preis")
@@ -404,432 +390,299 @@ export default function AdminPricingPage(): ReactElement {
 
   const handleDeleteConfirm = activeTab === 0 ? deletePrice : deletePackage;
 
-  /* ---- loading ---- */
-
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
-      </Box>
+      <div {...stylex.props(s.loading)}>
+        <Spinner size="lg" />
+      </div>
     );
   }
 
-  /* ---- render ---- */
-
   return (
     <>
-      <Box sx={{ pt: 1 }}>
-        <Typography variant="h5" fontWeight={700} sx={{ mb: 1.5, display: { xs: "none", md: "block" } }}>
-          Preise
-        </Typography>
+      <div {...stylex.props(s.root)}>
+        <div {...stylex.props(s.pageTitle)}>
+          <Heading level={5}>Preise</Heading>
+        </div>
 
-        {/* Two-panel container */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", md: "row" },
-            border: "1px solid",
-            borderColor: "divider",
-            borderRadius: 2,
-            overflow: { xs: "visible", md: "hidden" },
-            height: { md: "calc(100vh - 160px)" },
-            minHeight: { md: 500 },
-            bgcolor: "background.paper",
-          }}
-        >
+        <div {...stylex.props(s.panels)}>
           {/* ===== LEFT PANEL ===== */}
-          <Box
-            sx={{
-              width: { md: 280 },
-              flexShrink: 0,
-              borderRight: { md: "1px solid" },
-              borderBottom: { xs: "1px solid", md: "none" },
-              borderColor: "divider",
-              display: { xs: hasSelection ? "none" : "flex", md: "flex" },
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
-          >
-            {/* Tabs */}
-            <Tabs
-              value={activeTab}
-              onChange={(_, v) => {
-                setActiveTab(v as number);
-                setSearch("");
-                setSelectedPriceId(undefined);
-                setSelectedPackageId(undefined);
-              }}
-              variant="fullWidth"
-              sx={{ borderBottom: "1px solid", borderColor: "divider", flexShrink: 0, minHeight: 44 }}
-            >
-              <Tab label="Einzelpreise" sx={{ fontSize: "0.78rem", minHeight: 44 }} />
-              <Tab label="Pakete"       sx={{ fontSize: "0.78rem", minHeight: 44 }} />
-            </Tabs>
+          <div {...stylex.props(s.left, hasSelection && s.hideOnMobile)}>
+            <div {...stylex.props(s.tabs)}>
+              {["Einzelpreise", "Pakete"].map((label, i) => (
+                <button
+                  key={label}
+                  {...stylex.props(s.tab, activeTab === i && s.tabActive)}
+                  onClick={() => {
+                    setActiveTab(i);
+                    setSearch("");
+                    setSelectedPriceId(undefined);
+                    setSelectedPackageId(undefined);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
-            {/* New button + Search */}
-            <Box sx={{ p: 1.5, borderBottom: "1px solid", borderColor: "divider", flexShrink: 0 }}>
+            <div {...stylex.props(s.leftHead)}>
               <Button
-                variant="contained"
-                fullWidth
-                size="small"
-                startIcon={<Add />}
+                variant="primary"
+                width="100%"
+                size="sm"
+                icon={<Add />}
+                label={activeTab === 0 ? "Neues Produkt" : "Neues Paket"}
                 onClick={() => (activeTab === 0 ? startNewPrice() : startNewPackage())}
-              >
-                {activeTab === 0 ? "Neues Produkt" : "Neues Paket"}
-              </Button>
-              <Tooltip
-                title={
+              />
+              <Button
+                variant="secondary"
+                width="100%"
+                size="sm"
+                icon={<AutoAwesome />}
+                isDisabled={saving}
+                tooltip={
                   activeTab === 0
                     ? "Fügt typische Produkte (Abzüge, Leinwand, Poster, Download) mit üblichen Preisen ein — alles bleibt anpassbar"
                     : "Fügt typische Bilderpakete (5 bis 40 Bilder) mit üblichen Preisen ein — alles bleibt anpassbar"
                 }
-              >
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  size="small"
-                  startIcon={<AutoAwesome />}
-                  disabled={saving}
-                  onClick={() =>
-                    void (activeTab === 0 ? insertStandardCatalog() : insertStandardPackages())
-                  }
-                  sx={{ mt: 1 }}
-                >
-                  {activeTab === 0 ? "Standard-Katalog einfügen" : "Standard-Pakete einfügen"}
-                </Button>
-              </Tooltip>
-              <TextField
-                fullWidth
-                size="small"
+                label={activeTab === 0 ? "Standard-Katalog einfügen" : "Standard-Pakete einfügen"}
+                onClick={() => void (activeTab === 0 ? insertStandardCatalog() : insertStandardPackages())}
+              />
+              <TextInput
+                label="Suche"
+                isLabelHidden
+                width="100%"
+                size="sm"
+                startIcon={<Search />}
                 placeholder="Suche…"
                 value={search}
-                onChange={e => setSearch(e.target.value)}
-                sx={{ mt: 1.25 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
+                onChange={(v) => setSearch(v)}
               />
-            </Box>
+            </div>
 
-            {/* List */}
-            <Box sx={{ flex: 1, overflowY: "auto" }}>
+            <div {...stylex.props(s.list)}>
               {activeTab === 0 ? (
                 filteredPrices.length === 0 ? (
-                  <Typography color="text.secondary" variant="body2" sx={{ p: 2, textAlign: "center", pt: 4 }}>
-                    {search ? "Keine Ergebnisse" : "Keine Preise vorhanden"}
-                  </Typography>
+                  <div {...stylex.props(s.listEmpty)}>
+                    <Text type="body" color="secondary">{search ? "Keine Ergebnisse" : "Keine Preise vorhanden"}</Text>
+                  </div>
                 ) : (
                   groupPrices(filteredPrices).map(group => (
-                    <Box key={group.category}>
-                      <Typography
-                        variant="overline"
-                        color="text.secondary"
-                        sx={{
-                          display: "block",
-                          px: 1.5,
-                          pt: 1.5,
-                          pb: 0.25,
-                          fontSize: "0.65rem",
-                          letterSpacing: "0.08em",
-                        }}
-                      >
-                        {CATEGORY_LABELS[group.category]}
-                      </Typography>
+                    <div key={group.category}>
+                      <span {...stylex.props(s.groupLabel)}>
+                        <Text type="supporting" color="secondary">{CATEGORY_LABELS[group.category]}</Text>
+                      </span>
                       {group.items.map(p => (
-                        <PriceListItem
+                        <ListItem
                           key={p.id}
-                          price={p}
                           isSelected={selectedPriceId === p.id}
                           onClick={() => selectPrice(p)}
+                          icon={<Euro style={{ fontSize: 18 }} />}
+                          title={p.title || "Unbenannt"}
+                          subtitle={<Text type="supporting" color={selectedPriceId === p.id ? "accent" : "secondary"}>{p.amount}€{p.size ? ` · ${p.size}` : ""}</Text>}
+                          badge={p.isDownloadable ? <Badge variant="info" label="Download" /> : undefined}
                         />
                       ))}
-                    </Box>
+                    </div>
                   ))
                 )
               ) : (
                 filteredPackages.length === 0 ? (
-                  <Typography color="text.secondary" variant="body2" sx={{ p: 2, textAlign: "center", pt: 4 }}>
-                    {search ? "Keine Ergebnisse" : "Keine Pakete vorhanden"}
-                  </Typography>
+                  <div {...stylex.props(s.listEmpty)}>
+                    <Text type="body" color="secondary">{search ? "Keine Ergebnisse" : "Keine Pakete vorhanden"}</Text>
+                  </div>
                 ) : (
                   filteredPackages.map(p => (
-                    <PackageListItem
+                    <ListItem
                       key={p.id}
-                      pkg={p}
                       isSelected={selectedPackageId === p.id}
                       onClick={() => selectPackage(p)}
+                      icon={<LocalOffer style={{ fontSize: 18 }} />}
+                      title={p.title || "Unbenannt"}
+                      subtitle={<Text type="supporting" color={selectedPackageId === p.id ? "accent" : "secondary"}>{p.numberOfImages} Bilder · {p.totalPrice}€ · +{p.singlePrice}€/Bild</Text>}
                     />
                   ))
                 )
               )}
-            </Box>
-          </Box>
+            </div>
+          </div>
 
           {/* ===== RIGHT PANEL ===== */}
-          <Box
-            sx={{
-              flex: 1,
-              display: { xs: hasSelection ? "flex" : "none", md: "flex" },
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
-          >
+          <div {...stylex.props(s.right, !hasSelection && s.hideOnMobile)}>
             {!hasSelection ? (
-              /* Empty state (desktop) */
-              <Box
-                display="flex"
-                flexDirection="column"
-                alignItems="center"
-                justifyContent="center"
-                flex={1}
-                gap={1}
-              >
-                {activeTab === 0 ? (
-                  <Euro sx={{ fontSize: 56, color: "text.disabled", opacity: 0.4 }} />
-                ) : (
-                  <LocalOffer sx={{ fontSize: 56, color: "text.disabled", opacity: 0.4 }} />
-                )}
-                <Typography variant="body1" color="text.secondary">
-                  {activeTab === 0 ? "Preis auswählen" : "Paket auswählen"}
-                </Typography>
-              </Box>
+              <div {...stylex.props(s.rightEmpty)}>
+                {activeTab === 0
+                  ? <Euro {...stylex.props(s.emptyIcon)} />
+                  : <LocalOffer {...stylex.props(s.emptyIcon)} />}
+                <Text type="body" color="secondary">{activeTab === 0 ? "Preis auswählen" : "Paket auswählen"}</Text>
+              </div>
             ) : (
-              <Box sx={{ flex: 1, overflowY: "auto", p: { xs: 2, md: 4 } }}>
-                {/* Mobile back button */}
+              <div {...stylex.props(s.rightScroll)}>
                 {isMobile && (
-                  <Button
-                    startIcon={<ArrowBack />}
-                    onClick={() => {
-                      setSelectedPriceId(undefined);
-                      setSelectedPackageId(undefined);
-                    }}
-                    sx={{ mb: 2 }}
-                    size="small"
-                  >
-                    {activeTab === 0 ? "Alle Preise" : "Alle Pakete"}
-                  </Button>
+                  <div {...stylex.props(s.backBtn)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<ArrowBack />}
+                      label={activeTab === 0 ? "Alle Preise" : "Alle Pakete"}
+                      onClick={() => { setSelectedPriceId(undefined); setSelectedPackageId(undefined); }}
+                    />
+                  </div>
                 )}
 
                 {activeTab === 0 ? (
-                  /* ---- Price form ---- */
                   <>
-                    <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
-                      <Typography variant="h6" fontWeight={600}>
-                        {selectedPriceId === "" ? "Neues Produkt" : "Produkt bearbeiten"}
-                      </Typography>
+                    <div {...stylex.props(s.formHead)}>
+                      <Heading level={6}>{selectedPriceId === "" ? "Neues Produkt" : "Produkt bearbeiten"}</Heading>
                       {selectedPriceId !== "" && (
-                        <Tooltip title="Preis löschen">
-                          <IconButton
-                            color="error"
-                            size="small"
-                            onClick={() => setOpenDeleteModal(true)}
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        <IconButton variant="ghost" icon={<Delete />} label="Preis löschen" tooltip="Preis löschen" onClick={() => setOpenDeleteModal(true)} />
                       )}
-                    </Box>
+                    </div>
 
-                    <Box display="flex" flexDirection="column" gap={2.5}>
-                      <TextField
-                        select
+                    <div {...stylex.props(s.form)}>
+                      <Selector
+                        width="100%"
                         label="Produktart"
-                        fullWidth
+                        options={CATEGORY_ORDER.map(c => ({ value: c, label: CATEGORY_LABELS[c] }))}
                         value={priceForm.category}
-                        onChange={e => setPriceCategory(e.target.value as PriceCategory)}
-                      >
-                        {CATEGORY_ORDER.map(c => (
-                          <MenuItem key={c} value={c}>{CATEGORY_LABELS[c]}</MenuItem>
-                        ))}
-                      </TextField>
+                        onChange={(v) => v && setPriceCategory(v as PriceCategory)}
+                      />
                       {priceForm.category !== "digital" && (
-                        <Autocomplete
-                          freeSolo
-                          options={SIZE_SUGGESTIONS[priceForm.category]}
+                        <TextInput
+                          width="100%"
+                          label="Größe"
+                          placeholder="z. B. 13×18 cm"
+                          description="Übliche Formate zur Auswahl — eigene Größen einfach eintippen"
                           value={priceForm.size}
-                          onInputChange={(_, value) => setPriceForm(f => ({ ...f, size: value }))}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              label="Größe"
-                              placeholder="z. B. 13×18 cm"
-                              helperText="Übliche Formate zur Auswahl — eigene Größen einfach eintippen"
-                            />
-                          )}
+                          onChange={(v) => setPriceForm(f => ({ ...f, size: v }))}
                         />
                       )}
-                      <TextField
-                        label="Preis"
-                        fullWidth
-                        type="number"
+                      <TextInput
+                        width="100%"
+                        label="Preis (€)"
+                       
                         value={priceForm.amount}
-                        onChange={e => setPriceForm(f => ({ ...f, amount: e.target.value }))}
-                        InputProps={{
-                          endAdornment: <InputAdornment position="end">€</InputAdornment>,
-                        }}
+                        onChange={(v) => setPriceForm(f => ({ ...f, amount: v }))}
                       />
-                      <TextField
+                      <TextInput
+                        width="100%"
                         label="Titel (optional)"
-                        fullWidth
-                        value={priceForm.title}
                         placeholder={priceTitle(priceForm.category, priceForm.size)}
-                        helperText={`Leer lassen für den automatischen Titel „${priceTitle(priceForm.category, priceForm.size)}“`}
-                        onChange={e => setPriceForm(f => ({ ...f, title: e.target.value }))}
+                        description={`Leer lassen für den automatischen Titel „${priceTitle(priceForm.category, priceForm.size)}“`}
+                        value={priceForm.title}
+                        onChange={(v) => setPriceForm(f => ({ ...f, title: v }))}
                       />
-                      <TextField
+                      <TextArea
+                        width="100%"
                         label="Beschreibung"
-                        fullWidth
-                        multiline
                         rows={3}
                         placeholder="z. B. Papierart, Rahmung, Lieferzeit"
                         value={priceForm.description}
-                        onChange={e => setPriceForm(f => ({ ...f, description: e.target.value }))}
+                        onChange={(v) => setPriceForm(f => ({ ...f, description: v }))}
                       />
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={priceForm.isDownloadable}
-                            onChange={e => setPriceForm(f => ({ ...f, isDownloadable: e.target.checked }))}
-                          />
-                        }
+                      <Switch
                         label="Digitaler Download (keine Lieferadresse nötig)"
+                        value={priceForm.isDownloadable}
+                        onChange={(checked) => setPriceForm(f => ({ ...f, isDownloadable: checked }))}
                       />
 
                       <Divider />
 
-                      <Box display="flex" gap={1} justifyContent="flex-end">
+                      <div {...stylex.props(s.formActions)}>
+                        <Button variant="secondary" label="Abbrechen" onClick={() => setSelectedPriceId(undefined)} />
                         <Button
-                          variant="outlined"
-                          color="inherit"
-                          onClick={() => setSelectedPriceId(undefined)}
-                        >
-                          Abbrechen
-                        </Button>
-                        <Button
-                          variant="contained"
-                          disabled={saving || priceForm.amount.trim() === ""}
+                          variant="primary"
+                          label="Speichern"
+                          isDisabled={saving || priceForm.amount.trim() === ""}
+                          isLoading={saving}
                           onClick={() => void savePrice()}
-                          startIcon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}
-                        >
-                          Speichern
-                        </Button>
-                      </Box>
-                    </Box>
+                        />
+                      </div>
+                    </div>
                   </>
                 ) : (
-                  /* ---- Package form ---- */
                   <>
-                    <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
-                      <Typography variant="h6" fontWeight={600}>
-                        {selectedPackageId === "" ? "Neues Paket" : "Paket bearbeiten"}
-                      </Typography>
+                    <div {...stylex.props(s.formHead)}>
+                      <Heading level={6}>{selectedPackageId === "" ? "Neues Paket" : "Paket bearbeiten"}</Heading>
                       {selectedPackageId !== "" && (
-                        <Tooltip title="Paket löschen">
-                          <IconButton
-                            color="error"
-                            size="small"
-                            onClick={() => setOpenDeleteModal(true)}
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        <IconButton variant="ghost" icon={<Delete />} label="Paket löschen" tooltip="Paket löschen" onClick={() => setOpenDeleteModal(true)} />
                       )}
-                    </Box>
+                    </div>
 
-                    <Box display="flex" flexDirection="column" gap={2.5}>
-                      <TextField
+                    <div {...stylex.props(s.form)}>
+                      <TextInput
+                        width="100%"
                         label="Inklusiv-Bilder"
-                        fullWidth
-                        type="number"
-                        inputProps={{ min: 1 }}
-                        helperText="So viele Bilder darf der Kunde zum Paketpreis auswählen"
+                       
+                        description="So viele Bilder darf der Kunde zum Paketpreis auswählen"
                         value={packageForm.numberOfImages}
-                        onChange={e => setPackageForm(f => ({ ...f, numberOfImages: e.target.value }))}
+                        onChange={(v) => setPackageForm(f => ({ ...f, numberOfImages: v }))}
                       />
-                      <TextField
-                        label="Paketpreis"
-                        fullWidth
-                        type="number"
+                      <TextInput
+                        width="100%"
+                        label="Paketpreis (€)"
+                       
                         value={packageForm.totalPrice}
-                        onChange={e => setPackageForm(f => ({ ...f, totalPrice: e.target.value }))}
-                        InputProps={{
-                          endAdornment: <InputAdornment position="end">€</InputAdornment>,
-                        }}
+                        onChange={(v) => setPackageForm(f => ({ ...f, totalPrice: v }))}
                       />
-                      <TextField
-                        label="Preis je weiterem Bild"
-                        fullWidth
-                        type="number"
-                        helperText="Gilt für jedes Bild über die Inklusiv-Anzahl hinaus"
+                      <TextInput
+                        width="100%"
+                        label="Preis je weiterem Bild (€)"
+                       
+                        description="Gilt für jedes Bild über die Inklusiv-Anzahl hinaus"
                         value={packageForm.singlePrice}
-                        onChange={e => setPackageForm(f => ({ ...f, singlePrice: e.target.value }))}
-                        InputProps={{
-                          endAdornment: <InputAdornment position="end">€</InputAdornment>,
-                        }}
+                        onChange={(v) => setPackageForm(f => ({ ...f, singlePrice: v }))}
                       />
-                      <TextField
+                      <TextInput
+                        width="100%"
                         label="Titel (optional)"
-                        fullWidth
-                        value={packageForm.title}
                         placeholder={packageTitle(packageForm.numberOfImages || "…")}
-                        helperText={`Leer lassen für den automatischen Titel „${packageTitle(packageForm.numberOfImages || "…")}“`}
-                        onChange={e => setPackageForm(f => ({ ...f, title: e.target.value }))}
+                        description={`Leer lassen für den automatischen Titel „${packageTitle(packageForm.numberOfImages || "…")}“`}
+                        value={packageForm.title}
+                        onChange={(v) => setPackageForm(f => ({ ...f, title: v }))}
                       />
-                      <TextField
+                      <TextArea
+                        width="100%"
                         label="Beschreibung"
-                        fullWidth
-                        multiline
                         rows={2}
                         placeholder="z. B. 10 Bilder deiner Wahl in voller Auflösung"
                         value={packageForm.description}
-                        onChange={e => setPackageForm(f => ({ ...f, description: e.target.value }))}
+                        onChange={(v) => setPackageForm(f => ({ ...f, description: v }))}
                       />
 
                       {packageForm.numberOfImages && packageForm.totalPrice && (
-                        <Typography variant="body2" color="text.secondary">
-                          So sieht es der Kunde: <b>{packageForm.numberOfImages} Bilder
-                          für {packageForm.totalPrice} €</b>
+                        <Text type="body" color="secondary">
+                          So sieht es der Kunde: <b>{packageForm.numberOfImages} Bilder für {packageForm.totalPrice} €</b>
                           {packageForm.singlePrice
                             ? <>, jedes weitere Bild <b>{packageForm.singlePrice} €</b></>
                             : null}
-                        </Typography>
+                        </Text>
                       )}
 
                       <Divider />
 
-                      <Box display="flex" gap={1} justifyContent="flex-end">
+                      <div {...stylex.props(s.formActions)}>
+                        <Button variant="secondary" label="Abbrechen" onClick={() => setSelectedPackageId(undefined)} />
                         <Button
-                          variant="outlined"
-                          color="inherit"
-                          onClick={() => setSelectedPackageId(undefined)}
-                        >
-                          Abbrechen
-                        </Button>
-                        <Button
-                          variant="contained"
-                          disabled={
+                          variant="primary"
+                          label="Speichern"
+                          isDisabled={
                             saving ||
                             packageForm.numberOfImages.trim() === "" ||
                             packageForm.totalPrice.trim() === ""
                           }
+                          isLoading={saving}
                           onClick={() => void savePackage()}
-                          startIcon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}
-                        >
-                          Speichern
-                        </Button>
-                      </Box>
-                    </Box>
+                        />
+                      </div>
+                    </div>
                   </>
                 )}
-              </Box>
+              </div>
             )}
-          </Box>
-        </Box>
-      </Box>
+          </div>
+        </div>
+      </div>
 
       <DeleteModal
         open={openDeleteModal}

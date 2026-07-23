@@ -1,5 +1,7 @@
 import { ReactElement, ReactNode } from "react";
-import { Box, Breadcrumbs, Link as MuiLink, Stack, Typography } from "@mui/material";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
 import { Link } from "react-router-dom";
 
 import useMobileService from "../../hooks/useMobileService";
@@ -18,6 +20,31 @@ type Props = {
   marginBottom?: string;
 };
 
+const s = stylex.create({
+  root: { flex: 1, width: "100%" },
+  crumbs: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
+  },
+  crumbSep: { color: "var(--color-text-secondary)" },
+  crumbLink: { color: "var(--color-text-secondary)", textDecoration: "none" },
+  header: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+    flexWrap: "wrap",
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  subtitle: { marginTop: 4 },
+  actions: { flexShrink: 0 },
+});
+
 export default function Page(props: Props): ReactElement {
   const isMobile = useMobileService();
   const {
@@ -33,56 +60,53 @@ export default function Page(props: Props): ReactElement {
   const showTitle = Boolean(title) && (showTitleOnMobile ?? !isMobile);
 
   return (
-    <Box flex={1} width="100%" className={className}>
+    <div className={className} {...stylex.props(s.root)}>
       {breadcrumps && (
-        <Breadcrumbs maxItems={3} aria-label="breadcrumb" sx={{ mb: 1 }}>
-          {breadcrumps.map(({ name, href }, index) =>
-            index < breadcrumps.length - 1 && href ? (
-              <MuiLink
-                component={Link}
-                to={href}
-                key={name}
-                color="inherit"
-                underline="hover"
-              >
-                {name}
-              </MuiLink>
-            ) : (
-              <Typography color="text.primary" key={name}>
-                {name}
-              </Typography>
-            )
-          )}
-        </Breadcrumbs>
+        <nav aria-label="breadcrumb" {...stylex.props(s.crumbs)}>
+          {breadcrumps.map(({ name, href }, index) => {
+            const isLast = index >= breadcrumps.length - 1;
+            return (
+              <span key={name} {...stylex.props(s.crumbs)}>
+                {isLast || !href ? (
+                  <Text type="supporting">{name}</Text>
+                ) : (
+                  <>
+                    <Link to={href} {...stylex.props(s.crumbLink)}>
+                      <Text type="supporting" color="secondary">
+                        {name}
+                      </Text>
+                    </Link>
+                    <span {...stylex.props(s.crumbSep)}>/</span>
+                  </>
+                )}
+              </span>
+            );
+          })}
+        </nav>
       )}
       {(showTitle || actions) && (
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          gap={2}
-          flexWrap="wrap"
-          sx={{ mb: 3, mt: 1 }}
-        >
-          <Box>
+        <div {...stylex.props(s.header)}>
+          <div>
             {showTitle &&
               (typeof title === "string" ? (
-                <Typography variant="h4" component="h1">
+                <Heading level={4} accessibilityLevel={1}>
                   {title}
-                </Typography>
+                </Heading>
               ) : (
                 title
               ))}
             {showTitle && subtitle && (
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                {subtitle}
-              </Typography>
+              <div {...stylex.props(s.subtitle)}>
+                <Text type="body" color="secondary">
+                  {subtitle}
+                </Text>
+              </div>
             )}
-          </Box>
-          {actions && <Box sx={{ flexShrink: 0 }}>{actions}</Box>}
-        </Stack>
+          </div>
+          {actions && <div {...stylex.props(s.actions)}>{actions}</div>}
+        </div>
       )}
       <ErrorBoundary>{children}</ErrorBoundary>
-    </Box>
+    </div>
   );
 }

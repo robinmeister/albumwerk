@@ -1,21 +1,12 @@
 import { ReactElement, useEffect, useState } from "react";
-import {
-  Box,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  InputAdornment,
-  Switch,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-} from "@mui/material";
-import { Search, PeopleOutline } from "@mui/icons-material";
+import { Badge } from "@astryxdesign/core/Badge";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Spinner } from "@astryxdesign/core/Spinner";
+import { Switch } from "@astryxdesign/core/Switch";
+import { Text } from "@astryxdesign/core/Text";
+import { TextInput } from "@astryxdesign/core/TextInput";
+import * as stylex from "@stylexjs/stylex";
+import { Search, Users as PeopleOutline } from "lucide-react";
 import EmptyState from "../../components/feedback/EmptyState";
 import { toast } from "react-toastify";
 import { pb } from "../../config/pocketbase";
@@ -36,6 +27,46 @@ function randomTokenKey(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   return Array.from({ length: 50 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
+
+const s = stylex.create({
+  card: {
+    padding: 24,
+    borderRadius: "var(--radius-container)",
+    border: "1px solid var(--color-border)",
+    backgroundColor: "var(--color-background-card)",
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  search: { marginBlock: 16 },
+  loading: { display: "flex", justifyContent: "center", padding: 32 },
+  scroll: { overflowX: "auto" },
+  table: { width: "100%", borderCollapse: "collapse" },
+  th: {
+    textAlign: "left",
+    padding: "8px 12px",
+    borderBottom: "1px solid var(--color-border)",
+    color: "var(--color-text-secondary)",
+    fontWeight: 600,
+    fontSize: 14,
+    whiteSpace: "nowrap",
+  },
+  center: { textAlign: "center" },
+  td: { padding: "8px 12px", borderBottom: "1px solid var(--color-border)" },
+  tdCenter: { padding: "8px 12px", borderBottom: "1px solid var(--color-border)", textAlign: "center" },
+  mobileList: { display: "flex", flexDirection: "column", gap: 8 },
+  mobileCard: {
+    padding: "12px 16px",
+    borderRadius: "var(--radius-element)",
+    border: "1px solid var(--color-border)",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
+  },
+  mobileInfo: { minWidth: 0, display: "flex", flexDirection: "column", gap: 4 },
+  chips: { display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 },
+});
 
 export default function AdminUsersPage(): ReactElement {
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -106,131 +137,111 @@ export default function AdminUsersPage(): ReactElement {
 
   const adminToggle = (user: UserRow) =>
     toggling === user.id ? (
-      <CircularProgress size={20} />
+      <Spinner size="sm" />
     ) : (
       <Switch
-        checked={user.isAdmin}
+        label="Admin"
+        isLabelHidden
+        value={user.isAdmin}
         onChange={() => void toggleAdmin(user)}
-        color="primary"
       />
     );
 
   return (
     <Page>
-      <Card>
-        <CardContent>
-          <Typography variant="h5" gutterBottom>
-            Nutzerverwaltung
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {users.length} Nutzer · Änderung des Admin-Status meldet den Nutzer aus.
-          </Typography>
+      <div {...stylex.props(s.card)}>
+        <Heading level={5}>Nutzerverwaltung</Heading>
+        <Text type="body" color="secondary">
+          {users.length} Nutzer · Änderung des Admin-Status meldet den Nutzer aus.
+        </Text>
 
-          <TextField
-            fullWidth
+        <div {...stylex.props(s.search)}>
+          <TextInput
+            label="Suche"
+            isLabelHidden
+            width="100%"
+            startIcon={<Search />}
             placeholder="Suche nach Name oder E-Mail…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            sx={{ mb: 2 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search />
-                </InputAdornment>
-              ),
-            }}
+            onChange={(v) => setSearch(v)}
           />
+        </div>
 
-          {loading ? (
-            <Box display="flex" justifyContent="center" p={4}>
-              <CircularProgress />
-            </Box>
-          ) : filtered.length === 0 ? (
-            <EmptyState
-              dense
-              icon={<PeopleOutline />}
-              title={search ? "Keine Treffer" : "Noch keine Nutzer"}
-              description={
-                search
-                  ? "Zu deiner Suche gibt es keine passenden Nutzer."
-                  : "Sobald sich Kund:innen registrieren, erscheinen sie hier."
-              }
-            />
-          ) : isMobile ? (
-            <Box>
-              {filtered.map((user) => (
-                <Card key={user.id} variant="outlined" sx={{ mb: 1 }}>
-                  <CardContent sx={{ pb: "12px !important", pt: 1.5, px: 2 }}>
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
-                      <Box flex={1} minWidth={0}>
-                        <Typography variant="subtitle2" noWrap>
-                          {user.firstName} {user.lastName}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" noWrap display="block">
-                          {user.email}
-                        </Typography>
-                        <Box sx={{ mt: 0.5, display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-                          <Chip
-                            label={user.verified ? "Verifiziert" : "Nicht verifiziert"}
-                            size="small"
-                            color={user.verified ? "success" : "default"}
-                          />
-                          <Chip
-                            label={`${user.shootingIds.length} Shootings`}
-                            size="small"
-                            variant="outlined"
-                          />
-                          {user.isAdmin && (
-                            <Chip label="Admin" size="small" color="primary" />
-                          )}
-                        </Box>
-                      </Box>
-                      <Box ml={1} flexShrink={0}>
-                        {adminToggle(user)}
-                      </Box>
-                    </Box>
-                  </CardContent>
-                </Card>
-              ))}
-            </Box>
-          ) : (
-            <Box sx={{ overflowX: "auto" }}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>E-Mail</TableCell>
-                    <TableCell align="center">Shootings</TableCell>
-                    <TableCell align="center">Verifiziert</TableCell>
-                    <TableCell align="center">Admin</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filtered.map((user) => (
-                    <TableRow key={user.id} hover>
-                      <TableCell>
-                        {user.firstName} {user.lastName}
-                      </TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell align="center">
-                        <Chip label={user.shootingIds.length} size="small" variant="outlined" />
-                      </TableCell>
-                      <TableCell align="center">
-                        <Chip
-                          label={user.verified ? "Ja" : "Nein"}
-                          size="small"
-                          color={user.verified ? "success" : "default"}
-                        />
-                      </TableCell>
-                      <TableCell align="center">{adminToggle(user)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
-          )}
-        </CardContent>
-      </Card>
+        {loading ? (
+          <div {...stylex.props(s.loading)}>
+            <Spinner size="md" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            dense
+            icon={<PeopleOutline />}
+            title={search ? "Keine Treffer" : "Noch keine Nutzer"}
+            description={
+              search
+                ? "Zu deiner Suche gibt es keine passenden Nutzer."
+                : "Sobald sich Kund:innen registrieren, erscheinen sie hier."
+            }
+          />
+        ) : isMobile ? (
+          <div {...stylex.props(s.mobileList)}>
+            {filtered.map((user) => (
+              <div key={user.id} {...stylex.props(s.mobileCard)}>
+                <div {...stylex.props(s.mobileInfo)}>
+                  <Text type="label" weight="semibold" maxLines={1}>
+                    {user.firstName} {user.lastName}
+                  </Text>
+                  <Text type="supporting" color="secondary" maxLines={1}>
+                    {user.email}
+                  </Text>
+                  <div {...stylex.props(s.chips)}>
+                    <Badge
+                      variant={user.verified ? "success" : "neutral"}
+                      label={user.verified ? "Verifiziert" : "Nicht verifiziert"}
+                    />
+                    <Badge variant="neutral" label={`${user.shootingIds.length} Shootings`} />
+                    {user.isAdmin && <Badge variant="info" label="Admin" />}
+                  </div>
+                </div>
+                {adminToggle(user)}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div {...stylex.props(s.scroll)}>
+            <table {...stylex.props(s.table)}>
+              <thead>
+                <tr>
+                  <th {...stylex.props(s.th)}>Name</th>
+                  <th {...stylex.props(s.th)}>E-Mail</th>
+                  <th {...stylex.props(s.th, s.center)}>Shootings</th>
+                  <th {...stylex.props(s.th, s.center)}>Verifiziert</th>
+                  <th {...stylex.props(s.th, s.center)}>Admin</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((user) => (
+                  <tr key={user.id}>
+                    <td {...stylex.props(s.td)}>
+                      {user.firstName} {user.lastName}
+                    </td>
+                    <td {...stylex.props(s.td)}>{user.email}</td>
+                    <td {...stylex.props(s.tdCenter)}>
+                      <Badge variant="neutral" label={user.shootingIds.length} />
+                    </td>
+                    <td {...stylex.props(s.tdCenter)}>
+                      <Badge
+                        variant={user.verified ? "success" : "neutral"}
+                        label={user.verified ? "Ja" : "Nein"}
+                      />
+                    </td>
+                    <td {...stylex.props(s.tdCenter)}>{adminToggle(user)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </Page>
   );
 }

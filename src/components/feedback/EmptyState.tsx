@@ -1,4 +1,6 @@
-import { Box, Button, Typography } from "@mui/material";
+import { Button } from "@astryxdesign/core/Button";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
 import { ReactElement, ReactNode } from "react";
 
 interface EmptyStateProps {
@@ -10,6 +12,27 @@ interface EmptyStateProps {
   dense?: boolean;
 }
 
+const s = stylex.create({
+  root: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 16,
+    padding: "0 16px",
+    textAlign: "center",
+  },
+  pad: (dense: boolean) => ({
+    paddingBlock: dense ? 48 : 80,
+  }),
+  icon: {
+    color: "var(--color-icon-disabled)",
+    fontSize: 72,
+    lineHeight: 0,
+  },
+  desc: { maxWidth: 420 },
+});
+
 // Shared empty-state block (icon + heading + text + optional CTA). Replaces the
 // hand-rolled variants that were duplicated across album, orders, pricing etc.
 export default function EmptyState({
@@ -20,30 +43,26 @@ export default function EmptyState({
   dense = false,
 }: EmptyStateProps): ReactElement {
   return (
-    <Box
-      display="flex"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
-      gap={2}
-      sx={{ py: dense ? 6 : 10, px: 2, textAlign: "center" }}
-    >
-      {icon && (
-        <Box sx={{ color: "text.disabled", "& > *": { fontSize: 72 } }}>{icon}</Box>
-      )}
-      <Typography variant="h6" color="text.secondary">
+    <div {...stylex.props(s.root, s.pad(dense))}>
+      {icon && <div {...stylex.props(s.icon)}>{icon}</div>}
+      <Text type="large" weight="semibold" color="secondary">
         {title}
-      </Typography>
+      </Text>
       {description && (
-        <Typography variant="body2" color="text.disabled" sx={{ maxWidth: 420 }}>
-          {description}
-        </Typography>
+        <div {...stylex.props(s.desc)}>
+          <Text type="body" color="disabled">
+            {description}
+          </Text>
+        </div>
       )}
       {action && (
-        <Button variant="contained" startIcon={action.icon} onClick={action.onClick}>
-          {action.label}
-        </Button>
+        <Button
+          variant="primary"
+          icon={action.icon}
+          label={action.label}
+          onClick={action.onClick}
+        />
       )}
-    </Box>
+    </div>
   );
 }

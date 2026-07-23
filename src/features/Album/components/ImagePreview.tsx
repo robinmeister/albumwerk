@@ -1,12 +1,5 @@
-import {
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  CloseOutlined,
-  RadioButtonUnchecked,
-  Wallpaper,
-} from "@mui/icons-material";
-import { Box, Dialog, Fade, IconButton, Tooltip, Typography } from "@mui/material";
+import { Check, ChevronLeft, ChevronRight, X as CloseOutlined, Circle as RadioButtonUnchecked, Image as Wallpaper } from "lucide-react";
+import * as stylex from "@stylexjs/stylex";
 import { ReactElement, useCallback, useEffect, useState } from "react";
 import { useSwipeable } from "react-swipeable";
 
@@ -22,6 +15,74 @@ type Props = {
   // admin only: use the currently shown image as album cover
   onSetCover?: (image: string) => void;
 };
+
+const SM = "@media (min-width: 600px)";
+
+const s = stylex.create({
+  root: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 1300,
+    backgroundColor: "#000",
+  },
+  topbar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 2,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "12px 16px",
+    background: "linear-gradient(rgba(0,0,0,0.55), transparent)",
+  },
+  counter: { color: "rgba(255,255,255,0.85)", fontVariantNumeric: "tabular-nums" },
+  topActions: { display: "flex", gap: 8 },
+  btn: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 42,
+    height: 42,
+    border: "none",
+    borderRadius: "var(--radius-full)",
+    color: "#fff",
+    cursor: "pointer",
+    backdropFilter: "blur(4px)",
+    backgroundColor: {
+      default: "rgba(255,255,255,0.08)",
+      ":hover": "rgba(255,255,255,0.2)",
+    },
+  },
+  btnActive: {
+    backgroundColor: { default: "var(--color-accent)", ":hover": "var(--color-accent)" },
+  },
+  stage: {
+    position: "absolute",
+    inset: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  img: (loaded: boolean) => ({
+    maxWidth: "100vw",
+    maxHeight: "100vh",
+    objectFit: "contain",
+    userSelect: "none",
+    opacity: loaded ? 1 : 0,
+    transition: "opacity 0.25s ease",
+  }),
+  arrow: {
+    position: "absolute",
+    top: "50%",
+    transform: "translateY(-50%)",
+    zIndex: 2,
+    display: { default: "none", [SM]: "inline-flex" },
+  },
+  arrowLeft: { left: 12 },
+  arrowRight: { right: 12 },
+});
 
 // Fullscreen lightbox on black: swipe on touch, arrow keys / hover arrows on
 // desktop, image counter and a like-style select toggle in the top bar.
@@ -87,128 +148,70 @@ export default function ImagePreview(props: Props): ReactElement | null {
     });
   }, [open, index, images]);
 
-  if (!previewImage) return null;
+  if (!open || !previewImage) return null;
 
   const isSelected = selected.includes(previewImage);
 
-  const overlayButton = {
-    color: "#fff",
-    bgcolor: "rgba(255,255,255,0.08)",
-    backdropFilter: "blur(4px)",
-    "&:hover": { bgcolor: "rgba(255,255,255,0.2)" },
-  } as const;
-
   return (
-    <Dialog
-      open={open}
-      onClose={close}
-      fullScreen
-      PaperProps={{ sx: { bgcolor: "#000" } }}
-    >
+    <div {...stylex.props(s.root)}>
       {/* top bar */}
-      <Box
-        sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 2,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          px: 2,
-          py: 1.5,
-          background: "linear-gradient(rgba(0,0,0,0.55), transparent)",
-        }}
-      >
-        <Typography sx={{ color: "rgba(255,255,255,0.85)", fontVariantNumeric: "tabular-nums" }}>
+      <div {...stylex.props(s.topbar)}>
+        <span {...stylex.props(s.counter)}>
           {index + 1} / {images.length}
-        </Typography>
-        <Box sx={{ display: "flex", gap: 1 }}>
+        </span>
+        <div {...stylex.props(s.topActions)}>
           {onSetCover && (
-            <Tooltip title="Als Cover setzen">
-              <IconButton onClick={() => onSetCover(previewImage)} sx={overlayButton}>
-                <Wallpaper />
-              </IconButton>
-            </Tooltip>
+            <button
+              aria-label="Als Cover setzen"
+              onClick={() => onSetCover(previewImage)}
+              {...stylex.props(s.btn)}
+            >
+              <Wallpaper />
+            </button>
           )}
-          <IconButton onClick={toggleSelected} sx={{
-            ...overlayButton,
-            ...(isSelected && {
-              bgcolor: "primary.main",
-              "&:hover": { bgcolor: "primary.dark" },
-            }),
-          }}>
+          <button
+            aria-label="Auswählen"
+            onClick={toggleSelected}
+            {...stylex.props(s.btn, isSelected && s.btnActive)}
+          >
             {isSelected ? <Check /> : <RadioButtonUnchecked />}
-          </IconButton>
-          <IconButton onClick={close} sx={overlayButton}>
+          </button>
+          <button aria-label="Schließen" onClick={close} {...stylex.props(s.btn)}>
             <CloseOutlined />
-          </IconButton>
-        </Box>
-      </Box>
+          </button>
+        </div>
+      </div>
 
       {/* image */}
-      <Box
-        {...handlers}
-        onClick={close}
-        sx={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Fade in={imageLoaded} timeout={250}>
-          <Box
-            component="img"
-            src={previewImage}
-            alt="Vorschau"
-            onLoad={() => setImageLoaded(true)}
-            onClick={(e) => e.stopPropagation()}
-            sx={{
-              maxWidth: "100vw",
-              maxHeight: "100vh",
-              objectFit: "contain",
-              userSelect: "none",
-            }}
-          />
-        </Fade>
-      </Box>
+      <div {...handlers} onClick={close} {...stylex.props(s.stage)}>
+        <img
+          src={previewImage}
+          alt="Vorschau"
+          onLoad={() => setImageLoaded(true)}
+          onClick={(e) => e.stopPropagation()}
+          {...stylex.props(s.img(imageLoaded))}
+        />
+      </div>
 
       {/* desktop arrows */}
       {index > 0 && (
-        <IconButton
+        <button
+          aria-label="Vorheriges Bild"
           onClick={() => goTo(index - 1)}
-          sx={{
-            ...overlayButton,
-            position: "absolute",
-            left: 12,
-            top: "50%",
-            transform: "translateY(-50%)",
-            display: { xs: "none", sm: "inline-flex" },
-            zIndex: 2,
-          }}
+          {...stylex.props(s.btn, s.arrow, s.arrowLeft)}
         >
-          <ChevronLeft fontSize="large" />
-        </IconButton>
+          <ChevronLeft />
+        </button>
       )}
       {index < images.length - 1 && (
-        <IconButton
+        <button
+          aria-label="Nächstes Bild"
           onClick={() => goTo(index + 1)}
-          sx={{
-            ...overlayButton,
-            position: "absolute",
-            right: 12,
-            top: "50%",
-            transform: "translateY(-50%)",
-            display: { xs: "none", sm: "inline-flex" },
-            zIndex: 2,
-          }}
+          {...stylex.props(s.btn, s.arrow, s.arrowRight)}
         >
-          <ChevronRight fontSize="large" />
-        </IconButton>
+          <ChevronRight />
+        </button>
       )}
-    </Dialog>
+    </div>
   );
 }

@@ -1,9 +1,5 @@
 import { ReactElement, useEffect, useMemo, useState } from "react";
-import {
-  CssBaseline,
-  StyledEngineProvider,
-  ThemeProvider,
-} from "@mui/material";
+import { Theme } from "@astryxdesign/core";
 import {
   BrowserRouter,
   Navigate,
@@ -13,7 +9,7 @@ import {
 import { ToastContainer } from "react-toastify";
 import { AuthUser } from "./config/authUser";
 
-import { buildTheme } from "./utils/theme";
+import { buildAstryxTheme, themeModeProp } from "./utils/theme";
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
 import { useBranding } from "./hooks/useBranding";
 import AlbumPage from "./pages/user/AlbumPage";
@@ -62,7 +58,8 @@ export default function App(): ReactElement {
 
 function ThemedApp(): ReactElement {
   const { settings } = useSettings();
-  const theme = useMemo(() => buildTheme(settings), [settings]);
+  const theme = useMemo(() => buildAstryxTheme(settings), [settings]);
+  const mode = themeModeProp(settings);
   useBranding();
 
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -96,11 +93,9 @@ function ThemedApp(): ReactElement {
   }
 
   return (
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <ToastContainer />
-        <AuthContext.Provider value={{ user }}>
+    <Theme theme={theme} mode={mode}>
+      <ToastContainer />
+      <AuthContext.Provider value={{ user }}>
           <BrowserRouter>
           <ScrollToTop />
           <ErrorBoundary>
@@ -163,7 +158,6 @@ function ThemedApp(): ReactElement {
           </ErrorBoundary>
           </BrowserRouter>
         </AuthContext.Provider>
-      </ThemeProvider>
-    </StyledEngineProvider>
+    </Theme>
   );
 }

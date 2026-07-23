@@ -1,30 +1,14 @@
 import { ReactElement, useMemo } from "react";
-import {
-  Alert,
-  Avatar,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  Dialog,
-  IconButton,
-  LinearProgress,
-  Modal,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tooltip,
-  Typography,
-  useTheme,
-} from "@mui/material";
+import { Dialog } from "@astryxdesign/core/Dialog";
+import { Banner } from "@astryxdesign/core/Banner";
+import { Button } from "@astryxdesign/core/Button";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { ProgressBar } from "@astryxdesign/core/ProgressBar";
+import { Heading } from "@astryxdesign/core/Heading";
+import { Text } from "@astryxdesign/core/Text";
+import * as stylex from "@stylexjs/stylex";
 import { useDropzone } from "react-dropzone";
-import { CheckCircle, Close, ErrorOutline, HourglassEmpty, Replay } from "@mui/icons-material";
+import { CircleCheck as CheckCircle, X as Close, CircleAlert as ErrorOutline, Hourglass as HourglassEmpty, RotateCcw as Replay } from "lucide-react";
 import { toast } from "react-toastify";
 
 import useMobileService from "../../../hooks/useMobileService";
@@ -37,8 +21,61 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+const s = stylex.create({
+  header: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 },
+  content: { display: "flex", flexDirection: "column", gap: 16, width: "100%" },
+  dropzone: {
+    minHeight: 130,
+    borderRadius: "var(--radius-element)",
+    padding: 16,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 4,
+    textAlign: "center",
+  },
+  panel: {
+    padding: 16,
+    borderRadius: "var(--radius-element)",
+    border: "1px solid var(--color-border)",
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+  },
+  panelRow: { display: "flex", gap: 12, alignItems: "center" },
+  actionsRow: { display: "flex", gap: 8, marginTop: 8 },
+  footer: { display: "flex", justifyContent: "space-between", alignItems: "center" },
+  tableWrap: {
+    maxHeight: "40vh",
+    overflow: "auto",
+    borderRadius: "var(--radius-element)",
+    border: "1px solid var(--color-border)",
+  },
+  table: { width: "100%", borderCollapse: "collapse" },
+  th: {
+    position: "sticky",
+    top: 0,
+    textAlign: "left",
+    padding: "8px 12px",
+    backgroundColor: "var(--color-background-surface)",
+    borderBottom: "1px solid var(--color-border)",
+    fontSize: 13,
+    fontWeight: 600,
+    color: "var(--color-text-secondary)",
+  },
+  thRight: { textAlign: "right" },
+  td: { padding: "8px 12px", borderBottom: "1px solid var(--color-border)", verticalAlign: "middle" },
+  tdRight: { padding: "8px 12px", borderBottom: "1px solid var(--color-border)", textAlign: "right" },
+  fileCell: { display: "flex", gap: 12, alignItems: "center" },
+  thumb: { width: 40, height: 40, borderRadius: "var(--radius-element)", objectFit: "cover", backgroundColor: "var(--color-background-muted)" },
+  fileName: { minWidth: 0, wordBreak: "break-all" },
+  statusRow: { display: "flex", gap: 6, justifyContent: "flex-end", alignItems: "center" },
+  ok: { color: "var(--color-success)", display: "inline-flex" },
+  err: { color: "var(--color-error)", display: "inline-flex" },
+});
+
 export default function UploadComponent(): ReactElement {
-  const theme = useTheme();
   const isMobile = useMobileService();
   const {
     openUploadModal,
@@ -100,260 +137,197 @@ export default function UploadComponent(): ReactElement {
   };
 
   const dropzoneBorder = isDragReject
-    ? theme.palette.error.main
+    ? "var(--color-error)"
     : isDragActive
-      ? theme.palette.primary.main
-      : theme.palette.divider;
+      ? "var(--color-accent)"
+      : "var(--color-border)";
 
   const content = (
-    <Stack spacing={2} sx={{ width: "100%" }}>
-      <Box
+    <div {...stylex.props(s.content)}>
+      <div
         {...getRootProps()}
-        sx={{
-          minHeight: 130,
+        {...stylex.props(s.dropzone)}
+        style={{
           border: `2px dashed ${dropzoneBorder}`,
-          borderRadius: 1,
-          p: 2,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
           cursor: isBusy || duplicatePrompt ? "default" : "pointer",
           opacity: isBusy || duplicatePrompt ? 0.5 : 1,
-          "&:hover": {
-            borderColor: isBusy || duplicatePrompt ? undefined : theme.palette.text.secondary,
-          },
         }}
       >
         <input {...getInputProps()} />
-        <Typography color={isDragReject ? "error" : "text.secondary"} align="center">
+        <Text type="body" color={isDragReject ? "primary" : "secondary"}>
           {isDragReject
             ? "Dieses Dateiformat wird nicht unterstützt"
             : isDragActive
               ? "Bilder hier ablegen …"
               : "Bilder hierher ziehen oder klicken, um Dateien auszuwählen"}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
+        </Text>
+        <Text type="supporting" color="secondary">
           JPG oder PNG
-        </Typography>
-      </Box>
+        </Text>
+      </div>
 
       {duplicatePrompt && (
-        <Alert severity="warning">
-          <Typography variant="body2">
-            {duplicatePrompt.duplicateNames.length === 1
+        <Banner
+          status="warning"
+          title={
+            duplicatePrompt.duplicateNames.length === 1
               ? `„${duplicatePrompt.duplicateNames[0]}“ existiert bereits in diesem Shooting.`
-              : `${duplicatePrompt.duplicateNames.length} Dateien existieren bereits in diesem Shooting.`}
-          </Typography>
-          <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-            <Button size="small" variant="contained" onClick={() => void resolveDuplicates("replace")}>
-              Ersetzen
-            </Button>
-            <Button size="small" onClick={() => void resolveDuplicates("skip")}>
-              Überspringen
-            </Button>
-            <Button size="small" color="inherit" onClick={() => void resolveDuplicates("cancel")}>
-              Abbrechen
-            </Button>
-          </Stack>
-        </Alert>
+              : `${duplicatePrompt.duplicateNames.length} Dateien existieren bereits in diesem Shooting.`
+          }
+        >
+          <div {...stylex.props(s.actionsRow)}>
+            <Button size="sm" variant="primary" label="Ersetzen" onClick={() => void resolveDuplicates("replace")} />
+            <Button size="sm" variant="secondary" label="Überspringen" onClick={() => void resolveDuplicates("skip")} />
+            <Button size="sm" variant="ghost" label="Abbrechen" onClick={() => void resolveDuplicates("cancel")} />
+          </div>
+        </Banner>
       )}
 
       {phase === "uploading" && totals.activeCount > 0 && (
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Typography variant="body2" fontWeight={600}>
+        <div {...stylex.props(s.panel)}>
+          <Text type="body" weight="semibold">
             {totals.doneCount} von {totals.activeCount} Dateien hochgeladen
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
+          </Text>
+          <Text type="supporting" color="secondary">
             {formatBytes(totals.doneBytes)} von {formatBytes(totals.totalBytes)}
-          </Typography>
-          <LinearProgress
-            variant="determinate"
+          </Text>
+          <ProgressBar
+            label="Upload"
+            isLabelHidden
             value={totals.totalBytes > 0 ? (totals.doneBytes / totals.totalBytes) * 100 : 0}
-            sx={{ mt: 1, borderRadius: 1 }}
+            max={100}
           />
-        </Paper>
+        </div>
       )}
 
       {phase === "processing" && previewProgress && (
-        <Paper variant="outlined" sx={{ p: 2 }}>
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <HourglassEmpty color="action" />
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="body2" fontWeight={600}>
+        <div {...stylex.props(s.panel)}>
+          <div {...stylex.props(s.panelRow)}>
+            <HourglassEmpty />
+            <div style={{ flex: 1 }}>
+              <Text type="body" weight="semibold">
                 Vorschauen mit Wasserzeichen werden erstellt …
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
+              </Text>
+              <Text type="supporting" color="secondary">
                 {previewProgress.done} von {previewProgress.total} fertig
-              </Typography>
-              <LinearProgress
-                variant="determinate"
+              </Text>
+              <ProgressBar
+                label="Vorschauen"
+                isLabelHidden
                 value={(previewProgress.done / previewProgress.total) * 100}
-                sx={{ mt: 1, borderRadius: 1 }}
+                max={100}
               />
-            </Box>
-          </Stack>
-        </Paper>
+            </div>
+          </div>
+        </div>
       )}
 
       {phase === "done" && previewProgress && (
         previewProgress.done >= previewProgress.total ? (
-          <Alert severity="success">
-            {previewProgress.total === 1
-              ? "1 Bild hochgeladen — die Vorschau wurde erstellt."
-              : `${previewProgress.total} Bilder hochgeladen — alle Vorschauen wurden erstellt.`}
-          </Alert>
+          <Banner
+            status="success"
+            title={
+              previewProgress.total === 1
+                ? "1 Bild hochgeladen — die Vorschau wurde erstellt."
+                : `${previewProgress.total} Bilder hochgeladen — alle Vorschauen wurden erstellt.`
+            }
+          />
         ) : (
-          <Alert severity="warning">
-            Bilder hochgeladen — einige Vorschauen werden noch erstellt und erscheinen in Kürze
-            im Album.
-          </Alert>
+          <Banner
+            status="warning"
+            title="Bilder hochgeladen — einige Vorschauen werden noch erstellt und erscheinen in Kürze im Album."
+          />
         )
       )}
 
       {items.length > 0 && (
-        <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: "40vh" }}>
-          <Table size="small" stickyHeader aria-label="Upload-Fortschritt">
-            <TableHead>
-              <TableRow>
-                <TableCell>Datei</TableCell>
-                <TableCell align="right" sx={{ width: "40%" }}>Status</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
+        <div {...stylex.props(s.tableWrap)}>
+          <table {...stylex.props(s.table)}>
+            <thead>
+              <tr>
+                <th {...stylex.props(s.th)}>Datei</th>
+                <th {...stylex.props(s.th, s.thRight)} style={{ width: "40%" }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
               {items.map((item) => (
-                <TableRow key={item.id} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
-                  <TableCell>
-                    <Stack direction="row" spacing={1.5} alignItems="center">
-                      <Avatar
-                        variant="rounded"
-                        src={item.thumbUrl}
-                        imgProps={{ loading: "lazy" }}
-                        sx={{ width: 40, height: 40 }}
-                      />
-                      <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="body2" sx={{ wordBreak: "break-all" }}>
-                          {item.file.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {formatBytes(item.file.size)}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </TableCell>
-                  <TableCell align="right">
+                <tr key={item.id}>
+                  <td {...stylex.props(s.td)}>
+                    <div {...stylex.props(s.fileCell)}>
+                      <img src={item.thumbUrl} loading="lazy" alt="" {...stylex.props(s.thumb)} />
+                      <div {...stylex.props(s.fileName)}>
+                        <Text type="body">{item.file.name}</Text>
+                        <Text type="supporting" color="secondary">{formatBytes(item.file.size)}</Text>
+                      </div>
+                    </div>
+                  </td>
+                  <td {...stylex.props(s.tdRight)}>
                     {item.status === "queued" && (
-                      <Typography variant="caption" color="text.secondary">
-                        Wartet …
-                      </Typography>
+                      <Text type="supporting" color="secondary">Wartet …</Text>
                     )}
                     {item.status === "uploading" && (
-                      <Box>
-                        <LinearProgress
-                          variant="determinate"
-                          value={item.progress}
-                          sx={{ borderRadius: 1 }}
-                        />
-                        <Typography variant="caption" color="text.secondary">
-                          {item.progress} %
-                        </Typography>
-                      </Box>
+                      <div>
+                        <ProgressBar label="Fortschritt" isLabelHidden value={item.progress} max={100} />
+                        <Text type="supporting" color="secondary">{item.progress} %</Text>
+                      </div>
                     )}
                     {item.status === "done" && (
-                      <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
-                        <CheckCircle color="success" fontSize="small" />
-                        <Typography variant="caption" color="text.secondary">
-                          Hochgeladen
-                        </Typography>
-                      </Stack>
+                      <div {...stylex.props(s.statusRow)}>
+                        <span {...stylex.props(s.ok)}><CheckCircle /></span>
+                        <Text type="supporting" color="secondary">Hochgeladen</Text>
+                      </div>
                     )}
                     {item.status === "error" && (
-                      <Stack direction="row" spacing={0.5} justifyContent="flex-end" alignItems="center">
-                        <Tooltip title={item.error ?? "Upload fehlgeschlagen"}>
-                          <ErrorOutline color="error" fontSize="small" />
-                        </Tooltip>
-                        <Typography variant="caption" color="error">
-                          Fehlgeschlagen
-                        </Typography>
-                        <Tooltip title="Erneut versuchen">
-                          <span>
-                            <IconButton
-                              size="small"
-                              aria-label="Erneut versuchen"
-                              disabled={isBusy}
-                              onClick={() => retryItem(item.id)}
-                            >
-                              <Replay fontSize="small" />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                      </Stack>
+                      <div {...stylex.props(s.statusRow)}>
+                        <span {...stylex.props(s.err)} title={item.error ?? "Upload fehlgeschlagen"}>
+                          <ErrorOutline />
+                        </span>
+                        <Text type="supporting" color="primary">Fehlgeschlagen</Text>
+                        <IconButton
+                          variant="ghost"
+                          icon={<Replay />}
+                          label="Erneut versuchen"
+                          tooltip="Erneut versuchen"
+                          isDisabled={isBusy}
+                          onClick={() => retryItem(item.id)}
+                        />
+                      </div>
                     )}
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+            </tbody>
+          </table>
+        </div>
       )}
 
-      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-        <Box>
+      <div {...stylex.props(s.footer)}>
+        <div>
           {phase === "uploading" && (
-            <Button color="error" onClick={cancelAll}>
-              Upload abbrechen
-            </Button>
+            <Button variant="ghost" label="Upload abbrechen" onClick={cancelAll} />
           )}
-        </Box>
-        <Button variant="contained" onClick={closeModal}>
-          {isBusy ? "Schließen" : "Fertig"}
-        </Button>
-      </Box>
-    </Stack>
+        </div>
+        <Button variant="primary" label={isBusy ? "Schließen" : "Fertig"} onClick={closeModal} />
+      </div>
+    </div>
   );
 
-  const desktopUploadModal = (
-    <Modal
-      open={openUploadModal}
-      onClose={(event, reason) => {
-        if (reason !== "backdropClick") closeModal();
-      }}
-      sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
-    >
-      <Card sx={{ width: "min(680px, 92vw)", maxHeight: "90vh", overflow: "auto" }}>
-        <CardHeader
-          title="Bilder hochladen"
-          subheader={selectedShooting?.title}
-          action={
-            <IconButton aria-label="Schließen" onClick={closeModal}>
-              <Close />
-            </IconButton>
-          }
-        />
-        <CardContent>{content}</CardContent>
-      </Card>
-    </Modal>
-  );
-
-  const mobileUploadDialog = (
+  return (
     <Dialog
-      fullScreen
-      open={openUploadModal}
-      onClose={(event, reason) => {
-        if (reason !== "backdropClick") closeModal();
-      }}
+      isOpen={openUploadModal}
+      onOpenChange={(open) => { if (!open) closeModal(); }}
+      width={isMobile ? undefined : 680}
     >
-      <Box sx={{ p: 2 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-          <Typography variant="h6">Bilder hochladen</Typography>
-          <IconButton aria-label="Schließen" onClick={closeModal}>
-            <Close />
-          </IconButton>
-        </Stack>
-        {content}
-      </Box>
+      <div {...stylex.props(s.header)}>
+        <div>
+          <Heading level={6}>Bilder hochladen</Heading>
+          {selectedShooting?.title && (
+            <Text type="supporting" color="secondary">{selectedShooting.title}</Text>
+          )}
+        </div>
+        <IconButton variant="ghost" icon={<Close />} label="Schließen" onClick={closeModal} />
+      </div>
+      {content}
     </Dialog>
   );
-
-  return isMobile ? mobileUploadDialog : desktopUploadModal;
 }
