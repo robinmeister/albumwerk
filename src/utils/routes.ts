@@ -1,5 +1,5 @@
 import { ComponentType } from "react";
-import { Download, Image, Palette, Wallet as Payments, Users as People, User as Person, Tag as PriceChange, ReceiptText as ReceiptLong, Headset as SupportAgent } from "lucide-react";
+import { Download, Image, Palette, Scale, Wallet as Payments, Users as People, User as Person, Tag as PriceChange, ReceiptText as ReceiptLong, Headset as SupportAgent } from "lucide-react";
 
 // Single source for navigation: Header (desktop), TabBar (mobile) and the
 // user menu all render from these arrays — labels are no longer coupled to
@@ -24,6 +24,7 @@ export const adminNavItems: NavItem[] = [
   { key: "users", label: "Nutzer", path: "/users", Icon: People },
   { key: "payments", label: "Zahlungen", path: "/payments", Icon: Payments },
   { key: "branding", label: "Branding", path: "/branding", Icon: Palette },
+  { key: "legal", label: "Rechtliches", path: "/legal", Icon: Scale },
 ];
 
 // user menu (avatar/settings menu in the header); "logout" is handled

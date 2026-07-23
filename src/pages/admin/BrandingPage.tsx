@@ -4,7 +4,6 @@ import { Divider } from "@astryxdesign/core/Divider";
 import { Selector } from "@astryxdesign/core/Selector";
 import { Slider } from "@astryxdesign/core/Slider";
 import { TextInput } from "@astryxdesign/core/TextInput";
-import { TextArea } from "@astryxdesign/core/TextArea";
 import { Theme } from "@astryxdesign/core";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Text } from "@astryxdesign/core/Text";
@@ -231,8 +230,7 @@ export default function BrandingPage(): ReactElement {
       const textFields: (keyof AppSettings)[] = [
         "businessName", "shortName", "tagline", "primaryColor", "secondaryColor",
         "fontFamily", "themeMode", "contactEmail", "orderNotificationEmail",
-        "websiteUrl", "customDomain", "currency",
-        "imprintHtml", "privacyHtml", "watermarkText",
+        "websiteUrl", "customDomain", "currency", "watermarkText",
       ];
       textFields.forEach((k) => fd.append(k, String(draft[k] ?? "")));
       fd.append("borderRadius", String(draft.borderRadius ?? 8));
@@ -377,17 +375,6 @@ export default function BrandingPage(): ReactElement {
     </SectionCard>
   );
 
-  const legalSection = (
-    <SectionCard title="Rechtliches" subtitle="Wird öffentlich unter /imprint und /privacy angezeigt (HTML erlaubt)">
-      <div {...stylex.props(f.grid1)}>
-        <TextArea width="100%" rows={6} label="Impressum" value={draft.imprintHtml}
-          onChange={(v) => set({ imprintHtml: v })} />
-        <TextArea width="100%" rows={6} label="Datenschutzerklärung" value={draft.privacyHtml}
-          onChange={(v) => set({ privacyHtml: v })} />
-      </div>
-    </SectionCard>
-  );
-
   const watermarkSection = (
     <SectionCard title="Wasserzeichen & Vorschau" subtitle="Für die automatisch erzeugten Vorschaubilder in Alben">
       <div {...stylex.props(f.grid2)}>
@@ -420,7 +407,6 @@ export default function BrandingPage(): ReactElement {
     { label: "Domain", content: domainSection },
     { label: "Kontakt", content: contactSection },
     { label: "Zahlung", content: paymentSection },
-    { label: "Rechtliches", content: legalSection },
   ];
 
   return (
@@ -462,7 +448,6 @@ export default function BrandingPage(): ReactElement {
               {contactSection}
               {paymentSection}
               {watermarkSection}
-              {legalSection}
               <Divider />
               <div {...stylex.props(f.saveRow)}>
                 <Button variant="primary" size="lg" label="Speichern" isDisabled={saving} isLoading={saving}
