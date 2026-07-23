@@ -1,7 +1,11 @@
 # ---------------------------------------------------------------------------
 # Stage 1: build the SPA
+#
+# glibc, nicht Alpine: @stylexswc/rs-compiler veröffentlicht für musl nur ein
+# x64-Binary (kein linux-arm64-musl), der Build bräche auf einem arm64-Host mit
+# "Cannot find native binding" ab.
 # ---------------------------------------------------------------------------
-FROM node:20-alpine AS build
+FROM node:20-bookworm-slim AS build
 
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -19,6 +23,9 @@ FROM alpine:3.20
 
 ARG PB_VERSION=0.39.4
 ARG APP_VERSION=dev
+# Von BuildKit gesetzt (amd64/arm64); beim klassischen Builder leer, dann
+# entscheidet uname -m über das PocketBase-Binary.
+ARG TARGETARCH
 
 LABEL org.opencontainers.image.title="Albumwerk" \
       org.opencontainers.image.description="Albumwerk — self-hostbare Kundenalben & Bildverkauf für Fotografen. 0 % Kommission, DSGVO-freundlich" \
@@ -32,7 +39,12 @@ RUN apk add --no-cache \
       # preview/watermark generation (pb_hooks/lib/previewlib.js)
       imagemagick imagemagick-jpeg imagemagick-webp imagemagick-heic \
       ttf-dejavu fontconfig \
-    && wget -q "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip" -O /tmp/pb.zip \
+    && case "${TARGETARCH:-$(uname -m)}" in \
+         amd64|x86_64)  PB_ARCH=amd64 ;; \
+         arm64|aarch64) PB_ARCH=arm64 ;; \
+         *) echo "PocketBase: nicht unterstützte Architektur '${TARGETARCH:-$(uname -m)}'" >&2; exit 1 ;; \
+       esac \
+    && wget -q "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_${PB_ARCH}.zip" -O /tmp/pb.zip \
     && unzip -q /tmp/pb.zip -d /pb \
     && rm /tmp/pb.zip \
     && apk del unzip

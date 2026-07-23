@@ -21,7 +21,13 @@ Drei Workflows in `.gitea/workflows/`:
    ```
 
    Der Runner braucht Zugriff auf den Docker-Socket (Image-Builds in
-   `release.yml`).
+   `release.yml`) und dort das **buildx-Plugin** — `release.yml` baut ein
+   Multi-Arch-Manifest (amd64 + arm64), damit das Image unabhängig von der
+   Architektur des Runners auf allen Kundeninstanzen läuft. Prüfen mit
+   `docker buildx version`; fehlt es, das Paket `docker-buildx` (bzw.
+   `docker-buildx-plugin`) nachinstallieren. Die QEMU-Emulation für die jeweils
+   fremde Architektur richtet der Workflow selbst ein, dafür muss
+   `docker run --privileged` erlaubt sein.
 
 2. **Actions im Repo aktivieren**: Repo → Settings → Actions → Enable.
 
