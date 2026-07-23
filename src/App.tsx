@@ -36,6 +36,7 @@ import PublicAlbumPage from "./pages/public/PublicAlbumPage";
 import PublicDownloadsPage from "./pages/public/PublicDownloadsPage";
 import LegalPage from "./pages/public/LegalPage";
 import BrandingPage from "./pages/admin/BrandingPage";
+import AdminLegalPage from "./pages/admin/AdminLegalPage";
 import SetupRedirect from "./components/SetupRedirect";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/layout/ErrorBoundary";
@@ -138,6 +139,7 @@ function ThemedApp(): ReactElement {
                   <Route path="users" element={<AdminUsersPage />} />
                   <Route path="payments" element={<AdminPaymentsPage />} />
                   <Route path="branding" element={<BrandingPage />} />
+                  <Route path="legal" element={<AdminLegalPage />} />
                   <Route path="downloads" element={<DownloadsPage />} />
                   <Route path="*" element={<NoMatchPage />} />
                 </Route>
