@@ -36,6 +36,11 @@
   }
 
   /* Album grid tile hover effects (StyleX can't express parent-hover-child). */
+  /* A long press selects the tile, so it must not raise the mobile image callout. */
+  .album-tile {
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
   .album-tile:hover img {
     transform: scale(1.03);
   }

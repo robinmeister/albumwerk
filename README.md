@@ -267,9 +267,13 @@ werden.
 
 1. **Shooting anlegen**: App → Album (Admin) → neues Shooting, Bilder
    hochladen. Wasserzeichen-Vorschauen werden automatisch erzeugt.
-2. **Kunden einladen**: Registrierungs-Link mit Shooting teilen
-   (`/signUp?shootingId=...`) oder öffentliches Album verlinken
-   (`/publicAlbum/SHOOTING-ID`).
+2. **Kunden einladen**: im Album auf *Teilen* — dort gibt es Link und
+   QR-Code (`/addAlbum/SHOOTING-ID`, öffentliche Alben:
+   `/publicAlbum/SHOOTING-ID`). Der QR-Code lässt sich herunterladen und
+   z. B. auf eine Karte drucken: Kunden scannen ihn mit der Handykamera,
+   registrieren sich einmalig und haben das Album danach automatisch in
+   ihrer Übersicht. Wer nicht scannen kann, gibt in *Album hinzufügen* den
+   Album-Code ein, der im Teilen-Dialog steht.
 3. **Bestellungen**: gehen per E-Mail an Ihre Bestell-Adresse und erscheinen
    unter *Bestellungen*.
 

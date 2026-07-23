@@ -12,6 +12,7 @@ import { AuthUser } from "./config/authUser";
 import { buildAstryxTheme, themeModeProp } from "./utils/theme";
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
 import { useBranding } from "./hooks/useBranding";
+import AddShootingPage from "./pages/user/AddShootingPage";
 import AlbumPage from "./pages/user/AlbumPage";
 import LoginPage from "./pages/auth/LoginPage";
 import PricingPage from "./pages/user/PricingPage";
@@ -100,6 +101,11 @@ function ThemedApp(): ReactElement {
           <ScrollToTop />
           <ErrorBoundary>
           <Routes>
+              {/* QR code / share link target — must resolve the same way for
+                  signed-in customers, admins and visitors without an account,
+                  so it sits above the role-specific layouts. */}
+              <Route path="addAlbum" element={<AddShootingPage />} />
+              <Route path="addAlbum/:shootingId" element={<AddShootingPage />} />
               {!isAdmin && user && (
                 <Route path="/" element={<Layout user={user} isAdmin={isAdmin} />}>
                   <Route index element={<Navigate to="/album" />} />

@@ -523,6 +523,11 @@ export default function Album(props: Props): ReactElement {
                     setOpen(true);
                   }
                 }}
+                onToggleSelect={() => {
+                  // the bubble is also reachable on hover outside select mode
+                  if (!selectMode) setSelectMode(true);
+                  toggleSelected(image);
+                }}
               />
             </div>
           ))}

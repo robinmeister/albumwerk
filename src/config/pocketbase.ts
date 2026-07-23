@@ -26,6 +26,26 @@ export async function signUpWithPocketBase(payload: {
   });
 }
 
+export type LinkShootingResult = {
+  status: string;
+  alreadyLinked: boolean;
+  id: string;
+  title: string;
+  type: string;
+};
+
+// Links an existing album to the logged-in account (QR code / album code).
+// Server-side because customers cannot write shootings.userIds themselves.
+// Throws with `error.response.code === 'unknown-shooting'` for a wrong code.
+export async function linkShootingToCurrentUser(
+  shootingId: string,
+): Promise<LinkShootingResult> {
+  return pb.send('/api/custom/link-shooting', {
+    method: 'POST',
+    body: { shootingId },
+  });
+}
+
 export async function loginWithPocketBase(identity: string, password: string) {
   return pb.collection('users').authWithPassword(identity, password);
 }

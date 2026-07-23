@@ -1,6 +1,11 @@
 import { Check, Circle as RadioButtonUnchecked } from "lucide-react";
 import * as stylex from "@stylexjs/stylex";
-import { ReactElement, useState } from "react";
+import { ReactElement, TouchEvent, useEffect, useRef, useState } from "react";
+
+// how long a touch has to rest on a tile before it starts the selection
+const LONG_PRESS_MS = 450;
+// finger wobble that still counts as holding still rather than scrolling
+const LONG_PRESS_TOLERANCE_PX = 10;
 
 type Props = {
   image: string;
@@ -9,6 +14,7 @@ type Props = {
   // selection that was already submitted by the customer
   isInUserSelection: boolean;
   onClick: () => void;
+  onToggleSelect: () => void;
 };
 
 // Grid tiles load the small server-side thumb instead of the full preview —
@@ -43,6 +49,7 @@ const s = stylex.create({
     justifyContent: "center",
     transition: "opacity 0.2s ease",
     opacity: visible ? 1 : 0,
+    cursor: "pointer",
     color: "#fff",
     backgroundColor: selected ? "var(--color-accent)" : "rgba(0,0,0,0.35)",
     border: selected ? "none" : "1.5px solid rgba(255,255,255,0.9)",
@@ -69,11 +76,68 @@ const s = stylex.create({
 // One tile of the album grid: fades in on load, zooms slightly on hover,
 // shows an instagram-like check bubble in select mode.
 export default function AlbumImage(props: Props): ReactElement {
-  const { image, selectMode, isSelected, isInUserSelection, onClick } = props;
+  const { image, selectMode, isSelected, isInUserSelection, onClick, onToggleSelect } = props;
   const [loaded, setLoaded] = useState(false);
+  const pressTimer = useRef<number | null>(null);
+  const pressStart = useRef<{ x: number; y: number } | null>(null);
+  // set once the press fired, so the tap that follows doesn't open the preview
+  const longPressFired = useRef(false);
+
+  const cancelLongPress = () => {
+    if (pressTimer.current !== null) {
+      window.clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+    pressStart.current = null;
+  };
+
+  // a pending press must not survive the tile (pagination swaps the grid)
+  useEffect(() => cancelLongPress, []);
+
+  const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    longPressFired.current = false;
+    // in select mode a plain tap already toggles, no need for the press
+    if (selectMode || event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    pressStart.current = { x: touch.clientX, y: touch.clientY };
+    pressTimer.current = window.setTimeout(() => {
+      pressTimer.current = null;
+      longPressFired.current = true;
+      onToggleSelect();
+    }, LONG_PRESS_MS);
+  };
+
+  const handleTouchMove = (event: TouchEvent<HTMLDivElement>) => {
+    const start = pressStart.current;
+    if (!start) return;
+    const touch = event.touches[0];
+    const moved =
+      Math.abs(touch.clientX - start.x) > LONG_PRESS_TOLERANCE_PX ||
+      Math.abs(touch.clientY - start.y) > LONG_PRESS_TOLERANCE_PX;
+    // the finger is scrolling the grid, not holding a tile
+    if (moved) cancelLongPress();
+  };
 
   return (
-    <div className="album-tile" onClick={onClick} {...stylex.props(s.tile)}>
+    <div
+      className="album-tile"
+      onClick={() => {
+        if (longPressFired.current) {
+          longPressFired.current = false;
+          return;
+        }
+        onClick();
+      }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={cancelLongPress}
+      onTouchCancel={cancelLongPress}
+      onContextMenu={(event) => {
+        // Android raises this mid-press; suppress it only for touch
+        if (pressStart.current || longPressFired.current) event.preventDefault();
+      }}
+      {...stylex.props(s.tile)}
+    >
       <img
         src={thumbUrl(image)}
         alt=""
@@ -82,9 +146,22 @@ export default function AlbumImage(props: Props): ReactElement {
         {...stylex.props(s.img(loaded, isSelected))}
       />
 
-      {/* select bubble: always in select mode, on hover otherwise */}
+      {/* select bubble: always in select mode, on hover otherwise.
+          Its own handler keeps the click off the tile, which would open the preview. */}
       <div
         className="album-tile-check"
+        role="checkbox"
+        aria-checked={isSelected}
+        aria-label={isSelected ? "Bild abwählen" : "Bild auswählen"}
+        onClick={(event) => {
+          event.stopPropagation();
+          // a press that started on the bubble already toggled it
+          if (longPressFired.current) {
+            longPressFired.current = false;
+            return;
+          }
+          onToggleSelect();
+        }}
         {...stylex.props(s.check(selectMode || isSelected, isSelected))}
       >
         {isSelected ? (

@@ -1,22 +1,22 @@
-import { ReactElement, useEffect, useMemo, useState } from "react";
+import { ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Button } from "@astryxdesign/core/Button";
-import { Dialog } from "@astryxdesign/core/Dialog";
 import { IconButton } from "@astryxdesign/core/IconButton";
 import { Spinner } from "@astryxdesign/core/Spinner";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Text } from "@astryxdesign/core/Text";
 import * as stylex from "@stylexjs/stylex";
-import { Plus as Add, ArrowLeft as ArrowBack, Images as Collections, Images as PhotoLibrary, Search } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { Plus as Add, ArrowLeft as ArrowBack, Images as Collections, Images as PhotoLibrary, QrCode, Search } from "lucide-react";
 import { currentUser } from "../../config/currentUser";
-import { doc, getDoc, updateDoc } from "../../config/firestore-compat";
-import { pb } from "../../config/pocketbase";
+import { doc, getDoc } from "../../config/firestore-compat";
+import { linkShootingToCurrentUser, pb } from "../../config/pocketbase";
 import { getShootingCoverUrl } from "../../config/storage-compat";
-import { toast } from "react-toastify";
 
 import Page from "../../components/layout/Page";
 import Album from "../../features/Album/components/Album";
+import AddShootingDialog from "../../features/Album/components/AddShootingDialog";
 
 type ShootingInfo = {
   id: string;
@@ -86,8 +86,6 @@ const s = stylex.create({
     color: "#fff",
   },
   cardType: { letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.85, marginTop: 4, display: "block" },
-  dialogBody: { display: "flex", flexDirection: "column", gap: 16, padding: 8 },
-  dialogActions: { display: "flex", justifyContent: "flex-end", gap: 8 },
 });
 
 // Album card: full-bleed cover with the title in a gradient overlay.
@@ -136,10 +134,33 @@ export default function AlbumPage(): ReactElement {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
-  const [newId, setNewId] = useState("");
-  const [adding, setAdding] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // ?shootingId=… — set by the QR code flow (AddShootingPage) and by logging in
+  // through a shared link. The album is already linked by then; make sure it is
+  // loaded, open it, and drop the parameter so a reload does not re-trigger it.
+  const requestedId = searchParams.get("shootingId") ?? "";
+  const handledIdRef = useRef("");
 
   useEffect(() => { void fetchShootings(); }, []);
+
+  useEffect(() => {
+    if (!requestedId || loading || handledIdRef.current === requestedId) return;
+    handledIdRef.current = requestedId;
+    void (async () => {
+      if (!shootings.some((s) => s.id === requestedId)) {
+        // came straight from login: the link step has not run yet
+        try {
+          await linkShootingToCurrentUser(requestedId);
+          await fetchShootings();
+        } catch {
+          /* unknown album — leave the overview as it is */
+        }
+      }
+      setSelectedId(requestedId);
+      setSearchParams({}, { replace: true });
+    })();
+  }, [requestedId, loading]);
 
   async function fetchShootings() {
     setLoading(true);
@@ -172,29 +193,10 @@ export default function AlbumPage(): ReactElement {
     setLoading(false);
   }
 
-  async function handleAddShooting() {
-    const trimmed = newId.trim();
-    if (!trimmed) return;
-    setAdding(true);
-    const user = currentUser();
-    if (!user) { setAdding(false); return; }
-    try {
-      const userDoc = doc("users", user.uid);
-      const snap = await getDoc(userDoc);
-      if (snap.exists()) {
-        const existing: string[] = snap.data()?.shootingIds ?? [];
-        if (!existing.includes(trimmed)) {
-          await updateDoc(userDoc, { shootingIds: [...existing, trimmed] });
-        }
-      }
-      toast.success("Album hinzugefügt");
-      setAddOpen(false);
-      setNewId("");
-      await fetchShootings();
-    } catch {
-      toast.error("Fehler beim Hinzufügen des Albums");
-    }
-    setAdding(false);
+  // the dialog has already linked the album server-side — reload and open it
+  async function handleAdded(shootingId: string) {
+    await fetchShootings();
+    setSelectedId(shootingId);
   }
 
   const selectedShooting = useMemo(
@@ -278,7 +280,7 @@ export default function AlbumPage(): ReactElement {
               onChange={(v) => setSearch(v)}
             />
           )}
-          <Button variant="secondary" icon={<Add />} label="Hinzufügen" onClick={() => setAddOpen(true)} />
+          <Button variant="secondary" icon={<Add />} label="Album hinzufügen" onClick={() => setAddOpen(true)} />
         </div>
       </div>
 
@@ -291,9 +293,10 @@ export default function AlbumPage(): ReactElement {
           {!search && (
             <>
               <Text type="body" color="disabled">
-                Füge dein erstes Album mit der Shooting-ID hinzu, die du erhalten hast.
+                Scanne den QR-Code, den du von deinem Fotografen bekommen hast — dein Album
+                erscheint dann sofort hier. Alternativ kannst du den Album-Code eingeben.
               </Text>
-              <Button variant="primary" icon={<Add />} label="Album hinzufügen" onClick={() => setAddOpen(true)} />
+              <Button variant="primary" icon={<QrCode />} label="QR-Code scannen oder Code eingeben" onClick={() => setAddOpen(true)} />
             </>
           )}
         </div>
@@ -313,38 +316,11 @@ export default function AlbumPage(): ReactElement {
         </div>
       )}
 
-      {/* ── add shooting dialog ── */}
-      <Dialog
+      <AddShootingDialog
         isOpen={addOpen}
-        onOpenChange={(open) => { if (!open) { setAddOpen(false); setNewId(""); } }}
-        width={380}
-      >
-        <div {...stylex.props(s.dialogBody)}>
-          <Heading level={5}>Album hinzufügen</Heading>
-          <Text type="body" color="secondary">
-            Gib die Shooting-ID ein. Du findest sie auf der Karte, die du erhalten hast.
-          </Text>
-          <TextInput
-            width="100%"
-            label="Shooting-ID"
-            hasAutoFocus
-            value={newId}
-            onChange={(v) => setNewId(v)}
-            onEnter={() => void handleAddShooting()}
-          />
-          <div {...stylex.props(s.dialogActions)}>
-            <Button variant="secondary" label="Abbrechen" onClick={() => { setAddOpen(false); setNewId(""); }} />
-            <Button
-              variant="primary"
-              icon={<Add />}
-              label="Hinzufügen"
-              isDisabled={!newId.trim() || adding}
-              isLoading={adding}
-              onClick={() => void handleAddShooting()}
-            />
-          </div>
-        </div>
-      </Dialog>
+        onOpenChange={setAddOpen}
+        onAdded={(shootingId) => void handleAdded(shootingId)}
+      />
     </Page>
   );
 }

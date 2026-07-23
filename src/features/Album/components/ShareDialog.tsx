@@ -10,6 +10,7 @@ import { ReactElement, useState } from "react";
 import { toast } from "react-toastify";
 
 import { Shooting } from "../../../utils/types";
+import { shootingShareLink } from "../../../utils/shootingLink";
 
 type Props = {
   shooting: Shooting;
@@ -30,19 +31,26 @@ const s = stylex.create({
   },
   qrWrap: { display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 12 },
   qrBox: { padding: 12, backgroundColor: "#fff", borderRadius: "var(--radius-element)" },
+  offscreen: { position: "absolute", left: -9999, top: -9999, pointerEvents: "none" },
+  steps: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    padding: 12,
+    borderRadius: "var(--radius-element)",
+    backgroundColor: "var(--color-background-muted)",
+  },
+  code: { fontFamily: "monospace", letterSpacing: "0.05em" },
 });
 
 // "Teilen" button + dialog: share link, copy to clipboard, QR code download.
-// Public shootings link straight to the album, everything else to the
-// signup page that auto-links the shooting.
+// Public shootings link straight to the album, everything else to /addAlbum,
+// which adds the album to the customer's account (or sends them to signup
+// first) — scanning the code is all a customer has to do.
 export default function ShareDialog({ shooting }: Props): ReactElement {
   const [open, setOpen] = useState(false);
 
-  const origin = window.location.origin;
-  const link =
-    shooting.type === "public"
-      ? `${origin}/publicAlbum/${shooting.id}`
-      : `${origin}/signUp?shootingId=${shooting.id}`;
+  const link = shootingShareLink(shooting);
 
   const copyLink = async () => {
     try {
@@ -53,8 +61,18 @@ export default function ShareDialog({ shooting }: Props): ReactElement {
     }
   };
 
+  const copyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(shooting.id);
+      toast.success("Album-Code kopiert");
+    } catch {
+      toast.error("Kopieren fehlgeschlagen");
+    }
+  };
+
+  // the visible code is only 168px — download the offscreen print-size one
   const downloadQRCode = () => {
-    const canvas = document.getElementById("share-qr-code") as HTMLCanvasElement;
+    const canvas = document.getElementById("share-qr-code-print") as HTMLCanvasElement;
     if (!canvas) return;
     const a = document.createElement("a");
     a.href = canvas.toDataURL("image/png");
@@ -79,8 +97,8 @@ export default function ShareDialog({ shooting }: Props): ReactElement {
           <Heading level={5}>Album teilen</Heading>
           <Text type="body" color="secondary">
             {shooting.type === "public"
-              ? "Jeder mit diesem Link kann das Album ansehen."
-              : "Kunden registrieren sich über diesen Link und werden automatisch mit dem Album verknüpft."}
+              ? "Jeder mit diesem Link oder QR-Code kann das Album ansehen — ohne Konto."
+              : "Der QR-Code führt direkt zum Album: Kunden scannen ihn mit der Handykamera, melden sich an bzw. registrieren sich einmalig — das Album liegt danach automatisch in ihrer Übersicht."}
           </Text>
           <div {...stylex.props(s.linkRow)}>
             <input readOnly value={link} {...stylex.props(s.linkInput)} />
@@ -94,7 +112,7 @@ export default function ShareDialog({ shooting }: Props): ReactElement {
           </div>
           <div {...stylex.props(s.qrWrap)}>
             <div {...stylex.props(s.qrBox)}>
-              <QRCodeCanvas id="share-qr-code" value={link} size={168} />
+              <QRCodeCanvas id="share-qr-code" value={link} size={168} level="M" marginSize={2} />
             </div>
             <Button
               variant="secondary"
@@ -102,6 +120,35 @@ export default function ShareDialog({ shooting }: Props): ReactElement {
               label="QR-Code herunterladen"
               onClick={downloadQRCode}
             />
+          </div>
+
+          {shooting.type !== "public" && (
+            <div {...stylex.props(s.steps)}>
+              <Text type="supporting" weight="semibold">
+                Falls das Scannen nicht klappt
+              </Text>
+              <Text type="supporting" color="secondary">
+                Kunden können das Album auch von Hand hinzufügen: „Meine Alben“ →
+                „Album hinzufügen“ → diesen Album-Code eingeben.
+              </Text>
+              <div {...stylex.props(s.linkRow)}>
+                <span {...stylex.props(s.code)}>
+                  <Text type="body">{shooting.id}</Text>
+                </span>
+                <IconButton
+                  icon={<ContentCopy />}
+                  label="Album-Code kopieren"
+                  tooltip="Album-Code kopieren"
+                  variant="ghost"
+                  onClick={() => void copyCode()}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* print-resolution copy of the same code, used by the download button */}
+          <div {...stylex.props(s.offscreen)} aria-hidden>
+            <QRCodeCanvas id="share-qr-code-print" value={link} size={1024} level="M" marginSize={2} />
           </div>
         </div>
       </Dialog>
