@@ -505,6 +505,7 @@ export default function Album(props: Props): ReactElement {
               ? "Sobald du Bilder hochlädst, erscheinen sie hier."
               : "Sobald Bilder hinzugefügt wurden, erscheinen sie hier. Schau später noch einmal vorbei."
           }
+          helpSlug={isAdminAlbum ? "bilder-hochladen" : undefined}
         />
       ) : (
         <div {...stylex.props(s.masonry)}>

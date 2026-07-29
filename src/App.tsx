@@ -35,6 +35,9 @@ import SupportPage from "./pages/user/SupportPage";
 import PublicAlbumPage from "./pages/public/PublicAlbumPage";
 import PublicDownloadsPage from "./pages/public/PublicDownloadsPage";
 import LegalPage from "./pages/public/LegalPage";
+import HelpPage from "./pages/help/HelpPage";
+import HelpArticlePage from "./pages/help/HelpArticlePage";
+import HelpAdminPage from "./pages/admin/HelpAdminPage";
 import BrandingPage from "./pages/admin/BrandingPage";
 import AdminLegalPage from "./pages/admin/AdminLegalPage";
 import AdminSupportPage from "./pages/admin/AdminSupportPage";
@@ -118,6 +121,8 @@ function ThemedApp(): ReactElement {
                   {/* direct download of paid/public shootings, no checkout */}
                   <Route path="shootingDownloads" element={<PublicDownloadsPage />} />
                   <Route path="support" element={<SupportPage />} />
+                  <Route path="help" element={<HelpPage />} />
+                  <Route path="help/:slug" element={<HelpArticlePage />} />
                   <Route path="*" element={<NoMatchPage />} />
                 </Route>
               )}
@@ -143,6 +148,11 @@ function ThemedApp(): ReactElement {
                   <Route path="legal" element={<AdminLegalPage />} />
                   <Route path="support" element={<AdminSupportPage />} />
                   <Route path="downloads" element={<DownloadsPage />} />
+                  {/* static segment outranks the dynamic one in react-router v6,
+                      so /help/manage never resolves as an article slug */}
+                  <Route path="help/manage" element={<HelpAdminPage />} />
+                  <Route path="help" element={<HelpPage />} />
+                  <Route path="help/:slug" element={<HelpArticlePage />} />
                   <Route path="*" element={<NoMatchPage />} />
                 </Route>
               )}
@@ -161,6 +171,10 @@ function ThemedApp(): ReactElement {
                 <Route path="publicDownloads" element={<PublicDownloadsPage />} />
                 <Route path="imprint" element={<LegalPage kind="imprint" />} />
                 <Route path="privacy" element={<LegalPage kind="privacy" />} />
+                {/* reachable without an account — only articles tagged
+                    "public" are served here */}
+                <Route path="help" element={<HelpPage standalone />} />
+                <Route path="help/:slug" element={<HelpArticlePage standalone />} />
                 <Route path="__/auth/action" element={<ActionPage />} />
                 <Route path="*" element={<NoMatchPage />} />
               </Route>

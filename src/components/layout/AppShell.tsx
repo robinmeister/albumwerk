@@ -237,6 +237,10 @@ export default function AppShell(props: Props): ReactElement {
           <Link to="/privacy" {...stylex.props(s.footerLink)}>
             Datenschutz
           </Link>
+          {" · "}
+          <Link to="/help" {...stylex.props(s.footerLink)}>
+            Hilfe
+          </Link>
         </Text>
       </div>
     </>

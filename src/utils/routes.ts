@@ -1,5 +1,5 @@
 import { ComponentType } from "react";
-import { Download, Image, Palette, Scale, Wallet as Payments, Users as People, User as Person, Tag as PriceChange, ReceiptText as ReceiptLong, Headset as SupportAgent } from "lucide-react";
+import { CircleHelp as HelpIcon, Download, Image, Palette, Scale, Wallet as Payments, Users as People, User as Person, Tag as PriceChange, ReceiptText as ReceiptLong, Headset as SupportAgent } from "lucide-react";
 
 // Single source for navigation: Header (desktop), TabBar (mobile) and the
 // user menu all render from these arrays — labels are no longer coupled to
@@ -32,9 +32,11 @@ export const adminNavItems: NavItem[] = [
 // specially by the consumer
 export const userMenuItems: NavItem[] = [
   { key: "profile", label: "Profil", path: "/profile", Icon: Person },
+  { key: "help", label: "Hilfe", path: "/help", Icon: HelpIcon },
   { key: "support", label: "Support", path: "/support", Icon: SupportAgent },
 ];
 
 export const adminMenuItems: NavItem[] = [
   { key: "profile", label: "Profil", path: "/profile", Icon: Person },
+  { key: "help", label: "Hilfe", path: "/help", Icon: HelpIcon },
 ];

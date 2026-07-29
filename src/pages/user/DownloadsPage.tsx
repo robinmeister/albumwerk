@@ -72,6 +72,7 @@ export default function DownloadsPage(): ReactElement {
                 title="Noch keine Downloads"
                 description="Sobald du Bilder gekauft oder freigeschaltet hast, findest du sie hier."
                 action={{ label: "Zum Album", onClick: () => navigate("/album") }}
+                helpSlug="downloads-nutzen"
             />
         </Page>
     ); }

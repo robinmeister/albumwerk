@@ -23,12 +23,22 @@ export type DuplicatePrompt = {
   existingIds: string[];
 };
 
-const MAX_PARALLEL_UPLOADS = 4;
+// Previews are rendered server-side by /api/custom/preview-worker, not inside
+// the upload request, so these slots really do carry bytes. Behind Caddy
+// (HTTP/2) uploads and worker calls share one connection; on plain HTTP/1.1 the
+// browser caps a host at 6 sockets and simply queues the surplus.
+const MAX_PARALLEL_UPLOADS = 6;
+const PREVIEW_WORKERS = 2; // parallel drain requests; server side is CPU-bound
+const PREVIEW_POLL_MS = 750; // re-ask for work while uploads are still running
 const PREVIEW_TIMEOUT_MS = 2 * 60 * 1000; // watermarking large batches takes a while
 const PREVIEW_RECONCILE_MS = 10_000; // safety net in case a realtime event is missed
 
 function makeId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -50,6 +60,7 @@ export function useImageUpload(
   const expectedRef = useRef<Set<string>>(new Set()); // names of successfully uploaded originals
   const receivedRef = useRef<Set<string>>(new Set()); // names of previews seen so far
   const abortRef = useRef<AbortController | null>(null);
+  const uploadsDoneRef = useRef(true); // lets the preview workers exit
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconcileRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -199,6 +210,35 @@ export function useImageUpload(
     }
   };
 
+  /**
+   * Drives the server-side preview queue while the uploads are still running,
+   * so ImageMagick and the network transfer overlap instead of alternating.
+   * The realtime subscription still reports what actually finished — this only
+   * makes the server start working earlier than the once-a-minute cron would.
+   */
+  const runPreviewWorker = async (signal: AbortSignal) => {
+    while (!signal.aborted) {
+      let pending = 0;
+      try {
+        const res: any = await pb.send("/api/custom/preview-worker", {
+          method: "POST",
+          body: {},
+          requestKey: null, // parallel workers must not cancel each other
+        });
+        pending = res?.pending ?? 0;
+      } catch {
+        // the cron fallback picks the queue up — never fail the upload over it
+        if (uploadsDoneRef.current) return;
+        await sleep(PREVIEW_POLL_MS);
+        continue;
+      }
+      if (pending === 0) {
+        if (uploadsDoneRef.current) return;
+        await sleep(PREVIEW_POLL_MS);
+      }
+    }
+  };
+
   const runBatch = async (batch: UploadItem[], sid: string) => {
     setPhase("uploading");
     setPreviewProgress(null);
@@ -221,9 +261,20 @@ export function useImageUpload(
         if (!ok) failed += 1;
       }
     };
-    await Promise.all(
-      Array.from({ length: Math.min(MAX_PARALLEL_UPLOADS, batch.length) }, () => worker())
+
+    uploadsDoneRef.current = false;
+    const previewWorkers = Promise.all(
+      Array.from({ length: PREVIEW_WORKERS }, () => runPreviewWorker(controller.signal))
     );
+
+    try {
+      await Promise.all(
+        Array.from({ length: Math.min(MAX_PARALLEL_UPLOADS, batch.length) }, () => worker())
+      );
+    } finally {
+      uploadsDoneRef.current = true;
+    }
+    void previewWorkers; // keeps draining until the queue is empty
 
     if (controller.signal.aborted) return;
     if (failed > 0) {
@@ -327,6 +378,7 @@ export function useImageUpload(
 
   const cancelAll = () => {
     abortRef.current?.abort();
+    uploadsDoneRef.current = true;
     clearWaiters();
     setItems((prev) =>
       prev.map((it) =>
@@ -343,6 +395,7 @@ export function useImageUpload(
   const reset = () => {
     abortRef.current?.abort();
     abortRef.current = null;
+    uploadsDoneRef.current = true;
     clearWaiters();
     thumbUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     thumbUrlsRef.current = [];

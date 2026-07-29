@@ -27,6 +27,8 @@ import Album from "../../features/Album/components/Album";
 import UploadComponent from "../../features/Album/components/UploadComponent";
 import EditShootingModal from "../../features/Album/components/ShootingModal";
 import DeleteModal from "../../components/widgets/DeleteModal";
+import HelpBanner from "../../components/feedback/HelpBanner";
+import HelpHint from "../../components/widgets/HelpHint";
 import { getUsersSnapshot } from "../../utils/functions";
 import { pb } from "../../config/pocketbase";
 import { getShootingCoverUrl } from "../../config/storage-compat";
@@ -43,7 +45,7 @@ const MD = "@media (min-width: 900px)";
 const s = stylex.create({
   loading: { display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" },
   root: { paddingTop: 8 },
-  pageTitle: { marginBottom: 12, display: { default: "none", [MD]: "block" } },
+  pageTitle: { marginBottom: 12, display: { default: "none", [MD]: "flex" }, alignItems: "center", gap: 4 },
   panels: {
     display: "flex",
     flexDirection: { default: "column", [MD]: "row" },
@@ -380,7 +382,14 @@ export default function AdminAlbumPage(): ReactElement {
       <div {...stylex.props(s.root)}>
         <div {...stylex.props(s.pageTitle)}>
           <Heading level={5}>Album</Heading>
+          <HelpHint slug="album-anlegen" />
         </div>
+
+        <HelpBanner
+          slug="album-anlegen"
+          title="Leg dein erstes Shooting an"
+          isHidden={loading || shootings.length > 0}
+        />
 
         {/* ===== Two-panel container ===== */}
         <div {...stylex.props(s.panels)}>

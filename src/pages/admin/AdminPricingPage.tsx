@@ -24,6 +24,8 @@ import {
 
 import { Package, Price } from "../../utils/types";
 import DeleteModal from "../../components/widgets/DeleteModal";
+import HelpBanner from "../../components/feedback/HelpBanner";
+import HelpHint from "../../components/widgets/HelpHint";
 import useMobileService from "../../hooks/useMobileService";
 import {
   CATEGORY_LABELS,
@@ -66,7 +68,7 @@ const MD = "@media (min-width: 900px)";
 const s = stylex.create({
   loading: { display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" },
   root: { paddingTop: 8 },
-  pageTitle: { marginBottom: 12, display: { default: "none", [MD]: "block" } },
+  pageTitle: { marginBottom: 12, display: { default: "none", [MD]: "flex" }, alignItems: "center", gap: 4 },
   panels: {
     display: "flex",
     flexDirection: { default: "column", [MD]: "row" },
@@ -403,7 +405,14 @@ export default function AdminPricingPage(): ReactElement {
       <div {...stylex.props(s.root)}>
         <div {...stylex.props(s.pageTitle)}>
           <Heading level={5}>Preise</Heading>
+          <HelpHint slug="preise-pakete" />
         </div>
+
+        <HelpBanner
+          slug="preise-pakete"
+          title="Noch keine Preise angelegt"
+          isHidden={loading || prices.length > 0 || packages.length > 0}
+        />
 
         <div {...stylex.props(s.panels)}>
           {/* ===== LEFT PANEL ===== */}

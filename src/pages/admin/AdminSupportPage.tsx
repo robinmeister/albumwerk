@@ -15,6 +15,7 @@ import { useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import EmptyState from "../../components/feedback/EmptyState";
+import HelpHint from "../../components/widgets/HelpHint";
 import Page from "../../components/layout/Page";
 import {
   CATEGORY_LABELS,
@@ -338,7 +339,10 @@ export default function AdminSupportPage(): ReactElement {
 
   // --- list ----------------------------------------------------------------
   return (
-    <Page title="Support">
+    <Page
+      title="Support"
+      actions={<HelpHint slug="support-postfach" />}
+    >
       <div {...stylex.props(s.column)}>
         <div {...stylex.props(s.rowBetween)}>
           <TextInput

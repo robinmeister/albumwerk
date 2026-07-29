@@ -113,6 +113,7 @@ export default function PublicAlbumPage(): ReactElement {
           <span>© {new Date().getFullYear()} {settings.businessName}</span>
           <Link to="/imprint" {...stylex.props(s.link)}>Impressum</Link>
           <Link to="/privacy" {...stylex.props(s.link)}>Datenschutz</Link>
+          <Link to="/help" {...stylex.props(s.link)}>Hilfe</Link>
         </div>
       </div>
     </div>

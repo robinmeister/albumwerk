@@ -1,0 +1,427 @@
+// Help articles for the instance operator (photographer). Shipped with the
+// build, so they always match the running version.
+//
+// Body markup is plain HTML — same pipeline as the legal texts: written here,
+// sanitized in the renderer, styled by the `.rich-text` rules in index.css.
+// Keep it to the tags that block covers: h2/h3, p, ul/ol/li, strong, em, code,
+// blockquote, a, hr.
+//
+// Slugs are referenced by <HelpHint slug=… /> and <HelpBanner slug=… /> across
+// the admin pages — renaming one breaks those call sites, so don't.
+
+import { HelpArticle } from "./types";
+
+export const adminArticles: HelpArticle[] = [
+  // --- Einrichtung ---------------------------------------------------------
+  {
+    slug: "erste-schritte-admin",
+    title: "Erste Schritte als Fotograf",
+    summary:
+      "Die vier Dinge, die du nach der Installation erledigen solltest — in der richtigen Reihenfolge.",
+    audience: ["admin"],
+    category: "setup",
+    keywords: ["einrichtung", "setup", "start", "installation", "onboarding"],
+    relatedPath: "/branding",
+    bodyHtml: `
+<p>Nach der Installation führt dich der Einrichtungs-Assistent einmal durch die wichtigsten Punkte. Falls du ihn übersprungen hast oder etwas nachholen willst, ist das hier die Reihenfolge, die sich bewährt hat:</p>
+<ol>
+  <li><strong>Branding</strong> — Name, Logo, Farben und Schrift. Damit sieht die App für deine Kunden nach dir aus und nicht nach Standard.</li>
+  <li><strong>Rechtstexte</strong> — Impressum und Datenschutzerklärung. Sobald Kunden Zugriff haben, sind die Pflicht.</li>
+  <li><strong>Zahlungen</strong> — nur nötig, wenn du direkt über die App verkaufen willst. Wenn deine Kunden ohnehin vorab bezahlen, kannst du das überspringen.</li>
+  <li><strong>Erstes Album</strong> — ein Shooting anlegen, Bilder hochladen, Link oder QR-Code an den Kunden geben.</li>
+</ol>
+<p>Eine eigene Domain kannst du jederzeit später nachrüsten — alle Links funktionieren weiter.</p>
+`,
+  },
+  {
+    slug: "branding-einrichten",
+    title: "Branding einrichten",
+    summary:
+      "Name, Logo, Favicon, Farben, Schriftart und Eckenradius — so bekommt die App dein Aussehen.",
+    audience: ["admin"],
+    category: "setup",
+    keywords: ["logo", "farben", "schrift", "design", "aussehen", "favicon", "corporate"],
+    relatedPath: "/branding",
+    bodyHtml: `
+<p>Unter <strong>Branding</strong> stellst du ein, wie die App für deine Kunden aussieht. Die Vorschau rechts (bzw. unter den Feldern auf dem Handy) aktualisiert sich sofort, gespeichert wird erst mit dem Button.</p>
+<h2>Die Felder im Einzelnen</h2>
+<ul>
+  <li><strong>Name des Geschäfts</strong> — steht in der Seitenleiste, im Footer und in allen E-Mails an deine Kunden.</li>
+  <li><strong>Kurzname (App)</strong> — der Name unter dem Icon, wenn jemand die App auf den Homescreen legt. Kurz halten, sonst wird er abgeschnitten.</li>
+  <li><strong>Slogan / Untertitel</strong> — erscheint auf der öffentlichen Album-Seite unter deinem Namen.</li>
+  <li><strong>Logo</strong> — wird in der Seitenleiste und auf öffentlichen Album-Seiten angezeigt. Ein freigestelltes PNG sieht in beiden Farbmodi am besten aus.</li>
+  <li><strong>Favicon</strong> — optional, das kleine Icon im Browser-Tab. Ohne eigenes Favicon wird das Logo verwendet.</li>
+  <li><strong>Primär- und Sekundärfarbe</strong> — Primär färbt Buttons und Links, Sekundär ist der Akzent für Hervorhebungen.</li>
+  <li><strong>Schriftart</strong> — vier mitgelieferte Schriften. <em>Inter</em> und <em>Montserrat</em> wirken sachlich-modern, <em>Lora</em> und <em>Playfair Display</em> klassisch-elegant.</li>
+  <li><strong>Erscheinungsbild</strong> — hell, dunkel oder automatisch nach der Systemeinstellung deiner Kunden.</li>
+  <li><strong>Eckenradius</strong> — von kantig (0) bis stark abgerundet (24). Wirkt auf Karten, Buttons und Bilder gleichzeitig.</li>
+</ul>
+<h2>Tipp zum Kontrast</h2>
+<p>Prüfe deine Primärfarbe einmal im hellen <em>und</em> im dunklen Modus. Sehr helle Farben werden auf weißem Hintergrund schnell unleserlich — die Vorschau zeigt dir das direkt.</p>
+`,
+  },
+  {
+    slug: "kontakt-benachrichtigungen",
+    title: "Kontaktdaten und Benachrichtigungen",
+    summary:
+      "Wohin Support-Anfragen und Bestellbenachrichtigungen gehen und wo deine Währung eingestellt wird.",
+    audience: ["admin"],
+    category: "setup",
+    keywords: ["email", "e-mail", "benachrichtigung", "währung", "eur", "kontakt", "website"],
+    relatedPath: "/branding",
+    bodyHtml: `
+<p>Der Abschnitt <strong>Kontakt &amp; Geschäft</strong> auf der Branding-Seite steuert, wo dich Nachrichten erreichen:</p>
+<ul>
+  <li><strong>Kontakt-E-Mail (Support)</strong> — die Adresse, die deine Kunden sehen, wenn sie dich erreichen wollen. Wird auch in den generierten Rechtstexten verwendet.</li>
+  <li><strong>Bestell-Benachrichtigungen an</strong> — hierhin geht eine Mail, sobald jemand bestellt. Darf eine andere Adresse sein als die Support-Adresse, zum Beispiel deine Buchhaltung.</li>
+  <li><strong>Website (optional)</strong> — verlinkt auf deine Hauptseite.</li>
+  <li><strong>Währung</strong> — ISO-Code, in Deutschland <code>EUR</code>. Bestimmt, in welcher Währung Beträge angezeigt und abgerechnet werden.</li>
+</ul>
+<blockquote>Damit überhaupt Mails rausgehen, muss in deiner Installation ein SMTP-Server hinterlegt sein. Das passiert nicht hier, sondern in der PocketBase-Administration deiner Instanz.</blockquote>
+`,
+  },
+  {
+    slug: "custom-domain",
+    title: "Eigene Domain einrichten",
+    summary:
+      "A-Record auf deinen Server zeigen lassen, Domain eintragen — das HTTPS-Zertifikat kommt automatisch.",
+    audience: ["admin"],
+    category: "setup",
+    keywords: ["domain", "dns", "https", "ssl", "zertifikat", "a-record", "let's encrypt", "url"],
+    relatedPath: "/branding",
+    bodyHtml: `
+<p>Standardmäßig ist deine Instanz unter der Adresse erreichbar, unter der du sie installiert hast. Mit einer eigenen Domain — etwa <code>fotos.deine-domain.de</code> — wirkt das Ganze deutlich professioneller.</p>
+<h2>So gehst du vor</h2>
+<ol>
+  <li>Lege bei deinem Domain-Anbieter einen <strong>A-Record</strong> an, der auf die <strong>IP-Adresse deines Servers</strong> zeigt. Wenn dein Server auch über IPv6 erreichbar ist, zusätzlich einen <strong>AAAA-Record</strong>.</li>
+  <li>Trage die Domain unter <strong>Branding → Eigene Domain</strong> ein und speichere.</li>
+  <li>Das HTTPS-Zertifikat wird beim ersten Aufruf <strong>automatisch</strong> von Let's Encrypt geholt. Du musst nichts weiter konfigurieren.</li>
+  <li>Mit <strong>Domain prüfen</strong> siehst du, ob die Adresse schon erreichbar und gesichert ist.</li>
+</ol>
+<h2>„Noch nicht erreichbar“ — was nun?</h2>
+<p>Das ist direkt nach dem Anlegen des DNS-Eintrags normal. DNS-Änderungen brauchen je nach Anbieter einige Minuten bis mehrere Stunden, bis sie überall aktiv sind. Prüfe später einfach noch einmal.</p>
+<p>Wenn es nach einem Tag immer noch nicht klappt, sind das die üblichen Ursachen:</p>
+<ul>
+  <li>Der A-Record zeigt auf die falsche IP — etwa auf die deines Routers statt auf die des Servers.</li>
+  <li>Ein Proxy des DNS-Anbieters ist aktiv (bei Cloudflare der orange Wolken-Schalter). Der muss für die automatische Zertifikatsausstellung zunächst aus sein.</li>
+  <li>Port 80 und 443 sind von außen nicht erreichbar. Let's Encrypt braucht beide.</li>
+</ul>
+`,
+  },
+  {
+    slug: "rechtstexte",
+    title: "Impressum und Datenschutzerklärung",
+    summary:
+      "Betreiberdaten eintragen, Texte automatisch erzeugen lassen und anschließend nachbearbeiten.",
+    audience: ["admin"],
+    category: "setup",
+    keywords: ["impressum", "datenschutz", "dsgvo", "recht", "agb", "pflichtangaben"],
+    relatedPath: "/legal",
+    bodyHtml: `
+<p>Sobald Kunden Zugriff auf deine Instanz haben, brauchst du in Deutschland ein <strong>Impressum</strong> und eine <strong>Datenschutzerklärung</strong>. Beide sind über den Footer von jeder Seite aus erreichbar.</p>
+<h2>So erzeugst du die Texte</h2>
+<ol>
+  <li>Trage unter <strong>Rechtliches</strong> deine Betreiberdaten ein: Name, Anschrift, Kontakt, gegebenenfalls Umsatzsteuer-ID.</li>
+  <li>Lass dir daraus die Textvorlagen erzeugen. Aktive Zahlungsanbieter werden dabei berücksichtigt — die Datenschutzerklärung bekommt automatisch die passenden Abschnitte zu PayPal beziehungsweise Stripe.</li>
+  <li>Geh die Texte im Editor durch. Alle Stellen, die als <code>[bitte ergänzen: …]</code> markiert sind, musst du selbst ausfüllen — die kann die Vorlage nicht kennen.</li>
+  <li>Speichern. Die Seiten <strong>Impressum</strong> und <strong>Datenschutz</strong> sind sofort öffentlich abrufbar.</li>
+</ol>
+<h2>Wichtiger Hinweis</h2>
+<blockquote>Die Vorlagen sind ein Startpunkt, keine Rechtsberatung. Sie decken den typischen Fall einer selbst gehosteten Foto-Instanz ab. Ob sie für deine Situation vollständig sind, kann dir nur jemand sagen, der deinen konkreten Fall kennt. Im Zweifel lass die Texte einmal anwaltlich prüfen — das ist einmalig Aufwand und danach erledigt.</blockquote>
+<p>Wenn du die Texte lieber komplett selbst schreibst: der Editor erlaubt auch das Einfügen von fertigem HTML über die Quelltext-Ansicht.</p>
+`,
+  },
+
+  // --- Alben & Bilder ------------------------------------------------------
+  {
+    slug: "album-anlegen",
+    title: "Ein Album (Shooting) anlegen",
+    summary:
+      "Titel, Kunden und Shooting-Typ festlegen — der Typ entscheidet, ob gekauft oder direkt heruntergeladen wird.",
+    audience: ["admin"],
+    category: "albums",
+    keywords: ["shooting", "album", "anlegen", "neu", "erstellen", "typ"],
+    relatedPath: "/album",
+    bodyHtml: `
+<p>Jedes Shooting ist ein eigenes Album. Über <strong>Album → Neues Shooting</strong> legst du eins an.</p>
+<h2>Die Felder</h2>
+<ul>
+  <li><strong>Titel</strong> — sieht der Kunde. Etwas Konkretes wie „Hochzeit Meyer, Juli 2026“ ist besser als „Shooting 1“.</li>
+  <li><strong>Beschreibung</strong> — optionaler Text über dem Album, zum Beispiel ein Hinweis auf die Auswahlfrist.</li>
+  <li><strong>Kunde(n)</strong> — welche Konten Zugriff bekommen. Du kannst das auch leer lassen und den Zugang später über Link oder QR-Code herstellen.</li>
+</ul>
+<h2>Der Shooting-Typ</h2>
+<p>Das ist die wichtigste Entscheidung, denn sie legt fest, was der Kunde im Album tun kann:</p>
+<ul>
+  <li><strong>Bezahlt</strong> — der Kunde hat bereits bezahlt, zum Beispiel direkt bei dir. Es gibt keinen Kaufvorgang; er markiert Bilder und lädt sie über <em>Download</em> direkt herunter.</li>
+  <li><strong>Öffentlich</strong> — für alle mit dem Link zugänglich, ebenfalls ohne Kaufvorgang. Passt für Vereins-, Event- oder Familienalben. Der Kunde sieht hier zusätzlich selbst den Teilen-Dialog und kann den Link weitergeben.</li>
+  <li><strong>Verkauf</strong> — der Kunde wählt Bilder aus und durchläuft die Kasse. Nur bei diesem Typ ordnest du <strong>Preise</strong> und optional ein <strong>Paket</strong> zu.</li>
+</ul>
+<h2>Vorabauswahl</h2>
+<p>Bei den Typen <em>Bezahlt</em> und <em>Verkauf</em> kannst du <strong>„Kunden können eine Vorabauswahl treffen“</strong> aktivieren. Der Kunde markiert dann Bilder und schickt dir die Auswahl, ohne schon etwas zu kaufen — praktisch, wenn du danach noch retuschierst.</p>
+`,
+  },
+  {
+    slug: "bilder-hochladen",
+    title: "Bilder hochladen",
+    summary:
+      "Originale hochladen — Vorschaubilder mit Wasserzeichen erzeugt die App automatisch im Hintergrund.",
+    audience: ["admin"],
+    category: "albums",
+    keywords: ["upload", "hochladen", "bilder", "fotos", "vorschau", "original", "raw"],
+    relatedPath: "/album",
+    bodyHtml: `
+<p>Öffne ein Shooting und zieh die Bilder in den Upload-Bereich oder wähle sie über den Dateidialog aus. Mehrere Bilder auf einmal sind kein Problem.</p>
+<h2>Was dabei passiert</h2>
+<p>Du lädst immer die <strong>Originale</strong> hoch. Daraus erzeugt die App automatisch:</p>
+<ul>
+  <li>ein <strong>Vorschaubild</strong> in reduzierter Größe und mit Wasserzeichen — das bekommen Kunden im Album zu sehen,</li>
+  <li>ein <strong>Thumbnail</strong> für die Rasteransicht.</li>
+</ul>
+<p>Das Original bleibt geschützt und wird erst herausgegeben, wenn der Kunde es gekauft hat beziehungsweise das Shooting als bezahlt oder öffentlich markiert ist.</p>
+<h2>Verarbeitung im Hintergrund</h2>
+<p>Die Vorschauen werden nach dem Upload in einer Warteschlange erzeugt. Bei vielen oder sehr großen Bildern kann das einen Moment dauern — du kannst die Seite in der Zwischenzeit verlassen, die Verarbeitung läuft weiter. Bilder, deren Vorschau noch nicht fertig ist, sind entsprechend markiert.</p>
+<h2>Wenn etwas hakt</h2>
+<ul>
+  <li>Sehr große Dateien brauchen länger und können bei knappem Speicher auf dem Server scheitern. Lade in dem Fall in kleineren Gruppen hoch.</li>
+  <li>Fehlt bei einzelnen Bildern dauerhaft die Vorschau, kannst du sie unter <strong>Branding → Wasserzeichen &amp; Vorschau</strong> mit <em>Vorschauen neu erzeugen</em> noch einmal anstoßen.</li>
+</ul>
+`,
+  },
+  {
+    slug: "wasserzeichen-vorschau",
+    title: "Wasserzeichen und Vorschaubilder",
+    summary:
+      "Text oder Logo als Wasserzeichen, Deckkraft und maximale Vorschaugröße einstellen.",
+    audience: ["admin"],
+    category: "albums",
+    keywords: ["wasserzeichen", "watermark", "vorschau", "preview", "deckkraft", "schutz", "kopierschutz"],
+    relatedPath: "/branding",
+    bodyHtml: `
+<p>Vorschaubilder sind die Version, die Kunden vor dem Kauf sehen. Sie sind verkleinert und tragen dein Wasserzeichen. Eingestellt wird das unter <strong>Branding → Wasserzeichen &amp; Vorschau</strong>.</p>
+<h2>Die Einstellungen</h2>
+<ul>
+  <li><strong>Wasserzeichen-Text</strong> — meist dein Name oder deine Domain.</li>
+  <li><strong>Wasserzeichen-Logo</strong> — optional statt des Textes. Ein weißes PNG mit transparentem Hintergrund funktioniert auf den meisten Bildern am besten.</li>
+  <li><strong>Deckkraft</strong> — zwischen 5 % und 100 %. Ein guter Startwert liegt bei etwa 30 %: deutlich sichtbar, aber das Bild bleibt beurteilbar.</li>
+  <li><strong>Max. Vorschaugröße (px)</strong> — die längere Kante des Vorschaubilds. Kleiner heißt schnelleres Laden und weniger Missbrauchspotenzial, größer heißt, dass Kunden Details besser einschätzen können.</li>
+</ul>
+<h2>Änderungen auf bestehende Bilder anwenden</h2>
+<p>Wasserzeichen werden beim Erzeugen der Vorschau fest ins Bild gerechnet. Änderst du also Text, Logo, Deckkraft oder Größe, gilt das zunächst nur für neue Uploads. Für die bereits vorhandenen Bilder klickst du auf <strong>Vorschauen neu erzeugen</strong> — je nach Anzahl läuft das eine Weile im Hintergrund.</p>
+<blockquote>Ein Wasserzeichen schützt vor der beiläufigen Weiterverwendung, nicht vor jemandem, der es unbedingt entfernen will. Der eigentliche Schutz liegt darin, dass das Original den Server bis zum Kauf nicht verlässt.</blockquote>
+`,
+  },
+  {
+    slug: "album-teilen-qr",
+    title: "Album teilen: Link, QR-Code und Album-Code",
+    summary:
+      "Drei Wege, wie ein Kunde an sein Album kommt — mit oder ohne bestehendes Konto.",
+    audience: ["admin"],
+    category: "albums",
+    keywords: ["teilen", "share", "qr", "qr-code", "link", "code", "einladung", "zugang"],
+    relatedPath: "/album",
+    bodyHtml: `
+<p>Über den Button <strong>Teilen</strong> im Album bekommst du drei Varianten:</p>
+<ul>
+  <li><strong>Link kopieren</strong> — der direkte Weg. Wer den Link öffnet und angemeldet ist, bekommt das Album sofort in seiner Übersicht. Wer noch kein Konto hat, wird durch die Registrierung geführt und das Album wird danach automatisch verknüpft.</li>
+  <li><strong>QR-Code herunterladen</strong> — dasselbe als Bild. Praktisch für Visitenkarten, Übergabemappen oder eine Karte, die du dem Kunden mitgibst.</li>
+  <li><strong>Album-Code kopieren</strong> — der reine Code zum Abtippen, falls jemand weder Link noch QR-Code nutzen kann.</li>
+</ul>
+<h2>Wer sieht was?</h2>
+<p>Bei <strong>öffentlichen</strong> Shootings kann jeder mit dem Link das Album ansehen und die Bilder herunterladen — auch ohne Konto. Bei den Typen <strong>Bezahlt</strong> und <strong>Verkauf</strong> dient der Link dazu, das Album mit einem Konto zu verknüpfen; danach ist es nur noch für dieses Konto sichtbar.</p>
+<blockquote>Behandle den Link entsprechend wie ein Passwort und schick ihn nur an den tatsächlichen Kunden.</blockquote>
+`,
+  },
+  {
+    slug: "bild-sichtbarkeit",
+    title: "Sichtbarkeit einzelner Bilder",
+    summary:
+      "Welche Bilder ein Kunde sieht, wann Originale herausgegeben werden und wie du Bilder wieder entfernst.",
+    audience: ["admin"],
+    category: "albums",
+    keywords: ["sichtbarkeit", "öffentlich", "privat", "löschen", "verstecken", "freigabe"],
+    relatedPath: "/album",
+    bodyHtml: `
+<p>Alle Bilder eines Shootings sind für die zugeordneten Kunden sichtbar — allerdings immer nur als Vorschau mit Wasserzeichen.</p>
+<h2>Wann bekommt jemand das Original?</h2>
+<ul>
+  <li>Bei <strong>Bezahlt</strong> und <strong>Öffentlich</strong>: sofort, über den Download-Button im Album.</li>
+  <li>Bei <strong>Verkauf</strong>: erst nach abgeschlossener Bestellung. Die gekauften Bilder erscheinen dann unter <em>Downloads</em> im Konto des Kunden.</li>
+</ul>
+<h2>Bilder entfernen</h2>
+<p>Über die Auswahl im Album kannst du Bilder markieren und löschen. Bereits gekaufte Bilder solltest du nicht löschen — der Kunde verliert damit seinen Download. Willst du ein Bild nur vorübergehend aus dem Album nehmen, ist es sicherer, es lokal zu sichern und später wieder hochzuladen.</p>
+`,
+  },
+
+  // --- Verkauf & Zahlungen -------------------------------------------------
+  {
+    slug: "preise-pakete",
+    title: "Preise und Pakete anlegen",
+    summary:
+      "Einzelprodukte (Abzüge, Downloads, Leinwand) und Pakete mit Inklusiv-Bildern — und wie beides zusammenspielt.",
+    audience: ["admin"],
+    category: "selling",
+    keywords: ["preis", "preise", "paket", "produkt", "abzug", "print", "leinwand", "download", "katalog"],
+    relatedPath: "/pricing",
+    bodyHtml: `
+<p>Unter <strong>Preise</strong> pflegst du zwei getrennte Dinge: einzelne <strong>Produkte</strong> und <strong>Pakete</strong>.</p>
+<h2>Produkte</h2>
+<p>Ein Produkt ist alles, was der Kunde je Bild kaufen kann:</p>
+<ul>
+  <li><strong>Produktart</strong> — digital, Abzug, Leinwand, Poster oder sonstiges.</li>
+  <li><strong>Größe</strong> — bei physischen Produkten, etwa <code>13×18 cm</code>. Gängige Formate stehen zur Auswahl, eigene tippst du einfach ein.</li>
+  <li><strong>Preis</strong> — der Betrag je Stück.</li>
+  <li><strong>Beschreibung</strong> — hier gehören Papierart, Rahmung oder Lieferzeit hin. Der Kunde sieht das beim Auswählen.</li>
+  <li><strong>Digitaler Download</strong> — anschalten für Dateien statt Ware. Für solche Positionen fragt die Kasse keine Lieferadresse ab.</li>
+</ul>
+<h2>Pakete</h2>
+<p>Ein Paket bündelt eine feste Anzahl Bilder zu einem Gesamtpreis:</p>
+<ul>
+  <li><strong>Inklusiv-Bilder</strong> — so viele Bilder darf der Kunde zum Paketpreis auswählen.</li>
+  <li><strong>Paketpreis</strong> — der Betrag für genau diese Anzahl.</li>
+  <li><strong>Preis je weiterem Bild</strong> — gilt für jedes Bild über die Inklusiv-Anzahl hinaus.</li>
+</ul>
+<p>Hängt ein Paket an einem Shooting, muss der Kunde mindestens die Inklusiv-Anzahl auswählen, bevor er zur Kasse kommt. Die App zeigt ihm dabei laufend an, wie viele Bilder ihm noch fehlen.</p>
+<h2>Zuordnung zum Shooting</h2>
+<p>Angelegte Produkte und Pakete gelten nicht automatisch überall. Du ordnest sie beim Bearbeiten eines Shootings vom Typ <strong>Verkauf</strong> zu. So kann eine Hochzeit andere Preise haben als ein Bewerbungsfoto-Termin.</p>
+`,
+  },
+  {
+    slug: "zahlungen-paypal",
+    title: "PayPal einrichten",
+    summary:
+      "Client-ID, Secret und Geschäftskonto hinterlegen — inklusive Testmodus vor dem Scharfschalten.",
+    audience: ["admin"],
+    category: "selling",
+    keywords: ["paypal", "zahlung", "bezahlen", "client-id", "secret", "sandbox", "live"],
+    relatedPath: "/payments",
+    bodyHtml: `
+<p>Unter <strong>Zahlungen</strong> trägst du deine PayPal-Zugangsdaten ein. Die Kurzanleitung direkt auf der Seite führt dich durch die fünf Schritte im PayPal-Entwicklerportal; hier die Punkte, an denen es erfahrungsgemäß hakt.</p>
+<h2>Die drei Felder</h2>
+<ul>
+  <li><strong>Client-ID</strong> — öffentlicher Teil der Zugangsdaten deiner PayPal-App.</li>
+  <li><strong>Secret</strong> — der geheime Teil. Er wird verschlüsselt gespeichert und dir danach nie wieder im Klartext angezeigt.</li>
+  <li><strong>PayPal-Geschäftskonto (E-Mail)</strong> — das Konto, auf dem das Geld landet.</li>
+</ul>
+<h2>Test- und Live-Modus</h2>
+<p>PayPal vergibt für Test (Sandbox) und Echtbetrieb (Live) <strong>unterschiedliche</strong> Zugangsdaten. Die häufigste Fehlerquelle ist, Sandbox-Daten im Live-Modus zu hinterlegen oder umgekehrt. Teste erst mit Sandbox-Daten einen kompletten Kauf und wechsle danach auf Live.</p>
+<p>Mit <strong>Speichern &amp; prüfen</strong> testet die App die Zugangsdaten sofort gegen PayPal — du merkst also direkt, ob etwas nicht stimmt, und nicht erst beim ersten echten Kunden.</p>
+<h2>PayPal wieder abschalten</h2>
+<p>Client-ID leeren und speichern. Danach taucht PayPal an der Kasse nicht mehr auf.</p>
+`,
+  },
+  {
+    slug: "zahlungen-stripe",
+    title: "Kartenzahlung mit Stripe einrichten",
+    summary:
+      "Kreditkarte, Apple Pay und Google Pay über einen einzigen geheimen Stripe-Schlüssel.",
+    audience: ["admin"],
+    category: "selling",
+    keywords: ["stripe", "kreditkarte", "karte", "apple pay", "google pay", "sk_live", "zahlung"],
+    relatedPath: "/payments",
+    bodyHtml: `
+<p>Stripe deckt Kreditkarte, Apple Pay und Google Pay in einem ab. Du brauchst dafür nur den <strong>geheimen Stripe-Schlüssel</strong> aus deinem Stripe-Dashboard.</p>
+<h2>Worauf du achten musst</h2>
+<ul>
+  <li>Der Schlüssel beginnt mit <code>sk_live_…</code> für den Echtbetrieb und mit <code>sk_test_…</code> für Tests. Beide funktionieren, aber nur mit dem Live-Schlüssel fließt echtes Geld.</li>
+  <li>Verwechsle den geheimen Schlüssel nicht mit dem veröffentlichbaren (<code>pk_…</code>) — der gehört nicht hierher.</li>
+  <li>Der Schlüssel wird verschlüsselt abgelegt und nicht mehr im Klartext angezeigt.</li>
+</ul>
+<p><strong>Speichern &amp; prüfen</strong> testet den Schlüssel direkt gegen Stripe. Zum Abschalten nutzt du <em>Kartenzahlung deaktivieren</em>.</p>
+<h2>Beide Anbieter gleichzeitig</h2>
+<p>Sind PayPal und Stripe eingerichtet, kann der Kunde an der Kasse frei wählen. Ist keiner von beiden eingerichtet, bekommt er stattdessen den Hinweis, dich direkt zu kontaktieren — Shootings vom Typ <em>Verkauf</em> sind dann also faktisch nicht abschließbar.</p>
+`,
+  },
+  {
+    slug: "bestellungen-bearbeiten",
+    title: "Bestellungen bearbeiten",
+    summary:
+      "Eingegangene Bestellungen ansehen, Details prüfen und als erledigt markieren.",
+    audience: ["admin"],
+    category: "selling",
+    keywords: ["bestellung", "auftrag", "order", "erledigt", "abwickeln", "versand"],
+    relatedPath: "/orders",
+    bodyHtml: `
+<p>Unter <strong>Bestellungen</strong> siehst du alles, was deine Kunden gekauft haben. Über die Detailansicht kommst du an die einzelnen Positionen: welches Bild, welches Produkt, welche Menge, welcher Betrag — und bei physischen Produkten die Lieferadresse.</p>
+<h2>Ablauf</h2>
+<ol>
+  <li>Du bekommst eine Mail an die Adresse, die unter <em>Bestell-Benachrichtigungen</em> hinterlegt ist.</li>
+  <li>Digitale Positionen stehen dem Kunden sofort unter <em>Downloads</em> zur Verfügung — da musst du nichts tun.</li>
+  <li>Physische Positionen (Abzüge, Leinwand, Poster) gibst du wie gewohnt bei deinem Labor in Auftrag und verschickst sie.</li>
+  <li>Ist alles raus, markierst du die Bestellung als erledigt. So bleibt die Liste der offenen Aufträge übersichtlich.</li>
+</ol>
+`,
+  },
+
+  // --- Kunden & Konten -----------------------------------------------------
+  {
+    slug: "nutzer-verwalten",
+    title: "Kundenkonten verwalten",
+    summary:
+      "Wer hat Zugriff auf welches Album, wie kommen Kunden zu einem Konto und wie hilfst du beim Login.",
+    audience: ["admin"],
+    category: "customers",
+    keywords: ["nutzer", "kunde", "konto", "account", "zugriff", "passwort", "registrierung"],
+    relatedPath: "/users",
+    bodyHtml: `
+<p>Unter <strong>Nutzer</strong> siehst du alle registrierten Konten mit ihren Kontaktdaten und den zugeordneten Alben.</p>
+<h2>Wie Kunden zu einem Konto kommen</h2>
+<p>In aller Regel gar nicht durch dich: Du gibst den Album-Link oder QR-Code weiter, der Kunde registriert sich selbst und das Album wird dabei automatisch mit seinem neuen Konto verknüpft. Das ist der bequemste Weg für beide Seiten.</p>
+<h2>Typische Fälle</h2>
+<ul>
+  <li><strong>„Ich sehe mein Album nicht.“</strong> — Meist wurde mit einer anderen E-Mail-Adresse registriert als erwartet, oder der Link wurde nie geöffnet. Prüfe unter <em>Nutzer</em>, welchem Konto das Album zugeordnet ist, und schick den Link gegebenenfalls erneut.</li>
+  <li><strong>„Ich habe mein Passwort vergessen.“</strong> — Der Kunde kann sich auf der Anmeldeseite über <em>Passwort vergessen</em> selbst eine Zurücksetzen-Mail schicken. Du musst und kannst kein Passwort für ihn setzen.</li>
+  <li><strong>„Die Bestätigungsmail kommt nicht an.“</strong> — Zuerst den Spam-Ordner prüfen lassen. Kommt bei mehreren Kunden nichts an, liegt es an der SMTP-Konfiguration deiner Instanz.</li>
+</ul>
+`,
+  },
+  {
+    slug: "support-postfach",
+    title: "Support-Anfragen beantworten",
+    summary:
+      "Das Postfach für Kundenanfragen — antworten, Status setzen und technische Probleme weiterleiten.",
+    audience: ["admin"],
+    category: "customers",
+    keywords: ["support", "anfrage", "ticket", "hilfe", "hersteller", "weiterleiten", "fehler"],
+    relatedPath: "/support",
+    bodyHtml: `
+<p>Kunden können dir aus der App heraus Anfragen schicken. Die laufen unter <strong>Support</strong> auf, mit Suche und Filter nach Status.</p>
+<h2>Der Ablauf</h2>
+<ol>
+  <li>Neue Anfragen tragen ein <strong>Neu</strong>-Kennzeichen. Du bekommst zusätzlich eine E-Mail.</li>
+  <li>Du antwortest direkt im Verlauf. Der Kunde bekommt deine Antwort per Mail und sieht sie in der App.</li>
+  <li>Ist die Sache erledigt, markierst du die Anfrage entsprechend.</li>
+</ol>
+<h2>Technische Probleme weiterleiten</h2>
+<p>Anfragen der Kategorie <em>technisch</em> betreffen oft nicht dich, sondern die Software selbst. Solche Tickets kannst du mit einer eigenen Notiz an den Hersteller weiterleiten — vorausgesetzt, deine Instanz ist dafür konfiguriert und der Kunde hat der Weitergabe zugestimmt.</p>
+<p>Weitergeleitet werden dabei der Verlauf und der technische Kontext (Fehlermeldung, Version, Browser), den die App beim Auftreten des Problems mitgeschnitten hat. Der Kunde sieht vor dem Absenden genau, was das ist. Schlägt eine Weiterleitung fehl, wird das am Ticket angezeigt und du kannst es erneut versuchen.</p>
+<blockquote>Ist keine Weiterleitung eingerichtet, verlässt keine dieser Daten deine Instanz — alle Anfragen bleiben dann bei dir.</blockquote>
+`,
+  },
+
+  // --- Betrieb -------------------------------------------------------------
+  {
+    slug: "backups-updates",
+    title: "Backups und Updates",
+    summary:
+      "Was automatisch gesichert wird, was du zusätzlich brauchst und worauf du beim Aktualisieren achtest.",
+    audience: ["admin"],
+    category: "operations",
+    keywords: ["backup", "sicherung", "update", "aktualisieren", "wiederherstellen", "wartung", "server"],
+    bodyHtml: `
+<p>Deine Instanz läuft auf deinem eigenen Server. Damit liegt die Verantwortung für Sicherungen und Aktualisierungen bei dir — beides ist überschaubar, sollte aber nicht liegen bleiben.</p>
+<h2>Automatische Backups</h2>
+<p>Die Instanz legt <strong>jede Nacht</strong> ein Backup an und behält die letzten sieben. Das deckt den häufigsten Fall ab: versehentlich gelöschte Daten, die dir am nächsten Tag auffallen.</p>
+<h2>Was das nicht abdeckt</h2>
+<p>Diese Backups liegen auf demselben Server wie die Daten. Bei einem Ausfall der Festplatte oder einem Totalverlust des Servers sind sie mit weg. Für echte Sicherheit brauchst du eine <strong>Kopie an einem anderen Ort</strong> — etwa per automatischer Übertragung auf einen S3-Speicher oder ein anderes Ziel deiner Wahl. Wie das für deine Installation eingerichtet wird, steht in der Installationsdokumentation deines Setups.</p>
+<blockquote>Ein Backup, das nie zurückgespielt wurde, ist eine Vermutung. Probier die Wiederherstellung einmal aus, solange nichts kaputt ist.</blockquote>
+<h2>Updates</h2>
+<ol>
+  <li>Vor dem Update ein aktuelles Backup ziehen und sichern.</li>
+  <li>Die neue Version einspielen. Nötige Datenbankänderungen laufen beim Start automatisch mit.</li>
+  <li>Danach kurz durchklicken: Album öffnen, ein Bild ansehen, eine Testbestellung durchspielen.</li>
+</ol>
+<p>Welche Version gerade läuft, steht unten auf dieser Hilfeseite unter <em>Zusätzliche Informationen</em>. Diese Angabe hilft auch beim Melden von Problemen.</p>
+`,
+  },
+];

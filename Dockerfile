@@ -61,6 +61,11 @@ RUN chmod +x /pb/docker-entrypoint.sh
 # read by pb_hooks/lib/supportlib.js when forwarding a ticket to the vendor
 ENV APP_VERSION=${APP_VERSION}
 
+# Previews are rendered by several workers in parallel (pb_hooks/previews.pb.js),
+# so each `magick` should stay on one core — OpenMP oversubscription cost ~15 %
+# in measurements (8 images / 4 parallel / 4 cores: 4.1 s -> 3.5 s).
+ENV MAGICK_THREAD_LIMIT=1
+
 EXPOSE 8090
 
 # pb_data holds the database and all uploaded files — mount it as a volume!

@@ -16,6 +16,7 @@ import { useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import EmptyState from "../../components/feedback/EmptyState";
+import HelpHint from "../../components/widgets/HelpHint";
 import Page from "../../components/layout/Page";
 import { useSettings } from "../../context/SettingsContext";
 import { describeAppError, getAppError, readAppErrors } from "../../utils/errorReport";
@@ -404,12 +405,15 @@ export default function SupportPage(): ReactElement {
     <Page
       title="Support"
       actions={
-        <Button
-          variant="primary"
-          icon={<Plus />}
-          label="Neue Anfrage"
-          onClick={() => setView("new")}
-        />
+        <div {...stylex.props(s.badgeRow)}>
+          <HelpHint slug="hilfe-anfordern" />
+          <Button
+            variant="primary"
+            icon={<Plus />}
+            label="Neue Anfrage"
+            onClick={() => setView("new")}
+          />
+        </div>
       }
     >
       <div {...stylex.props(s.column)}>

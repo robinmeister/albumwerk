@@ -10,6 +10,7 @@ import { CreditCard, ChevronDown as ExpandMore, CircleHelp as HelpOutline } from
 import { ReactElement, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
+import HelpHint from "../../../components/widgets/HelpHint";
 import { pb } from "../../../config/pocketbase";
 import { SETTINGS_RECORD_ID } from "../../../config/settings";
 import { useSettings } from "../../../context/SettingsContext";
@@ -35,6 +36,7 @@ const s = stylex.create({
     borderBottom: "1px solid var(--color-border)",
   },
   headText: { flex: 1, minWidth: 0 },
+  titleRow: { display: "flex", alignItems: "center", gap: 4 },
   headAction: { flexShrink: 0 },
   body: { padding: 16, display: "flex", flexDirection: "column", gap: 16 },
   row: { display: "flex", gap: 8, flexWrap: "wrap" },
@@ -184,7 +186,10 @@ export default function PaymentSettings({ compact = false }: { compact?: boolean
         <div {...stylex.props(s.header)}>
           <span {...stylex.props(s.avatar)}><CreditCard /></span>
           <div {...stylex.props(s.headText)}>
-            <Heading level={6}>Kreditkarte, Apple Pay & Google Pay (Stripe)</Heading>
+            <div {...stylex.props(s.titleRow)}>
+              <Heading level={6}>Kreditkarte, Apple Pay & Google Pay (Stripe)</Heading>
+              <HelpHint slug="zahlungen-stripe" />
+            </div>
             <Text type="supporting" color="secondary">Kunden zahlen auf einer sicheren Stripe-Bezahlseite</Text>
           </div>
           <span {...stylex.props(s.headAction)}><StatusChip active={settings.stripeEnabled} /></span>
@@ -248,7 +253,10 @@ export default function PaymentSettings({ compact = false }: { compact?: boolean
         <div {...stylex.props(s.header)}>
           <span {...stylex.props(s.avatar)}>P</span>
           <div {...stylex.props(s.headText)}>
-            <Heading level={6}>PayPal</Heading>
+            <div {...stylex.props(s.titleRow)}>
+              <Heading level={6}>PayPal</Heading>
+              <HelpHint slug="zahlungen-paypal" />
+            </div>
             <Text type="supporting" color="secondary">Kunden zahlen mit ihrem PayPal-Konto direkt auf der Seite</Text>
           </div>
           <span {...stylex.props(s.headAction)}><StatusChip active={Boolean(settings.paypalEnabled)} /></span>

@@ -3,6 +3,8 @@ import { Text } from "@astryxdesign/core/Text";
 import * as stylex from "@stylexjs/stylex";
 import { ReactElement, ReactNode, useEffect, useState } from "react";
 
+import { Link } from "react-router-dom";
+
 import BrandLogo from "../widgets/BrandLogo";
 import { useSettings } from "../../context/SettingsContext";
 import { loadImage } from "../../utils/functions";
@@ -52,6 +54,17 @@ const s = stylex.create({
     marginBottom: 16,
     textAlign: "center",
   },
+  footer: {
+    display: "flex",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 12,
+    marginTop: 24,
+  },
+  footerLink: {
+    color: "var(--color-text-secondary)",
+    textDecoration: "none",
+  },
 });
 
 // Shared hero layout for the auth pages: fullscreen background image (one of
@@ -94,6 +107,26 @@ export default function AuthHero({ children, maxWidth = 420 }: Props): ReactElem
           )}
         </div>
         {children}
+
+        {/* the auth pages are the one place a visitor without an account can
+            reach the legal pages and the help articles */}
+        <div {...stylex.props(s.footer)}>
+          <Link to="/imprint" {...stylex.props(s.footerLink)}>
+            <Text type="supporting" color="secondary">
+              Impressum
+            </Text>
+          </Link>
+          <Link to="/privacy" {...stylex.props(s.footerLink)}>
+            <Text type="supporting" color="secondary">
+              Datenschutz
+            </Text>
+          </Link>
+          <Link to="/help" {...stylex.props(s.footerLink)}>
+            <Text type="supporting" color="secondary">
+              Hilfe
+            </Text>
+          </Link>
+        </div>
       </div>
     </div>
   );

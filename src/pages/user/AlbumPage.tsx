@@ -14,6 +14,7 @@ import { doc, getDoc } from "../../config/firestore-compat";
 import { linkShootingToCurrentUser, pb } from "../../config/pocketbase";
 import { getShootingCoverUrl } from "../../config/storage-compat";
 
+import EmptyState from "../../components/feedback/EmptyState";
 import Page from "../../components/layout/Page";
 import Album from "../../features/Album/components/Album";
 import AddShootingDialog from "../../features/Album/components/AddShootingDialog";
@@ -285,21 +286,25 @@ export default function AlbumPage(): ReactElement {
       </div>
 
       {filtered.length === 0 ? (
-        <div {...stylex.props(s.emptyBox)}>
-          <PhotoLibrary {...stylex.props(s.emptyIcon)} />
-          <Text type="large" color="secondary">
-            {search ? "Keine Alben gefunden." : "Noch kein Album vorhanden."}
-          </Text>
-          {!search && (
-            <>
-              <Text type="body" color="disabled">
-                Scanne den QR-Code, den du von deinem Fotografen bekommen hast — dein Album
-                erscheint dann sofort hier. Alternativ kannst du den Album-Code eingeben.
-              </Text>
-              <Button variant="primary" icon={<QrCode />} label="QR-Code scannen oder Code eingeben" onClick={() => setAddOpen(true)} />
-            </>
-          )}
-        </div>
+        <EmptyState
+          icon={<PhotoLibrary />}
+          title={search ? "Keine Alben gefunden." : "Noch kein Album vorhanden."}
+          description={
+            search
+              ? undefined
+              : "Scanne den QR-Code, den du von deinem Fotografen bekommen hast — dein Album erscheint dann sofort hier. Alternativ kannst du den Album-Code eingeben."
+          }
+          action={
+            search
+              ? undefined
+              : {
+                  label: "QR-Code scannen oder Code eingeben",
+                  icon: <QrCode />,
+                  onClick: () => setAddOpen(true),
+                }
+          }
+          helpSlug={search ? undefined : "album-oeffnen"}
+        />
       ) : (
         <div {...stylex.props(s.grid)}>
           {filtered.map((s) => (

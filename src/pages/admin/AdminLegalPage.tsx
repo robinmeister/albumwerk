@@ -7,6 +7,8 @@ import * as stylex from "@stylexjs/stylex";
 import { lazy, ReactElement, ReactNode, Suspense, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
+import HelpBanner from "../../components/feedback/HelpBanner";
+import HelpHint from "../../components/widgets/HelpHint";
 import Page from "../../components/layout/Page";
 import { pb } from "../../config/pocketbase";
 import { SETTINGS_RECORD_ID } from "../../config/settings";
@@ -26,6 +28,7 @@ const s = stylex.create({
     overflow: "hidden",
   },
   cardHead: { padding: "16px", borderBottom: "1px solid var(--color-border)", display: "flex", flexDirection: "column", gap: 2 },
+  cardTitleRow: { display: "flex", alignItems: "center", gap: 4 },
   cardBody: { padding: 16, display: "flex", flexDirection: "column", gap: 16 },
   grid2: { display: "grid", gridTemplateColumns: { default: "1fr", "@media (min-width: 600px)": "1fr 1fr" }, gap: 16 },
   full: { gridColumn: "1 / -1" },
@@ -33,11 +36,14 @@ const s = stylex.create({
   saveRow: { display: "flex", justifyContent: "flex-end" },
 });
 
-function SectionCard({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
+function SectionCard({ title, subtitle, helpSlug, children }: { title: string; subtitle: string; helpSlug?: string; children: ReactNode }) {
   return (
     <div {...stylex.props(s.card)}>
       <div {...stylex.props(s.cardHead)}>
-        <Heading level={6}>{title}</Heading>
+        <div {...stylex.props(s.cardTitleRow)}>
+          <Heading level={6}>{title}</Heading>
+          {helpSlug && <HelpHint slug={helpSlug} />}
+        </div>
         <Text type="supporting" color="secondary">{subtitle}</Text>
       </div>
       <div {...stylex.props(s.cardBody)}>{children}</div>
@@ -124,9 +130,22 @@ export default function AdminLegalPage(): ReactElement {
   return (
     <Page title="Rechtliches">
       <div {...stylex.props(s.sections)}>
+        {/* checks the saved values, not the local state — privacyHtml is
+            prefilled with the template and would hide the banner immediately */}
+        <HelpBanner
+          slug="rechtstexte"
+          title="Impressum und Datenschutzerklärung fehlen noch"
+          status="warning"
+          description="Beide Seiten sind bereits öffentlich verlinkt, aber noch leer. Trag unten deine Betreiberdaten ein und lass dir die Texte erzeugen."
+          isHidden={
+            Boolean(settings.imprintHtml.trim()) &&
+            Boolean(settings.privacyHtml.trim())
+          }
+        />
         <SectionCard
           title="Angaben zum Betrieb"
           subtitle="Grundlage für die erzeugten Texte — Impressum (§ 5 DDG) und Datenschutzerklärung"
+          helpSlug="rechtstexte"
         >
           <div {...stylex.props(s.grid2)}>
             <TextInput width="100%" label="Name / Firma" value={form.name}

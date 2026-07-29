@@ -91,27 +91,42 @@ function ToolButton({
   );
 }
 
+// Every button off — what the toolbar shows while the editor is being torn
+// down and nothing can be queried from it.
+const INACTIVE_TOOLBAR = {
+  bold: false, italic: false, underline: false, strike: false,
+  h2: false, h3: false, bulletList: false, orderedList: false,
+  blockquote: false, link: false, code: false, codeBlock: false,
+  canUndo: false, canRedo: false,
+};
+
 function Toolbar({ editor }: { editor: Editor }): ReactElement {
   // v3 no longer re-renders on every transaction, so the button states are
   // subscribed to explicitly.
+  //
+  // The selector also runs while the editor is being destroyed, and isActive /
+  // can() reach into a state that is already null by then — hence the guard.
   const state = useEditorState({
     editor,
-    selector: ({ editor: e }) => ({
-      bold: e.isActive("bold"),
-      italic: e.isActive("italic"),
-      underline: e.isActive("underline"),
-      strike: e.isActive("strike"),
-      h2: e.isActive("heading", { level: 2 }),
-      h3: e.isActive("heading", { level: 3 }),
-      bulletList: e.isActive("bulletList"),
-      orderedList: e.isActive("orderedList"),
-      blockquote: e.isActive("blockquote"),
-      link: e.isActive("link"),
-      code: e.isActive("code"),
-      codeBlock: e.isActive("codeBlock"),
-      canUndo: e.can().undo(),
-      canRedo: e.can().redo(),
-    }),
+    selector: ({ editor: e }) => {
+      if (!e || e.isDestroyed) return INACTIVE_TOOLBAR;
+      return {
+        bold: e.isActive("bold"),
+        italic: e.isActive("italic"),
+        underline: e.isActive("underline"),
+        strike: e.isActive("strike"),
+        h2: e.isActive("heading", { level: 2 }),
+        h3: e.isActive("heading", { level: 3 }),
+        bulletList: e.isActive("bulletList"),
+        orderedList: e.isActive("orderedList"),
+        blockquote: e.isActive("blockquote"),
+        link: e.isActive("link"),
+        code: e.isActive("code"),
+        codeBlock: e.isActive("codeBlock"),
+        canUndo: e.can().undo(),
+        canRedo: e.can().redo(),
+      };
+    },
   });
 
   const promptLink = () => {
@@ -189,8 +204,13 @@ export default function RichTextEditor(props: Props): ReactElement {
 
   // Pull in changes that came from outside (settings load, template generator,
   // or the HTML view). Guarded against the editor's own updates echoing back.
+  //
+  // The isDestroyed check is load-bearing: useEditor can hand this effect an
+  // instance that has already been torn down, and getHTML() on a destroyed
+  // editor throws on its null schema — which took the whole page down.
   useEffect(() => {
-    if (!editor || value === editor.getHTML()) return;
+    if (!editor || editor.isDestroyed) return;
+    if (value === editor.getHTML()) return;
     editor.commands.setContent(value, { emitUpdate: false });
   }, [editor, value]);
 

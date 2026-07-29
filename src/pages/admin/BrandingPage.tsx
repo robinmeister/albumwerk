@@ -13,6 +13,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useDropzone } from "react-dropzone";
 import { toast } from "react-toastify";
 
+import HelpHint from "../../components/widgets/HelpHint";
 import Page from "../../components/layout/Page";
 import { pb } from "../../config/pocketbase";
 import {
@@ -53,6 +54,7 @@ const f = stylex.create({
     overflow: "hidden",
   },
   cardHead: { padding: "16px", borderBottom: "1px solid var(--color-border)", display: "flex", flexDirection: "column", gap: 2 },
+  cardTitleRow: { display: "flex", alignItems: "center", gap: 4 },
   cardBody: { padding: 16 },
   grid2: { display: "grid", gridTemplateColumns: { default: "1fr", "@media (min-width: 600px)": "1fr 1fr" }, gap: 16 },
   grid1: { display: "grid", gridTemplateColumns: "1fr", gap: 16 },
@@ -87,11 +89,14 @@ const f = stylex.create({
   regenRow: { display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" },
 });
 
-function SectionCard({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
+function SectionCard({ title, subtitle, helpSlug, children }: { title: string; subtitle: string; helpSlug?: string; children: ReactNode }) {
   return (
     <div {...stylex.props(f.card)}>
       <div {...stylex.props(f.cardHead)}>
-        <Heading level={6}>{title}</Heading>
+        <div {...stylex.props(f.cardTitleRow)}>
+          <Heading level={6}>{title}</Heading>
+          {helpSlug && <HelpHint slug={helpSlug} />}
+        </div>
         <Text type="supporting" color="secondary">{subtitle}</Text>
       </div>
       <div {...stylex.props(f.cardBody)}>{children}</div>
@@ -258,9 +263,11 @@ export default function BrandingPage(): ReactElement {
     setRegenerating(true);
     try {
       const result = await pb.send("/api/custom/regenerate-previews", { method: "POST", body: {} });
+      // the previews are rendered in the background (pb_hooks/previews.pb.js)
       toast.success(
-        `Vorschauen neu erzeugt: ${result.generated ?? 0}` +
-          (result.failed ? `, fehlgeschlagen: ${result.failed}` : ""),
+        result.queued === 1
+          ? "1 Vorschau wird im Hintergrund neu erzeugt"
+          : `${result.queued ?? 0} Vorschauen werden im Hintergrund neu erzeugt`,
       );
     } catch (error) {
       console.error("preview regeneration failed", error);
@@ -292,7 +299,7 @@ export default function BrandingPage(): ReactElement {
   };
 
   const brandingSection = (
-    <SectionCard title="Branding" subtitle="Name, Logo, Farben und Schrift">
+    <SectionCard title="Branding" subtitle="Name, Logo, Farben und Schrift" helpSlug="branding-einrichten">
       <div {...stylex.props(f.grid2)}>
         <div {...stylex.props(f.full)}>
           <TextInput width="100%" label="Name des Geschäfts" value={draft.businessName}
@@ -326,7 +333,7 @@ export default function BrandingPage(): ReactElement {
   );
 
   const contactSection = (
-    <SectionCard title="Kontakt & Geschäft" subtitle="E-Mail-Adressen und Website">
+    <SectionCard title="Kontakt & Geschäft" subtitle="E-Mail-Adressen und Website" helpSlug="kontakt-benachrichtigungen">
       <div {...stylex.props(f.grid2)}>
         <TextInput width="100%" type="email" label="Kontakt-E-Mail (Support)"
           value={draft.contactEmail} onChange={(v) => set({ contactEmail: v })} />
@@ -342,7 +349,7 @@ export default function BrandingPage(): ReactElement {
   );
 
   const domainSection = (
-    <SectionCard title="Eigene Domain" subtitle="Unter welcher Adresse soll dein Album erreichbar sein?">
+    <SectionCard title="Eigene Domain" subtitle="Unter welcher Adresse soll dein Album erreichbar sein?" helpSlug="custom-domain">
       <div {...stylex.props(f.grid1)}>
         <TextInput width="100%" label="Domain" placeholder="fotos.deine-domain.de"
           description="Ohne https:// — z. B. fotos.deine-domain.de. Leer lassen, wenn (noch) keine eigene Domain."
@@ -370,13 +377,13 @@ export default function BrandingPage(): ReactElement {
   );
 
   const paymentSection = (
-    <SectionCard title="Zahlung" subtitle="PayPal und Kartenzahlung (Stripe) — optional, jederzeit änderbar">
+    <SectionCard title="Zahlung" subtitle="PayPal und Kartenzahlung (Stripe) — optional, jederzeit änderbar" helpSlug="zahlungen-paypal">
       <PaymentSettings compact />
     </SectionCard>
   );
 
   const watermarkSection = (
-    <SectionCard title="Wasserzeichen & Vorschau" subtitle="Für die automatisch erzeugten Vorschaubilder in Alben">
+    <SectionCard title="Wasserzeichen & Vorschau" subtitle="Für die automatisch erzeugten Vorschaubilder in Alben" helpSlug="wasserzeichen-vorschau">
       <div {...stylex.props(f.grid2)}>
         <TextInput width="100%" label="Wasserzeichen-Text"
           description="Leer lassen, um den Geschäftsnamen zu verwenden"
