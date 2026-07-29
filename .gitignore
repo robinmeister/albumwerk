@@ -23,6 +23,12 @@ saas/.env
 # backups created by `make backup`
 backup-*.tar.gz
 
+# E2E: Laufzeit-Artefakte. Die Screenshots unter public/help gehören dagegen
+# ins Repo — sie werden ins Image gebacken (siehe e2e/help-shots.mjs).
+e2e/.artifacts/
+e2e/.report/
+e2e/.shots/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

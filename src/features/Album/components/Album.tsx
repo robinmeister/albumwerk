@@ -508,7 +508,9 @@ export default function Album(props: Props): ReactElement {
           helpSlug={isAdminAlbum ? "bilder-hochladen" : undefined}
         />
       ) : (
-        <div {...stylex.props(s.masonry)}>
+        // data-testid: Ankerpunkt für die E2E-Suite, die daraus die
+        // Screenshots der Hilfe-Artikel zuschneidet.
+        <div data-testid="bildraster" {...stylex.props(s.masonry)}>
           {previewImages.map((image : string) => (
             <div key={image} {...stylex.props(s.tile)}>
               <AlbumImage

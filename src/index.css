@@ -155,6 +155,28 @@
     background-color: var(--color-background-muted);
     color: inherit;
   }
+  /* Screenshots (public/help, erzeugt von der E2E-Suite). Aufgenommen wird
+     ausschließlich im hellen Modus — der Rahmen und die neutrale Fläche
+     darunter verhindern, dass die Bilder im Dunkelmodus als grelle Rechtecke
+     im Text stehen. */
+  .help-article figure {
+    margin-top: 1.5em;
+  }
+  .help-article img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-element);
+    background-color: var(--color-background-muted);
+  }
+  .help-article figcaption {
+    margin-top: 0.5em;
+    font-size: 0.875em;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+  }
+
   .help-article code {
     font-size: 0.875em;
   }

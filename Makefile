@@ -9,8 +9,12 @@ REGISTRY := gitea.robinhm.de
 IMAGE    := $(REGISTRY)/robinmeister/albumwerk
 VERSION  := $(shell node -p "require('./package.json').version" 2>/dev/null || echo dev)
 
+# Die E2E-Suite braucht Node >= 20 (.nvmrc). Ist nvm installiert, wird die
+# passende Version geladen; im CI-Image bringt der Runner sie schon mit.
+USE_NODE20 := if [ -s "$$HOME/.nvm/nvm.sh" ]; then . "$$HOME/.nvm/nvm.sh" && nvm use >/dev/null; fi
+
 .DEFAULT_GOAL := help
-.PHONY: help hooks dev dev-reset dev-stop dev-logs prod stop logs update backup restore release
+.PHONY: help hooks dev dev-reset dev-stop dev-logs prod stop logs update backup restore release e2e e2e-clean help-shots
 
 hooks: ## Secret-Scan-Hook aktivieren (detect-secrets vor jedem Commit)
 	@command -v detect-secrets >/dev/null 2>&1 || pip3 install --user detect-secrets || pip3 install --user --break-system-packages detect-secrets
@@ -46,6 +50,21 @@ dev-stop: ## Dev-Instanz stoppen (Daten bleiben erhalten)
 
 dev-logs: ## Logs der Dev-Instanz anzeigen
 	$(DEV_COMPOSE) logs -f app
+
+# ---------------------------------------------------------------------------
+# End-to-End-Tests (laufen gegen die Dev-Instanz auf :8091)
+# ---------------------------------------------------------------------------
+
+e2e: ## E2E-Tests gegen die laufende Dev-Instanz ausführen
+	@$(USE_NODE20); npx playwright test $(ARGS)
+
+e2e-clean: ## Reste eines abgebrochenen E2E-Laufs entfernen (Testdaten, Branding)
+	@$(USE_NODE20); npx tsx e2e/clean.ts
+
+help-shots: ## Doku-Screenshots neu aufnehmen und nach public/help schreiben
+	@$(USE_NODE20); E2E_SHOTS=1 npx playwright test && node e2e/help-shots.mjs
+	@echo ""
+	@echo "  Bilder liegen in public/help/ — vor dem Commit einmal ansehen."
 
 # ---------------------------------------------------------------------------
 # Produktion (Daten liegen im Ordner ./pb_data)

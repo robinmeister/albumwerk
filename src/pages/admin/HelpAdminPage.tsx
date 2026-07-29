@@ -249,6 +249,7 @@ export default function HelpAdminPage(): ReactElement {
                 onChange={(v) => set({ slug: slugify(v) })}
               />
               <Selector
+                placeholder="Bitte wählen"
                 width="100%"
                 label="Kategorie"
                 options={CATEGORY_OPTIONS}
@@ -256,6 +257,7 @@ export default function HelpAdminPage(): ReactElement {
                 onChange={(v) => v && set({ category: v as HelpCategoryKey })}
               />
               <MultiSelector
+                placeholder="Bitte wählen"
                 width="100%"
                 label="Sichtbar für"
                 options={AUDIENCE_OPTIONS}

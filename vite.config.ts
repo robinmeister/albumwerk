@@ -31,6 +31,14 @@ export default defineConfig({
       // stays "waiting" and users keep seeing the old cached app
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico'],
+      workbox: {
+        // Die Screenshots der Hilfe-Artikel (public/help) dürfen NICHT in den
+        // Precache: Workbox nimmt png/webp standardmäßig mit, und dann lädt
+        // jeder Kunde beim ersten Öffnen die komplette Doku-Bildersammlung
+        // herunter — auf einer App, die überwiegend mobil benutzt wird.
+        // Sie werden bei Bedarf geladen und danach zur Laufzeit gecacht.
+        globIgnores: ['**/help/**'],
+      },
       // The manifest is generated at runtime from the instance settings by
       // pb_hooks/manifest.pb.js (linked in index.html) so branding changes
       // apply without rebuilding.

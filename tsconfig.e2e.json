@@ -1,0 +1,23 @@
+// Typprüfung für die E2E-Suite. Getrennt vom App-tsconfig, weil die Tests in
+// Node laufen (kein DOM-Bundling, andere Modulauflösung) und `npm run build`
+// sie nicht mitprüfen soll — der Produktions-Build hängt nicht an den Tests.
+//
+// Ausgeführt über `npm run e2e:check`.
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["node"],
+    "strict": true,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true
+  },
+  "include": ["e2e/**/*.ts", "playwright.config.ts"]
+}

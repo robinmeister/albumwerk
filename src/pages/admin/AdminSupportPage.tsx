@@ -354,6 +354,7 @@ export default function AdminSupportPage(): ReactElement {
             onChange={setSearch}
           />
           <Selector
+            placeholder="Bitte wählen"
             label="Status"
             isLabelHidden
             options={STATUS_FILTERS}

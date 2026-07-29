@@ -91,7 +91,11 @@ const f = stylex.create({
 
 function SectionCard({ title, subtitle, helpSlug, children }: { title: string; subtitle: string; helpSlug?: string; children: ReactNode }) {
   return (
-    <div {...stylex.props(f.card)}>
+    // data-testid: Ankerpunkt für die E2E-Suite, die aus den Abschnitten die
+    // Screenshots der Hilfe-Artikel zuschneidet. Der Titel ist bereits die
+    // fachliche Kennung des Abschnitts — ein zweiter Bezeichner würde nur
+    // auseinanderlaufen.
+    <div data-testid={`abschnitt:${title}`} {...stylex.props(f.card)}>
       <div {...stylex.props(f.cardHead)}>
         <div {...stylex.props(f.cardTitleRow)}>
           <Heading level={6}>{title}</Heading>

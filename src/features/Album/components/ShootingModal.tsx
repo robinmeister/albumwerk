@@ -175,6 +175,7 @@ export default function ShootingModal(): ReactElement {
             onChange={(v) => selectedShooting && setSelectedShooting({ ...selectedShooting, description: v })}
           />
           <MultiSelector
+            placeholder="Bitte wählen"
             width="100%"
             label="Kunde(n)"
             options={userOptions}
@@ -187,6 +188,7 @@ export default function ShootingModal(): ReactElement {
             }}
           />
           <Selector
+            placeholder="Bitte wählen"
             width="100%"
             label="Shooting Typ"
             options={[
@@ -239,6 +241,7 @@ export default function ShootingModal(): ReactElement {
               {!addPackage && (
                 <>
                   <MultiSelector
+                    placeholder="Bitte wählen"
                     width="100%"
                     label="Preise"
                     options={priceOptions}
@@ -269,6 +272,7 @@ export default function ShootingModal(): ReactElement {
               )}
               {addPackage && (
                 <Selector
+                  placeholder="Bitte wählen"
                   width="100%"
                   label="Paket"
                   options={packageOptions}

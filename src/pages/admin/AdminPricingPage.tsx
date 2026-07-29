@@ -550,6 +550,7 @@ export default function AdminPricingPage(): ReactElement {
 
                     <div {...stylex.props(s.form)}>
                       <Selector
+                        placeholder="Bitte wählen"
                         width="100%"
                         label="Produktart"
                         options={CATEGORY_ORDER.map(c => ({ value: c, label: CATEGORY_LABELS[c] }))}

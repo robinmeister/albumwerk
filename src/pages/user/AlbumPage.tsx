@@ -306,7 +306,8 @@ export default function AlbumPage(): ReactElement {
           helpSlug={search ? undefined : "album-oeffnen"}
         />
       ) : (
-        <div {...stylex.props(s.grid)}>
+        // data-testid: Ankerpunkt für die E2E-Suite (Screenshot-Zuschnitt).
+        <div data-testid="albumliste" {...stylex.props(s.grid)}>
           {filtered.map((s) => (
             <AlbumCard
               key={s.id}

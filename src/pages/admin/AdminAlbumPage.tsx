@@ -176,8 +176,11 @@ function ShootingDetailHeader({
   const assignedPrices  = prices.filter(p => (shooting.priceIds ?? []).includes(p.id));
   const assignedPackage = packages.find(pk => pk.id === shooting.packageId);
 
+  // data-testid: Ankerpunkt für die E2E-Suite. Sie schneidet daraus die
+  // Screenshots der Hilfe-Artikel zu — ohne stabilen Anker hinge jeder
+  // Bildausschnitt an einer Kette generierter StyleX-Klassen.
   return (
-    <div {...stylex.props(s.detailHead)}>
+    <div data-testid="shooting-detail" {...stylex.props(s.detailHead)}>
       <div {...stylex.props(s.cover)}>
         {thumbnail ? (
           <img src={thumbnail} alt={shooting.title} {...stylex.props(s.thumbImg)} />

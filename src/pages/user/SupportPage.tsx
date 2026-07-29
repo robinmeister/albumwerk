@@ -218,6 +218,7 @@ export default function SupportPage(): ReactElement {
 
           <div {...stylex.props(s.card, s.cardPad)}>
             <Selector
+              placeholder="Bitte wählen"
               width="100%"
               label="Worum geht es?"
               options={CATEGORY_OPTIONS}
@@ -244,6 +245,7 @@ export default function SupportPage(): ReactElement {
               <>
                 {errors.length > 0 && (
                   <Selector
+                    placeholder="Bitte wählen"
                     width="100%"
                     label="Aufgetretenen Fehler anhängen"
                     description="Hilft bei der Ursachensuche erheblich."
