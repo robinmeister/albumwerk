@@ -1,37 +1,21 @@
 // Reparaturbefehl für abgebrochene Läufe: `make e2e-clean`.
 //
-// Ein normaler Lauf räumt selbst auf. Nach Strg-C oder einem harten Fehlschlag
-// können aber Fixture-Records und ein umgefärbtes Branding zurückbleiben — das
-// hier setzt die Dev-Instanz wieder gerade.
+// Ein normaler Lauf räumt selbst auf, und global-setup.ts entfernt Rückstände
+// vor dem nächsten Lauf. Dieser Befehl ist für den Fall dazwischen: die
+// Dev-Instanz soll sofort wieder sauber sein, ohne dass man die Suite startet —
+// insbesondere das Branding, das sonst umgefärbt bliebe.
 
+import { fixturesEntfernen } from "./support/aufraeumen";
 import { PbAdmin } from "./support/pb";
 import { einstellungenWiederherstellen } from "./support/settings";
-import { BEISPIEL_ALBUM, BEISPIEL_KUNDIN, NEUES_ALBUM } from "./support/data";
 
 async function main(): Promise<void> {
   const pb = new PbAdmin();
   await pb.login();
 
-  const entfernt = await pb.purgeFixtures();
-  console.log(`Fixture-Records gelöscht: ${entfernt}`);
-
-  // Über die UI angelegte Records tragen kein e2e-ID-Präfix — die lassen sich
-  // nur über die Beispieldaten-Namen wiederfinden.
-  let ueberUi = 0;
-  for (const titel of [BEISPIEL_ALBUM.title, NEUES_ALBUM.title]) {
-    for (const shooting of await pb.list("shootings", `title = "${titel}"`)) {
-      for (const bild of await pb.list("images", `shootingId = "${shooting.id}"`)) {
-        await pb.delete("images", bild.id);
-      }
-      await pb.delete("shootings", shooting.id);
-      ueberUi += 1;
-    }
-  }
-  for (const nutzer of await pb.list("users", `email = "${BEISPIEL_KUNDIN.email}"`)) {
-    await pb.delete("users", nutzer.id);
-    ueberUi += 1;
-  }
-  console.log(`Über die Oberfläche angelegte Reste gelöscht: ${ueberUi}`);
+  const { ueberPraefix, ueberNamen } = await fixturesEntfernen(pb);
+  console.log(`Fixture-Records gelöscht: ${ueberPraefix}`);
+  console.log(`Über die Oberfläche angelegte Reste gelöscht: ${ueberNamen}`);
 
   const zurueck = await einstellungenWiederherstellen(pb);
   console.log(

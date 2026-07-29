@@ -106,34 +106,72 @@ export class PbAdmin {
   }
 
   /**
-   * Legt einen Record mit Dateianhang an (multipart).
+   * Legt einen Record an und hängt anschließend eine Datei an.
    *
-   * Mehrwertige Felder (Relationen wie `userIds`, `priceIds`) werden als Array
-   * übergeben und einzeln angehängt — als JSON-String verstünde PocketBase sie
-   * im multipart-Modus nicht.
+   * Zwei Schritte statt einem multipart-Aufruf, und das mit Absicht: `userIds`
+   * und `priceIds` sind JSON-Felder. Hängt man sie als Formularfeld nur einmal
+   * an, speichert PocketBase einen String statt eines Arrays — die App ruft
+   * darauf `.map()` und die Albumansicht stürzt ab. Über den JSON-Body bleiben
+   * Arrays zuverlässig Arrays, unabhängig vom Feldtyp.
    */
   async createWithFile(
     collection: string,
-    data: Record<string, string | string[] | boolean>,
+    data: Record<string, unknown>,
+    fileField: string,
+    filePath: string,
+  ): Promise<PbRecord> {
+    const record = await this.create(collection, data);
+    return this.attachFile(collection, record.id, fileField, filePath);
+  }
+
+  /** Hängt eine Datei an einen bestehenden Record (multipart-PATCH). */
+  async attachFile(
+    collection: string,
+    id: string,
     fileField: string,
     filePath: string,
   ): Promise<PbRecord> {
     await this.login();
     const form = new FormData();
-    for (const [key, value] of Object.entries(data)) {
-      if (Array.isArray(value)) value.forEach((entry) => form.append(key, entry));
-      else form.append(key, String(value));
-    }
     const buffer = await readFile(filePath);
     form.append(fileField, new Blob([buffer], { type: "image/jpeg" }), basename(filePath));
 
-    const res = await fetch(`${BASE_URL}/api/collections/${collection}/records`, {
-      method: "POST",
+    const res = await fetch(`${BASE_URL}/api/collections/${collection}/records/${id}`, {
+      method: "PATCH",
       headers: { Authorization: this.token },
       body: form,
     });
     if (!res.ok) {
-      throw new Error(`Upload nach ${collection} → ${res.status}: ${await res.text()}`);
+      throw new Error(`Datei an ${collection}/${id} → ${res.status}: ${await res.text()}`);
+    }
+    return res.json();
+  }
+
+  /**
+   * Legt einen Record im Namen eines App-Nutzers an.
+   *
+   * Notwendig für alles, was auf `users` verweist: PocketBase wendet die
+   * listRule der Zielcollection auch bei der Relationsprüfung an, und
+   * `users.listRule` verlangt `@request.auth.isAdmin = true || id =
+   * @request.auth.id`. Ein Superuser aus `_superusers` hat kein isAdmin-Feld
+   * und seine ID steht in keinem users-Record — die Regel wird falsch, und das
+   * Anlegen scheitert ausgerechnet mit den höchsten Rechten
+   * (`validation_missing_rel_records`).
+   */
+  async createAsUser(
+    email: string,
+    password: string,
+    collection: string,
+    data: Record<string, unknown>,
+  ): Promise<PbRecord> {
+    const { token } = await this.userToken(email, password);
+    const res = await fetch(`${BASE_URL}/api/collections/${collection}/records`, {
+      method: "POST",
+      headers: { Authorization: token, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      throw new Error(`POST ${collection} als ${email} → ${res.status}: ${await res.text()}`);
     }
     return res.json();
   }
@@ -149,9 +187,50 @@ export class PbAdmin {
     return res.json();
   }
 
+  /**
+   * Löscht alles, was an einem Nutzer hängt — vor dem Nutzer selbst.
+   *
+   * Nicht jeder abhängige Record trägt das ID-Präfix: Support-Tickets entstehen
+   * im Namen des Kunden und bekommen dabei eine PocketBase-ID. Bleiben sie
+   * liegen, lässt sich der Nutzer nicht löschen (`supportTickets.userId` ist
+   * `required` ohne Cascade) — und beim nächsten Lauf blockiert die dann noch
+   * belegte E-Mail-Adresse das Fixture.
+   */
+  async deleteDependents(userId: string): Promise<number> {
+    let removed = 0;
+    for (const ticket of await this.list("supportTickets", `userId = "${userId}"`).catch(() => [])) {
+      for (const nachricht of await this
+        .list("supportMessages", `ticketId = "${ticket.id}"`)
+        .catch(() => [])) {
+        await this.delete("supportMessages", nachricht.id);
+        removed += 1;
+      }
+      await this.delete("supportTickets", ticket.id);
+      removed += 1;
+    }
+    for (const collection of ["orders", "finishedOrders", "userSelection"]) {
+      for (const rec of await this.list(collection, `userId = "${userId}"`).catch(() => [])) {
+        await this.delete(collection, rec.id);
+        removed += 1;
+      }
+    }
+    return removed;
+  }
+
   /** Löscht alle Reste der Suite. Wird vom Teardown und von `make e2e-clean` genutzt. */
   async purgeFixtures(): Promise<number> {
-    // Reihenfolge zählt: images vor shootings, shootings vor users.
+    let removed = 0;
+
+    // Zuerst alles, was an einem Fixture-Nutzer hängt. Nicht jeder abhängige
+    // Record trägt das ID-Präfix: Support-Tickets entstehen im Namen des
+    // Kunden und bekommen dabei eine PocketBase-ID. Bleiben sie liegen, lässt
+    // sich der Nutzer nicht löschen — supportTickets.userId ist `required`
+    // ohne Cascade, PocketBase lehnt das Löschen dann ab.
+    const nutzer = await this.list("users", `id ~ "${E2E_ID_PREFIX}%"`).catch(() => []);
+    for (const n of nutzer) removed += await this.deleteDependents(n.id);
+
+    // Dann alles mit ID-Präfix. Reihenfolge zählt: images vor shootings,
+    // shootings vor users.
     const collections = [
       "images",
       "userSelection",
@@ -163,7 +242,6 @@ export class PbAdmin {
       "users",
       "helpArticles",
     ];
-    let removed = 0;
     for (const collection of collections) {
       let items: PbRecord[] = [];
       try {

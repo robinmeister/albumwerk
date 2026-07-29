@@ -7,15 +7,25 @@
 
 import { test as base, expect, type Page } from "@playwright/test";
 
-import { BEISPIELFOTOS, BEISPIEL_ALBUM, BEISPIEL_KUNDIN, DEMO_ADMIN } from "./data";
+import { BEISPIELFOTOS, BEISPIEL_PASSWORT, DEMO_ADMIN, personFuer } from "./data";
 import { PbAdmin, e2eId, type PbRecord } from "./pb";
 
 export type Beispielalbum = {
   id: string;
   title: string;
-  /** Die Kundin, der das Album zugeordnet ist — inkl. Klartext-Passwort. */
-  kundin: { id: string; email: string; password: string; name: string };
+  description: string;
+  /** Die Kundin bzw. der Kunde des Albums — inkl. Klartext-Passwort. */
+  kundin: {
+    id: string;
+    email: string;
+    password: string;
+    name: string;
+    firstName: string;
+    lastName: string;
+  };
   bildIds: string[];
+  /** Dateinamen der hochgeladenen Bilder, in Reihenfolge. */
+  bildNamen: string[];
 };
 
 type Fixtures = {
@@ -46,79 +56,98 @@ export const test = base.extend<Fixtures>({
     });
   },
 
-  album: async ({ pb }, use) => {
-    const kundinId = e2eId();
+  album: async ({ pb }, use, testInfo) => {
+    const person = personFuer(testInfo.parallelIndex);
     const albumId = e2eId();
-
-    const kundin = await pb.create("users", {
-      id: kundinId,
-      email: BEISPIEL_KUNDIN.email,
-      emailVisibility: false,
-      password: BEISPIEL_KUNDIN.password,
-      passwordConfirm: BEISPIEL_KUNDIN.password,
-      firstName: BEISPIEL_KUNDIN.firstName,
-      lastName: BEISPIEL_KUNDIN.lastName,
-      phone: BEISPIEL_KUNDIN.phone,
-      street: BEISPIEL_KUNDIN.street,
-      zip: BEISPIEL_KUNDIN.zip,
-      city: BEISPIEL_KUNDIN.city,
-      isAdmin: false,
-      verified: true,
-      shootingIds: [albumId],
-    });
-
-    await pb.createWithFile(
-      "shootings",
-      {
-        id: albumId,
-        title: BEISPIEL_ALBUM.title,
-        description: BEISPIEL_ALBUM.description,
-        type: BEISPIEL_ALBUM.type,
-        userIds: [kundin.id],
-        priceIds: ["defaultprice001", "defaultprice002", "defaultprice003", "defaultprice004"],
-        withUserSelection: false,
-      },
-      "coverImage",
-      BEISPIELFOTOS[0],
+    const bildNamen = BEISPIELFOTOS.map(
+      (_, index) => `${person.lastName.toLowerCase()}-${String(index + 1).padStart(2, '0')}.jpg`,
     );
 
-    const bilder: PbRecord[] = [];
-    for (const [index, foto] of BEISPIELFOTOS.entries()) {
-      bilder.push(
-        await pb.createWithFile(
-          "images",
-          {
-            id: e2eId(),
-            shootingId: albumId,
-            type: "original",
-            name: `hochzeit-${String(index + 1).padStart(2, "0")}.jpg`,
-          },
-          "originalFile",
-          foto,
-        ),
-      );
-    }
+    // Alles Angelegte hier vormerken: scheitert der Aufbau auf halbem Weg,
+    // wird der Teardown unten nie erreicht — der bereits erzeugte Nutzer bliebe
+    // liegen und der nächste Lauf scheiterte an der eindeutigen E-Mail.
+    const angelegt: Array<[string, string]> = [];
+    const aufraeumen = async () => {
+      // Erst alles, was am Nutzer hängt (Tickets, Bestellungen) — sonst
+      // verweigert PocketBase das Löschen des Nutzers.
+      const nutzerId = angelegt.find(([collection]) => collection === "users")?.[1];
+      if (nutzerId) await pb.deleteDependents(nutzerId);
+      for (const [collection, id] of [...angelegt].reverse()) await pb.delete(collection, id);
+    };
 
-    // previews.pb.js erzeugt die Wasserzeichen-Vorschauen asynchron. Ohne das
-    // Warten zeigt das Album-Grid graue Kacheln — im Test wie im Screenshot.
-    await wartenAufVorschauen(pb, albumId, BEISPIELFOTOS.length);
+    let kundin: PbRecord;
+    let bilder: PbRecord[] = [];
+    try {
+      kundin = await pb.create('users', {
+        id: e2eId(),
+        email: person.email,
+        emailVisibility: false,
+        password: BEISPIEL_PASSWORT,
+        passwordConfirm: BEISPIEL_PASSWORT,
+        firstName: person.firstName,
+        lastName: person.lastName,
+        phone: person.phone,
+        street: person.street,
+        zip: person.zip,
+        city: person.city,
+        isAdmin: false,
+        verified: true,
+        shootingIds: [albumId],
+      });
+      angelegt.push(['users', kundin.id]);
+
+      await pb.createWithFile(
+        'shootings',
+        {
+          id: albumId,
+          title: person.album.title,
+          description: person.album.description,
+          type: person.album.type,
+          userIds: [kundin.id],
+          priceIds: ['defaultprice001', 'defaultprice002', 'defaultprice003', 'defaultprice004'],
+          withUserSelection: false,
+        },
+        'coverImage',
+        BEISPIELFOTOS[0],
+      );
+      angelegt.push(['shootings', albumId]);
+
+      for (const [index, foto] of BEISPIELFOTOS.entries()) {
+        const bild = await pb.createWithFile(
+          'images',
+          { id: e2eId(), shootingId: albumId, type: 'original', name: bildNamen[index] },
+          'originalFile',
+          foto,
+        );
+        angelegt.push(['images', bild.id]);
+        bilder.push(bild);
+      }
+
+      // previews.pb.js erzeugt die Wasserzeichen-Vorschauen asynchron. Ohne das
+      // Warten zeigt das Bildraster graue Kacheln — im Test wie im Screenshot.
+      await wartenAufVorschauen(pb, albumId, BEISPIELFOTOS.length);
+    } catch (err) {
+      await aufraeumen();
+      throw err;
+    }
 
     await use({
       id: albumId,
-      title: BEISPIEL_ALBUM.title,
+      title: person.album.title,
+      description: person.album.description,
       kundin: {
         id: kundin.id,
-        email: BEISPIEL_KUNDIN.email,
-        password: BEISPIEL_KUNDIN.password,
-        name: `${BEISPIEL_KUNDIN.firstName} ${BEISPIEL_KUNDIN.lastName}`,
+        email: person.email,
+        password: BEISPIEL_PASSWORT,
+        name: `${person.firstName} ${person.lastName}`,
+        firstName: person.firstName,
+        lastName: person.lastName,
       },
       bildIds: bilder.map((b) => b.id),
+      bildNamen,
     });
 
-    // Aufräumen: Bilder vor dem Album, Album vor der Kundin.
-    for (const bild of bilder) await pb.delete("images", bild.id);
-    await pb.delete("shootings", albumId);
-    await pb.delete("users", kundin.id);
+    await aufraeumen();
   },
 });
 

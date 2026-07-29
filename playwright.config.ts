@@ -22,14 +22,23 @@ const SHOTS = process.env.E2E_SHOTS === "1";
 export default defineConfig({
   testDir: "./e2e/tests",
   outputDir: "./e2e/.artifacts",
+  // Entfernt Rückstände abgebrochener Läufe, bevor irgendein Test startet.
+  globalSetup: "./e2e/global-setup.ts",
   // Beim Screenshot-Lauf seriell: parallele Läufe teilen sich eine PocketBase
   // und damit die Vorschau-Worker — das erzeugt Wartezeiten, die als halb
   // geladene Bilder im Screenshot landen.
   fullyParallel: !SHOTS,
-  workers: SHOTS ? 1 : undefined,
+  // Zwei Worker, nicht "so viele wie Kerne": jeder Test lädt vier Bilder hoch,
+  // deren Vorschauen ImageMagick im selben Container erzeugt. Bei voller
+  // Parallelität warten die Tests länger auf die Vorschauen als ihr Zeitbudget
+  // hergibt — gemessen: dieselben Tests laufen seriell durch und scheitern
+  // parallel im Timeout.
+  workers: SHOTS ? 1 : 2,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  timeout: 60_000,
+  // 90 s: die Tests mit Bild-Upload warten auf die Vorschau-Erzeugung durch
+  // ImageMagick, und ein zu knappes Budget kürzt zusätzlich den Fixture-Teardown.
+  timeout: 90_000,
   expect: { timeout: 10_000 },
   reporter: process.env.CI
     ? [["list"], ["html", { outputFolder: "e2e/.report", open: "never" }]]

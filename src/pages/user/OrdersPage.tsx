@@ -185,7 +185,9 @@ function OrderListItem({
   order, isSelected, onClick,
 }: { order: TableOrderExtended; isSelected: boolean; onClick: () => void }) {
   return (
-    <div onClick={onClick} {...stylex.props(s.item, isSelected && s.itemSelected)}>
+    // data-testid: Ankerpunkt für die E2E-Suite. Die Liste ist keine
+    // semantische Tabelle, getByRole("row") greift hier nicht.
+    <div data-testid="bestellzeile" onClick={onClick} {...stylex.props(s.item, isSelected && s.itemSelected)}>
       <div {...stylex.props(s.itemMain)}>
         <Text type="body" weight={isSelected ? "semibold" : "normal"} maxLines={1}>
           {order.userEmail ?? "–"}
@@ -334,7 +336,9 @@ export default function OrdersPage(): ReactElement {
 
       const rawFinished: FinishedOrderLocal[] = finishedSnap.docs.map((d: any) => ({
         id:                   d.id,
-        orderId:              d.data().id,
+        // Rückfall auf `id` für Altbestände, die noch ohne orderId angelegt
+        // wurden (siehe OrderDetailsPage.handleFinishOrder).
+        orderId:              d.data().orderId || d.data().id,
         userId:               d.data().userId,
         shootingId:           d.data().shootingId,
         imagePriceObjectList: d.data().imagePriceObjectList,
@@ -404,6 +408,12 @@ export default function OrdersPage(): ReactElement {
     setFinishing(true);
     try {
       await addDoc(collection("finishedOrders"), {
+        // orderId verknüpft den Archiveintrag mit der offenen Bestellung —
+        // weiter unten blendet `pending` darüber die erledigten aus. Ohne das
+        // Feld blieb eine abgeschickte Bestellung dauerhaft in der Liste der
+        // offenen stehen: addDoc verwirft `id` (firestore-compat.ts:56), der
+        // Archiveintrag bekam eine neue PocketBase-ID und passte zu nichts.
+        orderId:              selectedOrder.id,
         id:                   selectedOrder.id,
         userId:               selectedOrder.userId,
         shootingId:           selectedOrder.shootingId,

@@ -70,6 +70,12 @@ export default function OrderDetailsPage(): ReactElement {
     setFinishing(true);
     try {
       await addDoc(collection("finishedOrders"), {
+        // orderId verknüpft den Archiveintrag mit der offenen Bestellung —
+        // OrdersPage blendet darüber erledigte Aufträge aus. Ohne das Feld
+        // blieb eine abgeschlossene Bestellung dauerhaft in der Liste der
+        // offenen stehen: `id` wird beim Anlegen von PocketBase vergeben und
+        // ist deshalb nicht die ID der Bestellung.
+        orderId:              order.id,
         id:                   order.id,
         userId:               order.userId,
         shootingId:           order.shootingId,
