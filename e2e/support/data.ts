@@ -91,6 +91,19 @@ export const PERSONEN = [
 export const BEISPIEL_PASSWORT = "beispiel123456";
 
 /**
+ * Person, die sich im Test selbst über die Oberfläche registriert.
+ *
+ * Getrennt vom Vorrat oben, weil dieser Datensatz kein e2e-ID-Präfix bekommt
+ * (die App vergibt die ID) und nur über die E-Mail-Adresse aufräumbar ist.
+ */
+export const NEUER_KUNDE = {
+  firstName: "Tomas",
+  lastName: "Winter",
+  email: "tomas.winter@beispiel.de",
+  password: "beispiel123456",
+};
+
+/**
  * Person für einen Worker.
  *
  * Beim Screenshot-Lauf läuft die Suite mit einem einzigen Worker — dort ist es

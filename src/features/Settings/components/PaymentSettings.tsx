@@ -182,7 +182,8 @@ export default function PaymentSettings({ compact = false }: { compact?: boolean
   return (
     <div {...stylex.props(s.grid)}>
       {/* ── Stripe ── */}
-      <div {...stylex.props(s.card)}>
+      {/* data-testid: Ankerpunkt für die E2E-Suite (Screenshot-Zuschnitt). */}
+      <div data-testid="zahlungsart:stripe" {...stylex.props(s.card)}>
         <div {...stylex.props(s.header)}>
           <span {...stylex.props(s.avatar)}><CreditCard /></span>
           <div {...stylex.props(s.headText)}>
@@ -249,7 +250,7 @@ export default function PaymentSettings({ compact = false }: { compact?: boolean
       </div>
 
       {/* ── PayPal ── */}
-      <div {...stylex.props(s.card)}>
+      <div data-testid="zahlungsart:paypal" {...stylex.props(s.card)}>
         <div {...stylex.props(s.header)}>
           <span {...stylex.props(s.avatar)}>P</span>
           <div {...stylex.props(s.headText)}>

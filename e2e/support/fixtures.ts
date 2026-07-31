@@ -151,10 +151,10 @@ export const test = base.extend<Fixtures>({
   },
 });
 
-// 90 s statt der naheliegenden 30: die Vorschauen entstehen über ImageMagick in
-// mehreren Workern (pb_hooks/previews.pb.js). Auf einem frisch gestarteten
-// Container ist der erste Aufruf deutlich langsamer, und parallele Tests teilen
-// sich dieselben Worker.
+// Treibt die Worker selbst an, statt auf den Minuten-Cron zu warten — sonst
+// kostet jede Fixture rund eine Minute Leerlauf (siehe pb.vorschauenErzeugen).
+// 90 s Frist bleiben trotzdem: die Warteschlange ist global, bei parallelen
+// Tests hängen die eigenen Bilder hinter denen der anderen.
 async function wartenAufVorschauen(
   pb: PbAdmin,
   shootingId: string,
@@ -168,7 +168,7 @@ async function wartenAufVorschauen(
       `shootingId = "${shootingId}" && type = "preview"`,
     );
     if (vorschauen.length >= erwartet) return;
-    await new Promise((r) => setTimeout(r, 500));
+    await pb.vorschauenErzeugen();
   }
   throw new Error(
     `Vorschauen für ${shootingId} nicht innerhalb von ${timeoutMs} ms erzeugt — ` +

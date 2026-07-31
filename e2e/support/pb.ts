@@ -96,6 +96,22 @@ export class PbAdmin {
     return page.items as PbRecord[];
   }
 
+  /**
+   * Arbeitet die Vorschau-Warteschlange ein Stück weit ab.
+   *
+   * pb_hooks/previews.pb.js erzeugt Vorschauen asynchron. Im Browser treibt der
+   * Upload-Dialog diesen Endpunkt parallel zu den Uploads; legt die Suite ihre
+   * Bilder dagegen über die API an, treibt niemand die Worker — dann bliebe nur
+   * der Minuten-Cron, und jeder Test wartete rund eine Minute auf sein
+   * Bildraster. Die Fixtures rufen das hier deshalb selbst auf.
+   *
+   * Liefert die Zahl der danach noch offenen Vorschauen.
+   */
+  async vorschauenErzeugen(): Promise<number> {
+    const res = await this.request("/api/custom/preview-worker", { method: "POST" });
+    return Number(res.pending ?? 0);
+  }
+
   async delete(collection: string, id: string): Promise<void> {
     try {
       await this.request(`/api/collections/${collection}/records/${id}`, { method: "DELETE" });

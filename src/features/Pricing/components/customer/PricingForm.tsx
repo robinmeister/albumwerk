@@ -33,6 +33,10 @@ const s = stylex.create({
     gridTemplateColumns: { default: "1fr", [DESKTOP]: "5fr 7fr" },
     gap: 24,
   },
+  // Ohne minWidth:0 ist die 1fr-Spur minmax(auto, 1fr) und kann nicht unter die
+  // Eigenbreite des Vorschaubildes schrumpfen — die Seite scrollte auf dem Handy
+  // waagerecht (486px Inhalt bei 390px Viewport).
+  col: { minWidth: 0 },
   preview: {
     position: "relative",
     border: "1px solid var(--color-border)",
@@ -233,7 +237,7 @@ export default function PricingForm(props: Props): ReactElement {
     <div {...stylex.props(s.root)}>
       <div {...stylex.props(s.grid)}>
         {/* ── Left column: image preview + thumbnail strip ── */}
-        <div>
+        <div {...stylex.props(s.col)}>
           <div {...stylex.props(s.preview)}>
             <img src={currentImage} alt={`Bild ${currentIndex + 1}`} {...stylex.props(s.previewImg)} />
             <div {...stylex.props(s.deselect)}>
@@ -290,7 +294,7 @@ export default function PricingForm(props: Props): ReactElement {
         </div>
 
         {/* ── Right column: product selection for the current image ── */}
-        <div>
+        <div {...stylex.props(s.col)}>
           <div {...stylex.props(s.colHead)}>
             <Text type="large" weight="semibold">
               Produkte für Bild {currentIndex + 1}

@@ -7,7 +7,7 @@
 // E-Mail-Adresse. Ein Lauf darf nicht davon abhängen, dass der vorige sauber
 // zu Ende gekommen ist.
 
-import { NEUES_ALBUM, PERSONEN } from "./data";
+import { NEUER_KUNDE, NEUES_ALBUM, PERSONEN } from "./data";
 import type { PbAdmin } from "./pb";
 
 export type Aufraeumbilanz = { ueberPraefix: number; ueberNamen: number };
@@ -27,9 +27,12 @@ export async function fixturesEntfernen(pb: PbAdmin): Promise<Aufraeumbilanz> {
       ueberNamen += 1;
     }
   }
-  for (const person of PERSONEN) {
+  for (const person of [...PERSONEN, NEUER_KUNDE]) {
     const lokal = person.email.split("@")[0];
     for (const nutzer of await pb.list("users", `email ~ "${lokal}%"`)) {
+      // Ein selbst registrierter Nutzer trägt kein ID-Präfix; auch an ihm
+      // können Tickets oder Bestellungen hängen, die das Löschen blockieren.
+      await pb.deleteDependents(nutzer.id);
       await pb.delete("users", nutzer.id);
       ueberNamen += 1;
     }

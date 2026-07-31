@@ -284,7 +284,8 @@ export default function PricingPage(): ReactElement {
   return (
     <Page title={shooting?.title ?? "Bestellung"} showTitleOnMobile>
       {selected.length > 0 && (
-        <div {...stylex.props(s.stepper)}>
+        // data-testid: Ankerpunkt für die E2E-Suite (Screenshot-Zuschnitt).
+        <div data-testid="bestellschritte" {...stylex.props(s.stepper)}>
           {steps.map((label, idx) => (
             <div key={label} {...stylex.props(s.step)}>
               {idx > 0 && <span {...stylex.props(s.sep)} />}

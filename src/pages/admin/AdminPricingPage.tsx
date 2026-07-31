@@ -548,7 +548,7 @@ export default function AdminPricingPage(): ReactElement {
                       )}
                     </div>
 
-                    <div {...stylex.props(s.form)}>
+                    <div data-testid="preisformular" {...stylex.props(s.form)}>
                       <Selector
                         placeholder="Bitte wählen"
                         width="100%"
@@ -619,7 +619,7 @@ export default function AdminPricingPage(): ReactElement {
                       )}
                     </div>
 
-                    <div {...stylex.props(s.form)}>
+                    <div data-testid="paketformular" {...stylex.props(s.form)}>
                       <TextInput
                         width="100%"
                         label="Inklusiv-Bilder"

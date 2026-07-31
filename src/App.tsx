@@ -47,6 +47,7 @@ import ErrorBoundary from "./components/layout/ErrorBoundary";
 import PageLoader from "./components/feedback/PageLoader";
 
 import { pb } from "./config/pocketbase";
+import { currentUser } from "./config/currentUser";
 
 import ActionPage from "./pages/auth/ActionPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
@@ -73,10 +74,15 @@ function ThemedApp(): ReactElement {
   const [loading, setLoading] = useState<boolean>(true);
   const [isAdminLoading, setIsAdminLoading] = useState<boolean>(true);
 
+  // currentUser() statt eines Casts auf das rohe PocketBase-Model: das Model
+  // heißt `id`, die App liest überall `uid`. Der Cast lieferte ein Objekt ohne
+  // uid — ProfilePage schickte daraufhin PATCH auf /users/records/ ohne ID
+  // (404, "Profil konnte nicht aktualisiert werden"), und PaymentForm lud die
+  // gespeicherten Kontaktdaten nie. Genau dafür gibt es config/currentUser.ts.
   useEffect(() => {
-    setUser((pb.authStore.model as unknown as AuthUser) ?? null);
+    setUser(currentUser());
     const unsubscribe = pb.authStore.onChange(() => {
-      setUser((pb.authStore.model as unknown as AuthUser) ?? null);
+      setUser(currentUser());
     });
     return () => unsubscribe();
   }, []);

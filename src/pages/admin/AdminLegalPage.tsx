@@ -38,7 +38,8 @@ const s = stylex.create({
 
 function SectionCard({ title, subtitle, helpSlug, children }: { title: string; subtitle: string; helpSlug?: string; children: ReactNode }) {
   return (
-    <div {...stylex.props(s.card)}>
+    // data-testid: Ankerpunkt für die E2E-Suite (Screenshot-Zuschnitt).
+    <div data-testid={`abschnitt:${title}`} {...stylex.props(s.card)}>
       <div {...stylex.props(s.cardHead)}>
         <div {...stylex.props(s.cardTitleRow)}>
           <Heading level={6}>{title}</Heading>

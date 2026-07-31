@@ -216,7 +216,8 @@ export default function SupportPage(): ReactElement {
             />
           </div>
 
-          <div {...stylex.props(s.card, s.cardPad)}>
+          {/* data-testid: Ankerpunkt für die E2E-Suite (Screenshot-Zuschnitt). */}
+          <div data-testid="anfrage-formular" {...stylex.props(s.card, s.cardPad)}>
             <Selector
               placeholder="Bitte wählen"
               width="100%"

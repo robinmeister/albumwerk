@@ -28,11 +28,10 @@ export default defineConfig({
   // und damit die Vorschau-Worker — das erzeugt Wartezeiten, die als halb
   // geladene Bilder im Screenshot landen.
   fullyParallel: !SHOTS,
-  // Zwei Worker, nicht "so viele wie Kerne": jeder Test lädt vier Bilder hoch,
-  // deren Vorschauen ImageMagick im selben Container erzeugt. Bei voller
-  // Parallelität warten die Tests länger auf die Vorschauen als ihr Zeitbudget
-  // hergibt — gemessen: dieselben Tests laufen seriell durch und scheitern
-  // parallel im Timeout.
+  // Zwei Worker, nicht "so viele wie Kerne": jeder Test legt vier Bilder an,
+  // deren Vorschauen ImageMagick im selben Container erzeugt. Mehr bringt
+  // nichts — gemessen: mit 4 Workern läuft die Suite genauso lange (~60 s),
+  // die Wartezeit liegt in den einzelnen Tests, nicht in der Parallelität.
   workers: SHOTS ? 1 : 2,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

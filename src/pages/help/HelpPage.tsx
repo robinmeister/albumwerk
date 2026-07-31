@@ -46,7 +46,8 @@ export default function HelpPage({ standalone = false }: Props): ReactElement {
 
   const body = (
     <>
-      <div {...stylex.props(s.hero)}>
+      {/* data-testid: Ankerpunkt für die E2E-Suite (Screenshot-Zuschnitt). */}
+      <div data-testid="hilfe-hero" {...stylex.props(s.hero)}>
         {standalone ? (
           <h2 {...stylex.props(s.pageTitle)}>Wie können wir helfen?</h2>
         ) : (
