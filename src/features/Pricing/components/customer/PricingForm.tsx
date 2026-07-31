@@ -294,7 +294,8 @@ export default function PricingForm(props: Props): ReactElement {
         </div>
 
         {/* ── Right column: product selection for the current image ── */}
-        <div {...stylex.props(s.col)}>
+        {/* data-testid: Ankerpunkt für die E2E-Suite (Screenshot-Zuschnitt). */}
+        <div data-testid="produktliste" {...stylex.props(s.col)}>
           <div {...stylex.props(s.colHead)}>
             <Text type="large" weight="semibold">
               Produkte für Bild {currentIndex + 1}

@@ -218,7 +218,8 @@ export default function HelpAdminPage(): ReactElement {
         )}
 
         {draft ? (
-          <div {...stylex.props(s.card)}>
+          // data-testid: Ankerpunkt für die E2E-Suite (Screenshot-Zuschnitt).
+          <div data-testid="artikelformular" {...stylex.props(s.card)}>
             <Heading level={6}>
               {draft.id ? "Artikel bearbeiten" : "Neuer Artikel"}
             </Heading>
@@ -256,7 +257,11 @@ export default function HelpAdminPage(): ReactElement {
                 value={draft.category}
                 onChange={(v) => v && set({ category: v as HelpCategoryKey })}
               />
+              {/* triggerDisplay: die Vorgabe "count" schreibt "1 selected" — Astryx
+                  liefert dafür nur englische Texte. "labels" zeigt stattdessen die
+                  Bezeichnungen der Auswahl, und die stehen bei uns auf Deutsch. */}
               <MultiSelector
+                triggerDisplay="labels"
                 placeholder="Bitte wählen"
                 width="100%"
                 label="Sichtbar für"

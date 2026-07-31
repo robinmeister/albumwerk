@@ -38,7 +38,10 @@ test("Kundin stellt eine Bestellung zusammen", async ({ page, album, anmelden })
   await expect(weiter).toBeDisabled();
   await page.getByRole("button", { name: "Mehr" }).first().click();
   await expect(page.getByText("Alle Bilder bepreist")).toBeVisible();
-  await shot(page.locator("main"), "bestellen-bezahlen/02-produkt-waehlen");
+  // Nur die Produktliste, nicht <main>: ein Ausschnitt, der höher ist als das
+  // Fenster, wird von Playwright scrollend zusammengesetzt — die fixierte
+  // Kopfzeile wandert dabei mit und landet mitten im Bild.
+  await shot(page.getByTestId("produktliste"), "bestellen-bezahlen/02-produkt-waehlen");
 
   await expect(weiter).toBeEnabled();
   await weiter.click();

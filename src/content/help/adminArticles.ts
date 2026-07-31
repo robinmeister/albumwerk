@@ -44,6 +44,10 @@ export const adminArticles: HelpArticle[] = [
     relatedPath: "/branding",
     bodyHtml: `
 <p>Unter <strong>Branding</strong> stellst du ein, wie die App für deine Kunden aussieht. Die Vorschau rechts (bzw. unter den Feldern auf dem Handy) aktualisiert sich sofort, gespeichert wird erst mit dem Button.</p>
+<figure>
+  <img src="/help/branding-einrichten/01-name.webp" alt="Der Abschnitt „Branding“ mit den Feldern für Name, Logo und Farben, daneben die Live-Vorschau" loading="lazy" />
+  <figcaption>Links die Felder, rechts die Vorschau: was du tippst, ist sofort zu sehen — gespeichert ist es damit noch nicht.</figcaption>
+</figure>
 <h2>Die Felder im Einzelnen</h2>
 <ul>
   <li><strong>Name des Geschäfts</strong> — steht in der Seitenleiste, im Footer und in allen E-Mails an deine Kunden.</li>
@@ -122,8 +126,16 @@ export const adminArticles: HelpArticle[] = [
 <h2>So erzeugst du die Texte</h2>
 <ol>
   <li>Trage unter <strong>Rechtliches</strong> deine Betreiberdaten ein: Name, Anschrift, Kontakt, gegebenenfalls Umsatzsteuer-ID.</li>
+<figure>
+  <img src="/help/rechtstexte/01-betriebsdaten.webp" alt="Der Abschnitt „Angaben zum Betrieb“ mit ausgefüllten Feldern für Firma, Straße, Ort und E-Mail" loading="lazy" />
+  <figcaption>Erst wenn Name, Anschrift und E-Mail stehen, werden die Erzeugen-Knöpfe darunter aktiv.</figcaption>
+</figure>
   <li>Lass dir daraus die Textvorlagen erzeugen. Aktive Zahlungsanbieter werden dabei berücksichtigt — die Datenschutzerklärung bekommt automatisch die passenden Abschnitte zu PayPal beziehungsweise Stripe.</li>
   <li>Geh die Texte im Editor durch. Alle Stellen, die als <code>[bitte ergänzen: …]</code> markiert sind, musst du selbst ausfüllen — die kann die Vorlage nicht kennen.</li>
+<figure>
+  <img src="/help/rechtstexte/02-erzeugtes-impressum.webp" alt="Der Abschnitt „Impressum“ mit dem erzeugten Text im Editor" loading="lazy" />
+  <figcaption>Das erzeugte Impressum steht im Editor und lässt sich dort direkt weiterbearbeiten.</figcaption>
+</figure>
   <li>Speichern. Die Seiten <strong>Impressum</strong> und <strong>Datenschutz</strong> sind sofort öffentlich abrufbar.</li>
 </ol>
 <h2>Wichtiger Hinweis</h2>
@@ -144,6 +156,28 @@ export const adminArticles: HelpArticle[] = [
     relatedPath: "/album",
     bodyHtml: `
 <p>Jedes Shooting ist ein eigenes Album. Über <strong>Album → Neues Shooting</strong> legst du eins an.</p>
+<h2>Schritt für Schritt</h2>
+<ol>
+  <li>Links über der Albumliste auf <strong>Neues Shooting</strong> klicken.</li>
+</ol>
+<figure>
+  <img src="/help/album-anlegen/01-neues-shooting.webp" alt="Der Button „Neues Shooting“" loading="lazy" />
+  <figcaption>Der Einstieg liegt links über der Liste deiner Alben.</figcaption>
+</figure>
+<ol start="2">
+  <li>Titel, Beschreibung, Kunden und Shooting-Typ ausfüllen.</li>
+</ol>
+<figure>
+  <img src="/help/album-anlegen/02-formular.webp" alt="Das Formular für ein neues Shooting mit den Feldern Titel, Beschreibung, Kunden und Typ" loading="lazy" />
+  <figcaption>Der Shooting-Typ steht ganz unten — er entscheidet, was der Kunde später im Album tun kann.</figcaption>
+</figure>
+<ol start="3">
+  <li>Speichern. Das Album erscheint in der Liste und ist bereit für Bilder.</li>
+</ol>
+<figure>
+  <img src="/help/album-anlegen/03-angelegt.webp" alt="Das neu angelegte Album in der Detailansicht, noch ohne Bilder" loading="lazy" />
+  <figcaption>Direkt nach dem Anlegen ist das Album leer — weiter geht es mit den Bildern.</figcaption>
+</figure>
 <h2>Die Felder</h2>
 <ul>
   <li><strong>Titel</strong> — sieht der Kunde. Etwas Konkretes wie „Hochzeit Meyer, Juli 2026“ ist besser als „Shooting 1“.</li>
@@ -172,6 +206,28 @@ export const adminArticles: HelpArticle[] = [
     relatedPath: "/album",
     bodyHtml: `
 <p>Öffne ein Shooting und zieh die Bilder in den Upload-Bereich oder wähle sie über den Dateidialog aus. Mehrere Bilder auf einmal sind kein Problem.</p>
+<h2>Schritt für Schritt</h2>
+<ol>
+  <li>Das Album öffnen und oben rechts auf <strong>Bilder hochladen</strong> gehen.</li>
+</ol>
+<figure>
+  <img src="/help/bilder-hochladen/01-album-oeffnen.webp" alt="Die Detailansicht eines Albums mit dem Button „Bilder hochladen“" loading="lazy" />
+  <figcaption>Der Upload-Button sitzt in der Kopfzeile des geöffneten Albums.</figcaption>
+</figure>
+<ol start="2">
+  <li>Bilder in die Fläche ziehen oder über den Dateidialog auswählen.</li>
+</ol>
+<figure>
+  <img src="/help/bilder-hochladen/02-dialog.webp" alt="Der Upload-Dialog mit der Ablagefläche für Dateien" loading="lazy" />
+  <figcaption>Der Dialog nimmt beliebig viele Bilder auf einmal an und zeigt den Fortschritt je Datei.</figcaption>
+</figure>
+<ol start="3">
+  <li>Fertig klicken. Die Bilder stehen im Album, die Vorschauen entstehen im Hintergrund.</li>
+</ol>
+<figure>
+  <img src="/help/bilder-hochladen/03-im-album.webp" alt="Das Bildraster des Albums mit den hochgeladenen Bildern" loading="lazy" />
+  <figcaption>Im Raster siehst du die Vorschauen mit Wasserzeichen — genau so sieht sie auch dein Kunde.</figcaption>
+</figure>
 <h2>Was dabei passiert</h2>
 <p>Du lädst immer die <strong>Originale</strong> hoch. Daraus erzeugt die App automatisch:</p>
 <ul>
@@ -227,7 +283,15 @@ export const adminArticles: HelpArticle[] = [
   <li><strong>QR-Code herunterladen</strong> — dasselbe als Bild. Praktisch für Visitenkarten, Übergabemappen oder eine Karte, die du dem Kunden mitgibst.</li>
   <li><strong>Album-Code kopieren</strong> — der reine Code zum Abtippen, falls jemand weder Link noch QR-Code nutzen kann.</li>
 </ul>
+<figure>
+  <img src="/help/album-teilen-qr/01-dialog.webp" alt="Der Teilen-Dialog mit Link, QR-Code und Album-Code" loading="lazy" />
+  <figcaption>Alle drei Wege liegen im selben Dialog — Link zum Verschicken, QR-Code zum Ausdrucken, Code zum Abtippen.</figcaption>
+</figure>
 <h2>Wer sieht was?</h2>
+<figure>
+  <img src="/help/album-teilen-qr/02-oeffentliche-ansicht.webp" alt="Ein öffentliches Album, geöffnet ohne Anmeldung" loading="lazy" />
+  <figcaption>So sieht ein öffentliches Album aus, wenn es jemand ohne Konto über den Link öffnet.</figcaption>
+</figure>
 <p>Bei <strong>öffentlichen</strong> Shootings kann jeder mit dem Link das Album ansehen und die Bilder herunterladen — auch ohne Konto. Bei den Typen <strong>Bezahlt</strong> und <strong>Verkauf</strong> dient der Link dazu, das Album mit einem Konto zu verknüpfen; danach ist es nur noch für dieses Konto sichtbar.</p>
 <blockquote>Behandle den Link entsprechend wie ein Passwort und schick ihn nur an den tatsächlichen Kunden.</blockquote>
 `,
@@ -249,6 +313,14 @@ export const adminArticles: HelpArticle[] = [
   <li>Bei <strong>Verkauf</strong>: erst nach abgeschlossener Bestellung. Die gekauften Bilder erscheinen dann unter <em>Downloads</em> im Konto des Kunden.</li>
 </ul>
 <h2>Bilder entfernen</h2>
+<figure>
+  <img src="/help/bild-sichtbarkeit/01-auswahl.webp" alt="Ein Bildraster, in dem das erste Bild mit einem Haken markiert ist" loading="lazy" />
+  <figcaption>Im Auswahlmodus markierst du die Bilder, die weg sollen.</figcaption>
+</figure>
+<figure>
+  <img src="/help/bild-sichtbarkeit/02-bestaetigen.webp" alt="Der Bestätigungsdialog vor dem Löschen von Bildern" loading="lazy" />
+  <figcaption>Vor dem Löschen fragt die App noch einmal nach — der Schritt lässt sich danach nicht rückgängig machen.</figcaption>
+</figure>
 <p>Über die Auswahl im Album kannst du Bilder markieren und löschen. Bereits gekaufte Bilder solltest du nicht löschen — der Kunde verliert damit seinen Download. Willst du ein Bild nur vorübergehend aus dem Album nehmen, ist es sicherer, es lokal zu sichern und später wieder hochzuladen.</p>
 `,
   },
@@ -274,6 +346,14 @@ export const adminArticles: HelpArticle[] = [
   <li><strong>Beschreibung</strong> — hier gehören Papierart, Rahmung oder Lieferzeit hin. Der Kunde sieht das beim Auswählen.</li>
   <li><strong>Digitaler Download</strong> — anschalten für Dateien statt Ware. Für solche Positionen fragt die Kasse keine Lieferadresse ab.</li>
 </ul>
+<figure>
+  <img src="/help/preise-pakete/01-neues-produkt.webp" alt="Das Formular für ein neues Produkt mit Produktart, Größe, Preis und Beschreibung" loading="lazy" />
+  <figcaption>Ein Produkt anlegen: Produktart und Größe ergeben zusammen den Titel, wenn du keinen eigenen eingibst.</figcaption>
+</figure>
+<figure>
+  <img src="/help/preise-pakete/02-katalog.webp" alt="Die Preisliste mit den angelegten Produkten, nach Produktart gruppiert" loading="lazy" />
+  <figcaption>Der fertige Katalog links, gruppiert nach Produktart. Über „Standard-Katalog einfügen“ bekommst du typische Produkte auf einen Schlag.</figcaption>
+</figure>
 <h2>Pakete</h2>
 <p>Ein Paket bündelt eine feste Anzahl Bilder zu einem Gesamtpreis:</p>
 <ul>
@@ -303,6 +383,10 @@ export const adminArticles: HelpArticle[] = [
   <li><strong>Secret</strong> — der geheime Teil. Er wird verschlüsselt gespeichert und dir danach nie wieder im Klartext angezeigt.</li>
   <li><strong>PayPal-Geschäftskonto (E-Mail)</strong> — das Konto, auf dem das Geld landet.</li>
 </ul>
+<figure>
+  <img src="/help/zahlungen-paypal/01-zugangsdaten.webp" alt="Der PayPal-Abschnitt mit den Feldern für Client-ID, Secret und Geschäftskonto" loading="lazy" />
+  <figcaption>Alle drei Felder liegen untereinander, darunter der Schalter für Test- oder Live-Modus.</figcaption>
+</figure>
 <h2>Test- und Live-Modus</h2>
 <p>PayPal vergibt für Test (Sandbox) und Echtbetrieb (Live) <strong>unterschiedliche</strong> Zugangsdaten. Die häufigste Fehlerquelle ist, Sandbox-Daten im Live-Modus zu hinterlegen oder umgekehrt. Teste erst mit Sandbox-Daten einen kompletten Kauf und wechsle danach auf Live.</p>
 <p>Mit <strong>Speichern &amp; prüfen</strong> testet die App die Zugangsdaten sofort gegen PayPal — du merkst also direkt, ob etwas nicht stimmt, und nicht erst beim ersten echten Kunden.</p>
@@ -321,6 +405,10 @@ export const adminArticles: HelpArticle[] = [
     relatedPath: "/payments",
     bodyHtml: `
 <p>Stripe deckt Kreditkarte, Apple Pay und Google Pay in einem ab. Du brauchst dafür nur den <strong>geheimen Stripe-Schlüssel</strong> aus deinem Stripe-Dashboard.</p>
+<figure>
+  <img src="/help/zahlungen-stripe/01-schluesselfeld.webp" alt="Der Stripe-Abschnitt mit dem Eingabefeld für den geheimen Schlüssel" loading="lazy" />
+  <figcaption>Ein einziges Feld — der Knopf daneben wird erst aktiv, wenn etwas darin steht.</figcaption>
+</figure>
 <h2>Worauf du achten musst</h2>
 <ul>
   <li>Der Schlüssel beginnt mit <code>sk_live_…</code> für den Echtbetrieb und mit <code>sk_test_…</code> für Tests. Beide funktionieren, aber nur mit dem Live-Schlüssel fließt echtes Geld.</li>
@@ -328,6 +416,10 @@ export const adminArticles: HelpArticle[] = [
   <li>Der Schlüssel wird verschlüsselt abgelegt und nicht mehr im Klartext angezeigt.</li>
 </ul>
 <p><strong>Speichern &amp; prüfen</strong> testet den Schlüssel direkt gegen Stripe. Zum Abschalten nutzt du <em>Kartenzahlung deaktivieren</em>.</p>
+<figure>
+  <img src="/help/zahlungen-stripe/02-anleitung.webp" alt="Die aufgeklappte Anleitung „Stripe in 5 Schritten einrichten“" loading="lazy" />
+  <figcaption>Die vollständige Anleitung steht direkt auf der Seite — inklusive Testkarte zum gefahrlosen Ausprobieren.</figcaption>
+</figure>
 <h2>Beide Anbieter gleichzeitig</h2>
 <p>Sind PayPal und Stripe eingerichtet, kann der Kunde an der Kasse frei wählen. Ist keiner von beiden eingerichtet, bekommt er stattdessen den Hinweis, dich direkt zu kontaktieren — Shootings vom Typ <em>Verkauf</em> sind dann also faktisch nicht abschließbar.</p>
 `,
@@ -342,12 +434,20 @@ export const adminArticles: HelpArticle[] = [
     keywords: ["bestellung", "auftrag", "order", "erledigt", "abwickeln", "versand"],
     relatedPath: "/orders",
     bodyHtml: `
+<figure>
+  <img src="/help/bestellungen-bearbeiten/01-eingegangen.webp" alt="Eine Bestellzeile in der Übersicht der eingegangenen Bestellungen" loading="lazy" />
+  <figcaption>Jede eingegangene Bestellung steht als eigene Zeile in der Liste.</figcaption>
+</figure>
 <p>Unter <strong>Bestellungen</strong> siehst du alles, was deine Kunden gekauft haben. Über die Detailansicht kommst du an die einzelnen Positionen: welches Bild, welches Produkt, welche Menge, welcher Betrag — und bei physischen Produkten die Lieferadresse.</p>
 <h2>Ablauf</h2>
 <ol>
   <li>Du bekommst eine Mail an die Adresse, die unter <em>Bestell-Benachrichtigungen</em> hinterlegt ist.</li>
   <li>Digitale Positionen stehen dem Kunden sofort unter <em>Downloads</em> zur Verfügung — da musst du nichts tun.</li>
   <li>Physische Positionen (Abzüge, Leinwand, Poster) gibst du wie gewohnt bei deinem Labor in Auftrag und verschickst sie.</li>
+<figure>
+  <img src="/help/bestellungen-bearbeiten/02-details.webp" alt="Die Detailansicht einer Bestellung mit den einzelnen Positionen" loading="lazy" />
+  <figcaption>In den Details steht, welches Bild in welchem Produkt und welcher Menge bestellt wurde.</figcaption>
+</figure>
   <li>Ist alles raus, markierst du die Bestellung als erledigt. So bleibt die Liste der offenen Aufträge übersichtlich.</li>
 </ol>
 `,
@@ -365,6 +465,10 @@ export const adminArticles: HelpArticle[] = [
     relatedPath: "/users",
     bodyHtml: `
 <p>Unter <strong>Nutzer</strong> siehst du alle registrierten Konten mit ihren Kontaktdaten und den zugeordneten Alben.</p>
+<figure>
+  <img src="/help/nutzer-verwalten/01-suchen.webp" alt="Die Nutzertabelle mit den Spalten Name, E-Mail, Shootings, Verifiziert und Admin" loading="lazy" />
+  <figcaption>Die Suche oben grenzt die Liste auf einen Namen ein. Der Schalter rechts vergibt Adminrechte.</figcaption>
+</figure>
 <h2>Wie Kunden zu einem Konto kommen</h2>
 <p>In aller Regel gar nicht durch dich: Du gibst den Album-Link oder QR-Code weiter, der Kunde registriert sich selbst und das Album wird dabei automatisch mit seinem neuen Konto verknüpft. Das ist der bequemste Weg für beide Seiten.</p>
 <h2>Typische Fälle</h2>
@@ -386,6 +490,10 @@ export const adminArticles: HelpArticle[] = [
     relatedPath: "/support",
     bodyHtml: `
 <p>Kunden können dir aus der App heraus Anfragen schicken. Die laufen unter <strong>Support</strong> auf, mit Suche und Filter nach Status.</p>
+<figure>
+  <img src="/help/support-postfach/01-postfach.webp" alt="Das Support-Postfach mit Suchfeld, Statusfilter und einer neuen Anfrage" loading="lazy" />
+  <figcaption>Neue Anfragen sind gekennzeichnet; über den Filter blendest du erledigte aus.</figcaption>
+</figure>
 <h2>Der Ablauf</h2>
 <ol>
   <li>Neue Anfragen tragen ein <strong>Neu</strong>-Kennzeichen. Du bekommst zusätzlich eine E-Mail.</li>
@@ -400,6 +508,44 @@ export const adminArticles: HelpArticle[] = [
   },
 
   // --- Betrieb -------------------------------------------------------------
+  {
+    slug: "eigene-hilfeartikel",
+    title: "Eigene Hilfe-Artikel schreiben",
+    summary:
+      "Eigene Anleitungen für deine Kunden anlegen — und mitgelieferte Artikel bei Bedarf überschreiben.",
+    audience: ["admin"],
+    category: "operations",
+    keywords: ["hilfe", "artikel", "anleitung", "dokumentation", "eigene", "texte", "faq"],
+    relatedPath: "/help/manage",
+    bodyHtml: `
+<p>Die Artikel, die du gerade liest, werden mit der Software ausgeliefert und passen damit immer zur laufenden Version. Alles, was nur bei dir gilt — Abholzeiten, Lieferfristen, deine Preisabsprachen —, kannst du zusätzlich selbst schreiben. Der Einstieg liegt auf der Hilfeseite oben rechts unter <strong>Artikel verwalten</strong>.</p>
+<h2>Schritt für Schritt</h2>
+<ol>
+  <li>Auf <strong>Neuer Artikel</strong> klicken.</li>
+</ol>
+<figure>
+  <img src="/help/eigene-hilfeartikel/01-neuer-artikel.webp" alt="Der Button „Neuer Artikel“" loading="lazy" />
+  <figcaption>Der Einstieg liegt über der Liste deiner eigenen Artikel.</figcaption>
+</figure>
+<ol start="2">
+  <li>Titel, Kategorie, Zielgruppe und Kurzbeschreibung ausfüllen, den Text im Editor schreiben und speichern.</li>
+</ol>
+<figure>
+  <img src="/help/eigene-hilfeartikel/02-formular.webp" alt="Das Formular für einen neuen Hilfe-Artikel mit Titel, Kurz-Link, Kategorie, Sichtbarkeit und Editor" loading="lazy" />
+  <figcaption>Der Kurz-Link entsteht automatisch aus dem Titel — er ist Teil der Adresse und sollte danach nicht mehr geändert werden.</figcaption>
+</figure>
+<h2>Die Felder</h2>
+<ul>
+  <li><strong>Kurz-Link</strong> — der letzte Teil der Adresse, also <code>/help/&lt;Kurz-Link&gt;</code>. Er wird beim Tippen aus dem Titel gebildet, solange der Artikel noch nicht existiert. Danach solltest du ihn stehen lassen: Links, die du schon verschickt hast, zeigen sonst ins Leere.</li>
+  <li><strong>Sichtbar für</strong> — <em>Admin</em> sieht nur du, <em>Kunden</em> sehen angemeldete Kunden, <em>Öffentlich</em> ist auch ohne Konto lesbar. Mehrfachauswahl ist möglich.</li>
+  <li><strong>Kurzbeschreibung</strong> — ein Satz. Er steht in der Übersicht unter dem Titel und erscheint in den (?)-Hinweisen an den Feldern.</li>
+  <li><strong>Veröffentlicht</strong> — ausgeschaltet bleibt der Artikel ein Entwurf und ist für niemanden sichtbar.</li>
+</ul>
+<h2>Einen mitgelieferten Artikel überschreiben</h2>
+<p>Vergibst du für deinen Artikel denselben Kurz-Link wie ein mitgelieferter, ersetzt deiner ihn vollständig. Das ist der Weg, wenn ein Standardtext für deinen Betrieb nicht stimmt — etwa weil du Abzüge selbst druckst statt über ein Labor. Zum Zurücksetzen löschst du deinen Artikel einfach wieder, dann erscheint der mitgelieferte erneut.</p>
+<blockquote>Die mitgelieferten Artikel werden mit jedem Update aktualisiert. Deine eigenen bleiben unverändert stehen — schau bei überschriebenen Artikeln nach einem größeren Update also kurz nach, ob dein Text noch passt.</blockquote>
+`,
+  },
   {
     slug: "backups-updates",
     title: "Backups und Updates",

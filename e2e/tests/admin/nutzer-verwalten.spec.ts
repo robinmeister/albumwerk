@@ -19,7 +19,9 @@ test("Fotograf findet einen Kunden und ändert die Rechte", async ({
   // false ist und PocketBase das Feld deshalb auch Admins nicht ausliefert.
   const zeile = page.getByRole("row", { name: new RegExp(album.kundin.lastName) });
   await expect(zeile).toBeVisible();
-  await shot(zeile, "nutzer-verwalten/01-suchen");
+  // Die ganze Tabelle, nicht nur die Zeile: ohne die Spaltenköpfe ist im Bild
+  // nicht zu erkennen, was „1" und der Schalter rechts bedeuten.
+  await shot(page.locator("table"), "nutzer-verwalten/01-suchen");
 
   // Adminrechte setzen und wieder zurücknehmen — der Test hinterlässt keinen
   // veränderten Rechtestand.

@@ -25,8 +25,7 @@ test("Fotograf legt einen eigenen Hilfe-Artikel an", async ({ page, pb, anmelden
       .getByLabel("Kurzbeschreibung")
       .fill("Wann und wie du fertige Abzüge bei mir abholen kannst.");
 
-    const formular = titel.locator("xpath=ancestor::form[1] | xpath=ancestor::*[self::section][1]");
-    await shot(formular.first(), "eigene-hilfeartikel/02-formular");
+    await shot(page.getByTestId("artikelformular"), "eigene-hilfeartikel/02-formular");
 
     await page.getByRole("button", { name: "Speichern", exact: true }).click();
     await expect(titel).toBeHidden();

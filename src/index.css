@@ -162,9 +162,14 @@
   .help-article figure {
     margin-top: 1.5em;
   }
+  /* width: auto statt 100% — die Bilder entstehen bei doppelter Pixeldichte
+     (make help-shots). Auf 100% gezogen wird ein Handy-Screenshot in der
+     breiten Artikelspalte hochskaliert und weich; so bleibt er bei seiner
+     Eigengröße und wird nur nach unten begrenzt. */
   .help-article img {
     display: block;
-    width: 100%;
+    width: auto;
+    max-width: 100%;
     height: auto;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-element);

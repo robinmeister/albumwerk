@@ -24,6 +24,10 @@ export const customerArticles: HelpArticle[] = [
   <li>Du siehst deine Bilder als Vorschau. Die Vorschauen tragen ein Wasserzeichen; die Bilder, die du bekommst, natürlich nicht.</li>
   <li>Du wählst Bilder aus und lädst sie herunter oder bestellst sie.</li>
 </ol>
+<figure>
+  <img src="/help/was-ist-albumwerk/01-hilfeseite.webp" alt="Die Hilfeseite, geöffnet ohne Anmeldung" loading="lazy" />
+  <figcaption>Diese Hilfe kannst du auch ohne Konto lesen — der Rest der App braucht eine Anmeldung.</figcaption>
+</figure>
 <p>Deine Bilder sind nur für dich sichtbar. Andere Kunden sehen dein Album nicht.</p>
 `,
   },
@@ -42,6 +46,18 @@ export const customerArticles: HelpArticle[] = [
   <li><strong>Mit Konto:</strong> Du meldest dich an, das Album landet in deiner Übersicht und öffnet sich direkt.</li>
   <li><strong>Ohne Konto:</strong> Du wirst durch die Registrierung geführt. Sobald sie abgeschlossen ist, ist das Album automatisch mit deinem Konto verknüpft — du musst den Link kein zweites Mal öffnen.</li>
 </ul>
+<figure>
+  <img src="/help/album-oeffnen/03-registrieren.webp" alt="Das Registrierungsformular mit den Feldern Vorname, Nachname, E-Mail und Passwort" loading="lazy" />
+  <figcaption>Bei der Registrierung über den Album-Link musst du keinen Code eintippen — das Album hängt schon daran.</figcaption>
+</figure>
+<figure>
+  <img src="/help/album-oeffnen/01-uebersicht.webp" alt="Die Albumübersicht mit einem Album" loading="lazy" />
+  <figcaption>Nach der Anmeldung liegen deine Alben in der Übersicht.</figcaption>
+</figure>
+<figure>
+  <img src="/help/album-oeffnen/02-bilder.webp" alt="Das geöffnete Album mit vier Bildern im Raster" loading="lazy" />
+  <figcaption>Im geöffneten Album siehst du alle Bilder deines Termins als Vorschau.</figcaption>
+</figure>
 <h2>Du hast nur einen Album-Code</h2>
 <p>Melde dich an und öffne den Link zum Hinzufügen eines Albums, den dir dein Fotograf geschickt hat. Dort kannst du den Code eintragen.</p>
 <h2>Das Album fehlt in meiner Übersicht</h2>
@@ -62,6 +78,21 @@ export const customerArticles: HelpArticle[] = [
     keywords: ["auswählen", "auswahl", "markieren", "favoriten", "vorauswahl", "abschicken"],
     relatedPath: "/album",
     bodyHtml: `
+<h2>Schritt für Schritt</h2>
+<ol>
+  <li>Im Album auf <strong>Bilder auswählen</strong> tippen.</li>
+</ol>
+<figure>
+  <img src="/help/bilder-auswaehlen/01-modus-starten.webp" alt="Der Button „Bilder auswählen“" loading="lazy" />
+  <figcaption>Erst der Auswahlmodus, dann die Bilder — sonst öffnet ein Tippen nur die Großansicht.</figcaption>
+</figure>
+<ol start="2">
+  <li>Die Bilder antippen, die du haben möchtest.</li>
+</ol>
+<figure>
+  <img src="/help/bilder-auswaehlen/02-markiert.webp" alt="Ein Bildraster, in dem das erste Bild mit einem grünen Haken markiert ist" loading="lazy" />
+  <figcaption>Markierte Bilder tragen einen grünen Haken. Ein zweites Tippen nimmt die Markierung zurück.</figcaption>
+</figure>
 <p>Tippe oder klicke ein Bild an, um es zu markieren. Markierte Bilder sind mit einem Haken gekennzeichnet, unten siehst du laufend, wie viele es sind. Ein erneuter Klick nimmt die Markierung wieder weg.</p>
 <h2>Was du mit der Auswahl machen kannst</h2>
 <p>Welche Möglichkeiten du hast, legt dein Fotograf für das jeweilige Album fest:</p>
@@ -87,13 +118,25 @@ export const customerArticles: HelpArticle[] = [
     relatedPath: "/pricing",
     bodyHtml: `
 <p>Wenn du im Album auf <strong>Kaufen</strong> gehst, landest du bei der Zusammenstellung deiner Bestellung.</p>
+<figure>
+  <img src="/help/bestellen-bezahlen/01-schritte.webp" alt="Die drei Schritte Preise auswählen, Bezahlen und Download als nummerierte Anzeige" loading="lazy" />
+  <figcaption>Oben siehst du jederzeit, an welcher Stelle du gerade bist.</figcaption>
+</figure>
 <h2>Schritt für Schritt</h2>
 <ol>
   <li><strong>Produkt je Bild wählen</strong> — für jedes ausgewählte Bild entscheidest du, was du haben möchtest: einen digitalen Download, einen Abzug in einer bestimmten Größe, eine Leinwand und so weiter. Die Beschreibung nennt dir Papierart, Rahmung oder Lieferzeit, sofern dein Fotograf das hinterlegt hat.</li>
   <li><strong>Menge festlegen</strong> — von einem Abzug kannst du auch mehrere bestellen.</li>
+<figure>
+  <img src="/help/bestellen-bezahlen/02-produkt-waehlen.webp" alt="Die Produktliste für ein Bild mit Plus- und Minus-Knöpfen je Produkt" loading="lazy" />
+  <figcaption>Über Plus und Minus legst du je Produkt die Menge fest. Unten läuft die Summe mit.</figcaption>
+</figure>
   <li><strong>Adresse angeben</strong> — nur nötig, wenn etwas Physisches dabei ist. Bei reinen Downloads entfällt der Schritt.</li>
   <li><strong>Bezahlen</strong> — je nachdem, was dein Fotograf eingerichtet hat, per PayPal oder per Karte (inklusive Apple Pay und Google Pay). Sind beide verfügbar, kannst du frei wählen.</li>
 </ol>
+<figure>
+  <img src="/help/bestellen-bezahlen/03-bezahlseite.webp" alt="Die Bezahlseite mit Bestellübersicht, Kontaktdaten und Zahlungsbereich" loading="lazy" />
+  <figcaption>Auf der Bezahlseite stehen Übersicht, Kontaktdaten und Zahlart untereinander. Deine Daten aus dem Profil sind schon eingetragen.</figcaption>
+</figure>
 <h2>Nach der Bestellung</h2>
 <p>Digitale Bilder stehen dir sofort unter <strong>Downloads</strong> zur Verfügung. Abzüge und andere physische Produkte werden von deinem Fotografen in Auftrag gegeben und dir zugeschickt — bei Fragen zur Lieferzeit wendest du dich direkt an ihn.</p>
 <h2>Deine Zwischenauswahl bleibt erhalten</h2>
@@ -113,6 +156,10 @@ export const customerArticles: HelpArticle[] = [
     relatedPath: "/downloads",
     bodyHtml: `
 <p>Unter <strong>Downloads</strong> findest du alle Bilder, die für dich freigegeben sind — gekaufte ebenso wie solche aus bereits bezahlten oder öffentlichen Alben.</p>
+<figure>
+  <img src="/help/downloads-nutzen/01-noch-leer.webp" alt="Der leere Download-Bereich mit dem Hinweis „Noch keine Downloads“" loading="lazy" />
+  <figcaption>Solange nichts freigegeben ist, bleibt der Bereich leer — das ist kein Fehler.</figcaption>
+</figure>
 <h2>Einzeln oder alle auf einmal</h2>
 <p>Du kannst jedes Bild einzeln herunterladen oder dir alle zusammen als <strong>ZIP-Archiv</strong> geben lassen. Das ZIP ist bei vielen Bildern der bequemere Weg; die Datei wird dabei im Browser zusammengestellt, was je nach Menge einen Moment dauern kann.</p>
 <h2>Auf dem Handy</h2>
@@ -139,7 +186,15 @@ export const customerArticles: HelpArticle[] = [
     bodyHtml: `
 <h2>Profildaten ändern</h2>
 <p>Unter <strong>Profil</strong> passt du Name, Kontaktdaten und Anschrift an. Die Adresse wird beim Bestellen von Abzügen als Lieferadresse vorgeschlagen.</p>
+<figure>
+  <img src="/help/konto-passwort/02-adresse.webp" alt="Das Profilformular mit den Abschnitten für Kontakt- und Adressinformationen" loading="lazy" />
+  <figcaption>Die Anschrift lohnt sich vorab: beim Bestellen von Abzügen ist sie dann schon ausgefüllt.</figcaption>
+</figure>
 <h2>Passwort vergessen</h2>
+<figure>
+  <img src="/help/konto-passwort/01-anmelden.webp" alt="Die Anmeldeseite mit den Feldern für E-Mail-Adresse und Passwort" loading="lazy" />
+  <figcaption>Der Link „Passwort vergessen“ steht direkt unter dem Anmeldeformular.</figcaption>
+</figure>
 <p>Auf der Anmeldeseite gibt es <strong>Passwort vergessen</strong>. Du trägst deine E-Mail-Adresse ein und bekommst eine Mail mit einem Link, über den du ein neues Passwort setzt. Der Link ist nur begrenzt gültig — fordere im Zweifel einfach einen neuen an.</p>
 <h2>Es kommt keine E-Mail an</h2>
 <ul>
@@ -163,6 +218,21 @@ export const customerArticles: HelpArticle[] = [
     relatedPath: "/support",
     bodyHtml: `
 <p>Findest du hier keine Antwort, kannst du deinem Fotografen unter <strong>Support</strong> direkt schreiben. Du siehst deine Anfragen und alle Antworten im Verlauf und wirst per E-Mail informiert, sobald es etwas Neues gibt.</p>
+<h2>Schritt für Schritt</h2>
+<ol>
+  <li>Unter <strong>Support</strong> auf <strong>Neue Anfrage</strong> tippen.</li>
+</ol>
+<figure>
+  <img src="/help/hilfe-anfordern/01-neue-anfrage.webp" alt="Der Button „Neue Anfrage“" loading="lazy" />
+  <figcaption>Über diesen Knopf startest du eine neue Anfrage.</figcaption>
+</figure>
+<ol start="2">
+  <li>Kategorie wählen, Betreff und Beschreibung ausfüllen, absenden.</li>
+</ol>
+<figure>
+  <img src="/help/hilfe-anfordern/02-formular.webp" alt="Das Anfrageformular mit Kategorie, Betreff und Beschreibung" loading="lazy" />
+  <figcaption>Die Kategorie hilft beim Einordnen; bei technischen Problemen erscheint darunter zusätzlich der Fehler-Anhang.</figcaption>
+</figure>
 <h2>Eine gute Anfrage</h2>
 <ul>
   <li>Wähle die passende <strong>Kategorie</strong> — technisches Problem, Album, Bestellung, Bezahlung oder sonstiges.</li>

@@ -174,7 +174,11 @@ export default function ShootingModal(): ReactElement {
             value={selectedShooting?.description ?? ""}
             onChange={(v) => selectedShooting && setSelectedShooting({ ...selectedShooting, description: v })}
           />
+          {/* triggerDisplay: die Vorgabe "count" schreibt "1 selected" — Astryx
+              liefert dafür nur englische Texte. "labels" zeigt stattdessen die
+              Bezeichnungen der Auswahl, und die stehen bei uns auf Deutsch. */}
           <MultiSelector
+            triggerDisplay="labels"
             placeholder="Bitte wählen"
             width="100%"
             label="Kunde(n)"
@@ -240,7 +244,11 @@ export default function ShootingModal(): ReactElement {
               </div>
               {!addPackage && (
                 <>
+                  {/* triggerDisplay: die Vorgabe "count" schreibt "1 selected" — Astryx
+                      liefert dafür nur englische Texte. "labels" zeigt stattdessen die
+                      Bezeichnungen der Auswahl, und die stehen bei uns auf Deutsch. */}
                   <MultiSelector
+                    triggerDisplay="labels"
                     placeholder="Bitte wählen"
                     width="100%"
                     label="Preise"
