@@ -410,12 +410,16 @@ export default function SupportPage(): ReactElement {
       actions={
         <div {...stylex.props(s.badgeRow)}>
           <HelpHint slug="hilfe-anfordern" />
-          <Button
-            variant="primary"
-            icon={<Plus />}
-            label="Neue Anfrage"
-            onClick={() => setView("new")}
-          />
+          {/* Der Leerzustand trägt denselben Knopf in der Mitte — zweimal
+              dieselbe Primäraktion auf einem Bildschirm. */}
+          {tickets.length > 0 && (
+            <Button
+              variant="primary"
+              icon={<Plus />}
+              label="Neue Anfrage"
+              onClick={() => setView("new")}
+            />
+          )}
         </div>
       }
     >

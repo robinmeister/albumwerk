@@ -351,15 +351,18 @@ export default function DayDetail(props: Props): ReactElement {
           isDisabled={busy}
           onClick={() => void submitBlock(true)}
         />
+        {/* secondary, nicht ghost: als Ghost stand hier neben "Ganzer Tag zu"
+            reiner Fließtext — die Aktion sah nicht klickbar aus. Ghost bleibt
+            für Symbolknöpfe und Abbrechen-Links. */}
         <Button
-          variant="ghost"
+          variant="secondary"
           size="sm"
           label="Zeitfenster sperren"
           isDisabled={busy}
           onClick={() => setForm(form === "block" ? null : "block")}
         />
         <Button
-          variant="ghost"
+          variant="secondary"
           size="sm"
           icon={<CalendarPlus />}
           label="Termin eintragen"

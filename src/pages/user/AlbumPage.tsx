@@ -112,13 +112,15 @@ function AlbumCard({
         </div>
       )}
 
+      {/* color="inherit": der Verlauf setzt #fff, aber Text färbt sich sonst
+          selbst mit --color-text-primary — auf einem dunklen Foto unsichtbar. */}
       <div {...stylex.props(s.cardOverlay)}>
-        <Text type="large" weight="semibold" maxLines={1}>
+        <Text type="large" weight="semibold" color="inherit" maxLines={1}>
           {shooting.title || "Ohne Titel"}
         </Text>
         {typeLabel[shooting.type] && (
           <span {...stylex.props(s.cardType)}>
-            <Text type="supporting">{typeLabel[shooting.type]}</Text>
+            <Text type="supporting" color="inherit">{typeLabel[shooting.type]}</Text>
           </span>
         )}
       </div>
@@ -280,7 +282,8 @@ export default function AlbumPage(): ReactElement {
               onChange={(v) => setSearch(v)}
             />
           )}
-          <Button variant="secondary" icon={<Add />} label="Album hinzufügen" onClick={() => setAddOpen(true)} />
+          {/* Einzige Aktion der Seite — also primär. */}
+          <Button variant="primary" icon={<Add />} label="Album hinzufügen" onClick={() => setAddOpen(true)} />
         </div>
       </div>
 

@@ -10,7 +10,20 @@
 
 import { ReactElement } from "react";
 import { Tab, TabList } from "@astryxdesign/core/TabList";
+import * as stylex from "@stylexjs/stylex";
 import { useLocation, useNavigate } from "react-router-dom";
+
+// Vier Reiter passen nicht in 390 px. Ohne Scroller schiebt der Streifen die
+// ganze Seite auf 427 px auf — dann wackelt jede Terminseite seitlich weg und
+// "Einbetten" ist abgeschnitten.
+const s = stylex.create({
+  scroller: {
+    overflowX: "auto",
+    overscrollBehaviorX: "contain",
+    scrollbarWidth: "none",
+    "::-webkit-scrollbar": { display: "none" },
+  },
+});
 
 const TABS = [
   { value: "/appointments", label: "Kalender" },
@@ -30,10 +43,12 @@ export default function AppointmentsTabs(): ReactElement {
     .sort((a, b) => b.length - a.length)[0] ?? TABS[0].value;
 
   return (
-    <TabList value={active} onChange={(value) => navigate(value)} hasDivider>
-      {TABS.map((tab) => (
-        <Tab key={tab.value} value={tab.value} label={tab.label} />
-      ))}
-    </TabList>
+    <div {...stylex.props(s.scroller)}>
+      <TabList value={active} onChange={(value) => navigate(value)} hasDivider>
+        {TABS.map((tab) => (
+          <Tab key={tab.value} value={tab.value} label={tab.label} />
+        ))}
+      </TabList>
+    </div>
   );
 }

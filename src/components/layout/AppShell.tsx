@@ -96,7 +96,16 @@ const s = stylex.create({
     justifyContent: "center",
   },
   spacer: { flexGrow: 1 },
-  footer: { padding: "12px 20px", borderTop: "1px solid var(--color-border)" },
+  footer: {
+    padding: "12px 20px",
+    borderTop: "1px solid var(--color-border)",
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
+  },
+  // Die Trenner lagen als "·" im Textfluss — beim Umbruch stand die zweite
+  // Zeile dann mit einem führenden Mittelpunkt da. Jetzt trennt der Abstand.
+  footerLinks: { display: "flex", flexWrap: "wrap", columnGap: 12, rowGap: 2 },
   footerLink: { color: "inherit", textDecoration: "none" },
   main: {
     flexGrow: 1,
@@ -229,19 +238,20 @@ export default function AppShell(props: Props): ReactElement {
       <div {...stylex.props(s.footer)}>
         <Text type="supporting" color="secondary">
           © {new Date().getFullYear()} {settings.businessName}
-          {" · "}
-          <Link to="/imprint" {...stylex.props(s.footerLink)}>
-            Impressum
-          </Link>
-          {" · "}
-          <Link to="/privacy" {...stylex.props(s.footerLink)}>
-            Datenschutz
-          </Link>
-          {" · "}
-          <Link to="/help" {...stylex.props(s.footerLink)}>
-            Hilfe
-          </Link>
         </Text>
+        <nav {...stylex.props(s.footerLinks)}>
+          {[
+            { to: "/imprint", label: "Impressum" },
+            { to: "/privacy", label: "Datenschutz" },
+            { to: "/help", label: "Hilfe" },
+          ].map((item) => (
+            <Link key={item.to} to={item.to} {...stylex.props(s.footerLink)}>
+              <Text type="supporting" color="secondary">
+                {item.label}
+              </Text>
+            </Link>
+          ))}
+        </nav>
       </div>
     </>
   );

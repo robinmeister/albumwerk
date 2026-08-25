@@ -352,9 +352,11 @@ export default function AvailabilityPage(): ReactElement {
                   </div>
                 </div>
                 <div {...stylex.props(s.badges)}>
-                  <Button variant="ghost" size="sm" label="Bearbeiten" onClick={() => startEdit(rule)} />
+                  {/* Zeilenaktionen als secondary — als Ghost waren sie von
+                      Fließtext nicht zu unterscheiden. */}
+                  <Button variant="secondary" size="sm" label="Bearbeiten" onClick={() => startEdit(rule)} />
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="sm"
                     icon={<Trash2 />}
                     label="Entfernen"

@@ -204,4 +204,16 @@
   .album-card:hover img {
     transform: scale(1.04);
   }
+
+  /* Astryx hängt an jedes Pflichtfeld das englische Wort "Required"
+   * (dist/Field/FieldLabel.js: `isRequired ? 'Required' : null` — hartkodiert,
+   * steht nicht im Sprachkatalog und ist über den i18n-Provider nicht
+   * erreichbar). Wir blenden nur diesen Zusatz aus; `aria-required` am
+   * Eingabefeld bleibt unangetastet. Pflichtfelder kennzeichnet die App wie
+   * überall sonst im Label selbst ("Website (optional)").
+   * ponytail: hängt an Astryx' Label-DOM. Bricht ein Update es, steht das
+   * englische Wort wieder sichtbar da — auffällig genug, um es zu merken. */
+  .astryx-field-label > span:has(> span[aria-hidden="true"]) {
+    display: none;
+  }
 }

@@ -96,6 +96,9 @@ const s = stylex.create({
   thumbImg: { width: "100%", height: "100%", objectFit: "cover" },
   placeholderIcon: { color: "var(--color-icon-disabled)", fontSize: 18 },
   itemMain: { flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" },
+  // alignItems: flex-start gibt den Kindern Inhaltsbreite — ohne diese Grenze
+  // wächst die Textbox über die Liste hinaus und maxLines kürzt nichts.
+  itemTitle: { maxWidth: "100%" },
   rightEmpty: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 8 },
   emptyIcon: { fontSize: 56, color: "var(--color-icon-disabled)", opacity: 0.5 },
   rightScroll: { flex: 1, overflowY: "auto", padding: { default: 16, [MD]: 24 } },
@@ -146,7 +149,12 @@ function ShootingListItem({
         )}
       </div>
       <div {...stylex.props(s.itemMain)}>
-        <Text type="body" weight={isSelected ? "semibold" : "normal"} maxLines={1}>
+        <Text
+          type="body"
+          weight={isSelected ? "semibold" : "normal"}
+          maxLines={1}
+          xstyle={s.itemTitle}
+        >
           {shooting.title}
         </Text>
         <Badge variant={typeInfo.color} label={typeInfo.label} />

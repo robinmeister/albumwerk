@@ -83,12 +83,25 @@ export function buildAstryxTheme(settings: AppSettings): DefinedTheme {
     tokens: tokens as DefineThemeTokens,
     components: {
       // large, light headlines with tight tracking — editorial/portfolio look
+      //
+      // Astryx' Überschriftenskala ist am unteren Ende gestaucht: level 5
+      // rendert 12px, level 6 noch kleiner — also KLEINER als der Fließtext
+      // (14px) darunter. Die App nutzt fast nur 4/5/6 (7/17/36 Stellen), damit
+      // stand auf fast jeder Seite die Überschrift unter ihrem eigenen Text.
+      // Hier einmal geradegerückt statt an 60 Aufrufstellen.
       heading: {
         base: { fontWeight: "300", letterSpacing: "-0.02em" },
+        "level:3": { fontSize: "var(--font-size-3xl)" }, // 29px  Seitentitel groß
+        "level:4": { fontSize: "var(--font-size-2xl)" }, // 24px  Seitentitel
+        "level:5": { fontSize: "var(--font-size-xl)" },  // 20px  Kartentitel
+        "level:6": { fontSize: "var(--font-size-lg)" },  // 17px  Abschnitt
       },
-      // pill buttons, flat (no elevation)
+      // flache Knöpfe ohne Schlagschatten. Die Rundung folgt der Instanz-
+      // Einstellung: als feste Pille (9999px) standen in einem Formular drei
+      // verschiedene Rundungen übereinander — Karte, Feld, Knopf.
+      // Pillen zurück: borderRadius wieder auf "9999px".
       button: {
-        base: { borderRadius: "9999px", paddingInline: "20px", boxShadow: "none" },
+        base: { borderRadius: "var(--radius-element)", paddingInline: "20px", boxShadow: "none" },
       },
       // flat, hairline-bordered cards
       card: {
