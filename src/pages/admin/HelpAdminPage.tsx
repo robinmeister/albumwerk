@@ -35,8 +35,8 @@ import {
   deleteCustomArticle,
   fetchAllCustomArticles,
   saveCustomArticle,
-  slugify,
 } from "../../utils/help";
+import { slugify } from "../../utils/slug";
 
 // Same reasoning as AdminLegalPage: TipTap is large and only ever needed here.
 const RichTextEditor = lazy(() => import("../../components/widgets/RichTextEditor"));

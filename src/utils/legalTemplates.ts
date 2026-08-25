@@ -16,7 +16,7 @@ export interface LegalOperator {
   mailProvider: string;
 }
 
-export interface PrivacyContext {
+interface PrivacyContext {
   paypalEnabled: boolean;
   stripeEnabled: boolean;
 }

@@ -7,7 +7,7 @@ import * as stylex from "@stylexjs/stylex";
 import { ArrowLeft as ArrowBack } from "lucide-react";
 import { toast } from "react-toastify";
 import { currentUser } from "../../../../config/currentUser";
-import { doc, getDoc, updateDoc } from "../../../../config/firestore-compat";
+import { getRecord, pb } from "../../../../config/pocketbase";
 import { ReactElement, useContext, useEffect, useState } from "react";
 
 import { ImagePriceObject, Package, PriceWithQuantity } from "../../../../utils/types";
@@ -98,9 +98,7 @@ export default function PaymentForm(props: Props): ReactElement {
   // show validation errors only after the customer has interacted with a field
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const paypalAvailable = Boolean(
-    settings.paypalEnabled || import.meta.env.VITE_PAYPAL_CLIENT_ID
-  );
+  const paypalAvailable = Boolean(settings.paypalEnabled);
   const stripeAvailable = Boolean(settings.stripeEnabled);
 
   // physical products (prints, canvases …) need a shipping address and a
@@ -144,10 +142,10 @@ export default function PaymentForm(props: Props): ReactElement {
       return;
     }
     try {
-      const snap = await getDoc(doc("users", user.uid));
-      if (snap.exists()) {
-        setProfileId(snap.id);
-        setUserData(snap.data());
+      const profile = await getRecord("users", user.uid);
+      if (profile) {
+        setProfileId(profile.id);
+        setUserData(profile);
       }
     } catch (e) {
       console.error(e);
@@ -161,7 +159,10 @@ export default function PaymentForm(props: Props): ReactElement {
     // after a successful payment, so a failure here must not alarm the customer
     // (the order is already placed) — log only, no toast.
     try {
-      await updateDoc(doc("users", profileId), userData);
+      // `userData` is the whole record the form was seeded from; PB rejects a
+      // write that carries the record's own id back.
+      const { id: _omit, ...fields } = userData;
+      await pb.collection("users").update(profileId, fields);
     } catch (e) {
       console.error(e);
     }

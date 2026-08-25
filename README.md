@@ -10,7 +10,7 @@ der Anwendung an.
 Ihre Fotos und Kundendaten bleiben bei Ihnen.
 
 > **Ausführliche Anleitung:** [docs/selfhosting.md](docs/selfhosting.md) —
-> Installation (auch ohne dieses Repo, per fertigem Image aus `deploy/`),
+> Installation (auch ohne dieses Repo, per fertigem Image),
 > Update, Backup und Fehlerbehebung Schritt für Schritt.
 
 ---

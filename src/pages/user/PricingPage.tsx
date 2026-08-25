@@ -6,8 +6,7 @@ import { currentUser } from "../../config/currentUser";
 import { ReactElement, useEffect, useState } from "react";
 import { Location, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { doc, getDoc } from "../../config/firestore-compat";
-import { pb } from "../../config/pocketbase";
+import { getRecord, pb } from "../../config/pocketbase";
 
 import Page from "../../components/layout/Page";
 import PageLoader from "../../components/feedback/PageLoader";
@@ -207,17 +206,17 @@ export default function PricingPage(): ReactElement {
     }
     setLoading(true);
     try {
-      const snap = await getDoc(doc("shootings", shootingId));
-      if (snap.exists()) {
+      const record = await getRecord("shootings", shootingId);
+      if (record) {
         setShooting({
-          id:                snap.id,
-          type:              snap.data().type,
-          title:             snap.data().title,
-          description:       snap.data().description,
-          packageId:         snap.data().packageId,
-          priceIds:          snap.data().priceIds,
-          userIds:           snap.data().userIds,
-          withUserSelection: snap.data().withUserSelection,
+          id:                record.id,
+          type:              record.type,
+          title:             record.title,
+          description:       record.description,
+          packageId:         record.packageId,
+          priceIds:          record.priceIds,
+          userIds:           record.userIds,
+          withUserSelection: record.withUserSelection,
         });
       }
     } catch (e) {
@@ -229,14 +228,14 @@ export default function PricingPage(): ReactElement {
   async function fetchPrices(priceIds: string[]) {
     const results = await Promise.all(
       priceIds.map(async (id) => {
-        const snap = await getDoc(doc("prices", id));
-        if (!snap.exists()) return undefined;
+        const record = await getRecord("prices", id);
+        if (!record) return undefined;
         return {
-          id:             snap.id,
-          title:          snap.data()?.title,
-          amount:         snap.data()?.amount,
-          description:    snap.data()?.description,
-          isDownloadable: snap.data()?.isDownloadable,
+          id:             record.id,
+          title:          record.title,
+          amount:         record.amount,
+          description:    record.description,
+          isDownloadable: record.isDownloadable,
         };
       })
     );

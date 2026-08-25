@@ -98,8 +98,8 @@ export type UserOrder = {
 
 export type SupportCategory = "technical" | "album" | "order" | "billing" | "other";
 export type SupportStatus = "open" | "waiting" | "resolved" | "closed";
-export type SupportTarget = "admin" | "vendor";
-export type SupportForwardState = "none" | "sent" | "failed";
+type SupportTarget = "admin" | "vendor";
+type SupportForwardState = "none" | "sent" | "failed";
 
 export type SupportTicket = {
   id: string;

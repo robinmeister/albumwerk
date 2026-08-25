@@ -16,8 +16,10 @@ wird hier erklärt.
 
 ### Weg A — fertiges Image (empfohlen, kein Quellcode nötig)
 
-1. Einen Ordner anlegen und die drei Dateien aus dem `deploy/`-Bundle
+1. Einen Ordner anlegen und die drei Dateien aus dem Repo-Stamm
    hineinlegen: `docker-compose.yml`, `Caddyfile`, `.env.example`.
+   (Quellcode wird nicht gebraucht — `docker compose up -d` zieht das
+   fertige Image aus der Registry.)
 2. `.env` erstellen und ausfüllen:
 
    ```bash

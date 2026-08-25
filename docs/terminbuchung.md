@@ -637,7 +637,8 @@ auf einer fremden Domain an (gemessen 147 px → 203 px beim Aufklappen).
 ## 13b. Ergebnisse der Etappe 2 (2026-07-31)
 
 Endpunkte, Mails und der Wartungsjob stehen und sind gegen die Dev-Instanz
-abgenommen (`node scripts/verify-booking.mjs`, 56 Prüfungen).
+abgenommen (56 Prüfungen). Das damalige Abnahmeskript `scripts/verify-booking.mjs`
+ist entfallen; die Strecken gehören in die Playwright-Suite (§14).
 
 **Abweichung von §6: die Rate-Limits sind großzügiger und einstellbar.** Der
 Entwurf nannte beispielhaft 3 Buchungen pro Stunde und IP. Bei der Umsetzung

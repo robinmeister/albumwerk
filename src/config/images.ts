@@ -1,25 +1,18 @@
-// Storage-style access backed by the PB `images` collection.
-// Path convention: `shootings/{shootingId}/{type}/{filename}`, type = "preview" | "original".
-// One PB record per image (option 1b). No firebase dependency.
-// Previews are generated server-side with a watermark (pb_hooks/previews.pb.js);
-// originals are only readable by admins and users assigned to the shooting.
+// Zugriff auf die Bilddateien der PB-Collection `images` — ein Datensatz je
+// Bild, `type` unterscheidet "preview" und "original".
+// Vorschauen entstehen serverseitig mit Wasserzeichen (pb_hooks/previews.pb.js);
+// Originale dürfen nur Admins und die dem Shooting zugeordneten Nutzer lesen.
 import { pb } from "./pocketbase";
 
-type PBRef = {
-  shootingId: string;
-  type: string;      // "preview" | "original" | "" (folder root)
-  name: string;      // filename, "" for folder
-  recordId?: string; // set when ref came from a list result
-  file?: string;     // stored filename, set when ref came from a list result
-  protected?: boolean; // true when the file lives in the protected originalFile field
-  fullPath: string;
-};
+// Ein Bild-Datensatz, so wie ihn die Album-Ansichten brauchen.
+export type ImageRef = { id: string; name: string; file?: string; originalFile?: string };
 
-// Originals live in the protected `originalFile` field (migration 1784600007):
-// their bytes require a short-lived file token. Previews stay in the public
-// `file` field. The token is cached and refreshed well before its 180s expiry.
+// Originale liegen im geschützten Feld `originalFile` (Migration 1784600007):
+// ihre Bytes brauchen ein kurzlebiges Datei-Token. Vorschauen bleiben im
+// öffentlichen Feld `file`. Das Token wird zwischengespeichert und lange vor
+// seinem Ablauf (180 s) erneuert.
 let tokenCache: { token: string; fetchedAt: number } | null = null;
-export async function fileAccessToken(): Promise<string> {
+async function fileAccessToken(): Promise<string> {
   if (tokenCache && Date.now() - tokenCache.fetchedAt < 120_000) {
     return tokenCache.token;
   }
@@ -28,8 +21,8 @@ export async function fileAccessToken(): Promise<string> {
   return token;
 }
 
-// URL for a single image record; appends a file token when the record's bytes
-// are in the protected originalFile field.
+// URL zu einem einzelnen Bild-Datensatz; hängt ein Datei-Token an, wenn die
+// Bytes im geschützten Feld originalFile liegen.
 export async function imageFileUrl(rec: {
   id: string;
   originalFile?: string;
@@ -43,61 +36,36 @@ export async function imageFileUrl(rec: {
   return pb.files.getUrl(record, rec.file as string);
 }
 
-// shootings/{id}/{type}/{name}  — also handles trailing/leading slashes
-function parsePath(path: string): { shootingId: string; type: string; name: string } {
-  const parts = path.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);
-  const shootingId = parts[1] ?? "";
-  const type = parts[2] ?? "";
-  const name = parts.slice(3).join("/") ?? "";
-  return { shootingId, type, name };
-}
-
-export function ref(path: string): PBRef {
-  const { shootingId, type, name } = parsePath(path);
-  return { shootingId, type, name, fullPath: path.replace(/^\/+/, "") };
-}
-
-function recordToRef(rec: any): PBRef {
-  return {
-    shootingId: rec.shootingId,
-    type: rec.type,
-    name: rec.name,
-    recordId: rec.id,
-    file: rec.originalFile || rec.file,
-    protected: Boolean(rec.originalFile),
-    fullPath: `shootings/${rec.shootingId}/${rec.type}/${rec.name}`,
-  };
-}
-
-async function listRecords(shootingId: string, type: string) {
-  return pb.collection("images").getFullList({
+async function listImages(shootingId: string, type: "preview" | "original"): Promise<ImageRef[]> {
+  return (await pb.collection("images").getFullList({
     requestKey: null,
     filter: pb.filter("shootingId={:sid} && type={:type}", { sid: shootingId, type }),
+  })) as unknown as ImageRef[];
+}
+
+/** Vorschaubilder eines Shootings, nach ursprünglichem Dateinamen sortiert. */
+export async function listPreviews(shootingId: string): Promise<ImageRef[]> {
+  const items = await listImages(shootingId, "preview");
+  const stemOf = (filename: string) =>
+    (filename.split(".")[0].split("/").pop() ?? "").toLowerCase();
+  return items.sort((a, b) => {
+    const stemA = stemOf(a.name ?? "");
+    const stemB = stemOf(b.name ?? "");
+    const numA = stemA.match(/\d+/)?.[0];
+    const numB = stemB.match(/\d+/)?.[0];
+    if (numA && numB && parseInt(numA) !== parseInt(numB)) {
+      return parseInt(numA) - parseInt(numB);
+    }
+    return stemA.localeCompare(stemB);
   });
 }
 
-export async function listAll(r: PBRef): Promise<any> {
-  const recs = await listRecords(r.shootingId, r.type);
-  return { items: recs.map(recordToRef), prefixes: [] };
-}
-
-export async function list(r: PBRef, _opts?: any): Promise<any> {
-  const recs = await listRecords(r.shootingId, r.type);
-  return { items: recs.map(recordToRef), prefixes: [], nextPageToken: undefined };
-}
-
-export async function getDownloadURL(r: PBRef): Promise<string> {
-  if (r.recordId) {
-    return imageFileUrl(
-      r.protected
-        ? { id: r.recordId, originalFile: r.file }
-        : { id: r.recordId, file: r.file },
-    );
-  }
-  const recs = await listRecords(r.shootingId, r.type);
-  const match = recs.find((x: any) => x.name === r.name) ?? recs[0];
-  if (!match) throw Object.assign(new Error("object-not-found"), { code: "storage/object-not-found" });
-  return imageFileUrl(match as any);
+/** URL zum Original mit dem angegebenen Dateinamen. */
+export async function originalFileUrl(shootingId: string, name: string): Promise<string> {
+  const originals = await listImages(shootingId, "original");
+  const match = originals.find((image) => image.name === name);
+  if (!match) throw new Error(`Original nicht gefunden: ${name}`);
+  return imageFileUrl(match);
 }
 
 // Create an images record with real upload progress. The PB SDK cannot report
@@ -197,22 +165,4 @@ export async function deleteImageByUrl(url: string): Promise<void> {
     }
   }
   await pb.collection("images").delete(rec.id);
-}
-
-export async function deleteObject(r: PBRef): Promise<void> {
-  if (r.recordId) {
-    await pb.collection("images").delete(r.recordId);
-    return;
-  }
-  const recs = await pb.collection("images").getFullList({
-    requestKey: null,
-    filter: pb.filter("shootingId={:sid} && type={:type} && name={:name}", {
-      sid: r.shootingId,
-      type: r.type,
-      name: r.name,
-    }),
-  });
-  for (const rec of recs) {
-    await pb.collection("images").delete(rec.id);
-  }
 }

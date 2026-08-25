@@ -5,13 +5,7 @@ import { Heading } from "@astryxdesign/core/Heading";
 import { Text } from "@astryxdesign/core/Text";
 import * as stylex from "@stylexjs/stylex";
 import { currentUser } from "../../config/currentUser";
-import {
-  deleteDoc,
-  doc,
-  DocumentData,
-  getDoc,
-  updateDoc,
-} from "../../config/firestore-compat";
+import { getRecord, pb } from "../../config/pocketbase";
 import {
   FormEvent,
   ReactElement,
@@ -70,13 +64,11 @@ export default function ProfilePage(): ReactElement {
 
   async function fetchUser(): Promise<void> {
     if (!user) return;
-    const userRef = doc("users", user.uid);
     try {
-      const docSnap = await getDoc(userRef);
-      if (docSnap.exists()) {
-        const data: DocumentData = docSnap.data();
+      const data = await getRecord("users", user.uid);
+      if (data) {
         setUserData({
-          uid: docSnap.id,
+          uid: data.id,
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email,
@@ -96,7 +88,7 @@ export default function ProfilePage(): ReactElement {
   async function updateProfile(): Promise<void> {
     if (!user) return;
     try {
-      await updateDoc(doc("users", user.uid), userData);
+      await pb.collection("users").update(user.uid, userData);
       toast.success("Profil erfolgreich aktualisiert");
     } catch (e) {
       console.error("Error updating document: ", e);
@@ -115,10 +107,8 @@ export default function ProfilePage(): ReactElement {
   const deleteUserFromDB = async (user: AuthUser | null): Promise<void> => {
     if (!user) return;
     try {
-      const docRef = doc("users", user.uid);
-      const result = await getDoc(docRef);
-      if (result.exists()) {
-        await deleteDoc(docRef);
+      if (await getRecord("users", user.uid)) {
+        await pb.collection("users").delete(user.uid);
       }
     } catch (error) {
       console.error(error);

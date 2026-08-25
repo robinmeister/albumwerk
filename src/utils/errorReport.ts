@@ -47,14 +47,6 @@ export function getAppError(id: string): AppErrorEntry | null {
   return readRaw().find((entry) => entry.id === id) ?? null;
 }
 
-export function clearAppErrors(): void {
-  try {
-    sessionStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // storage unavailable — nothing to clear
-  }
-}
-
 // Records an error and returns its id, which the ErrorBoundary passes to the
 // support form via ?error=<id>.
 export function recordAppError(error: Error, componentStack: string): string {

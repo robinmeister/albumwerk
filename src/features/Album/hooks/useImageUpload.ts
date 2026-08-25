@@ -2,11 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 import { pb } from "../../../config/pocketbase";
-import { uploadImage } from "../../../config/storage-compat";
+import { uploadImage } from "../../../config/images";
 
-export type UploadItemStatus = "queued" | "uploading" | "done" | "error";
+type UploadItemStatus = "queued" | "uploading" | "done" | "error";
 
-export type UploadItem = {
+type UploadItem = {
   id: string;
   file: File;
   thumbUrl: string;
@@ -15,9 +15,9 @@ export type UploadItem = {
   error?: string;
 };
 
-export type UploadPhase = "idle" | "uploading" | "processing" | "done";
+type UploadPhase = "idle" | "uploading" | "processing" | "done";
 
-export type DuplicatePrompt = {
+type DuplicatePrompt = {
   files: File[];
   duplicateNames: string[];
   existingIds: string[];

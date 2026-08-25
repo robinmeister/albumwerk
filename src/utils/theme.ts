@@ -101,9 +101,3 @@ export function buildAstryxTheme(settings: AppSettings): DefinedTheme {
 // The tokens map includes a custom property name, so we widen the type for the
 // defineTheme call (Astryx only types core token names).
 type DefineThemeTokens = Parameters<typeof defineTheme>[0]["tokens"];
-
-// Legacy static theme for modules that still import a default; built from the
-// neutral defaults. New code should use buildAstryxTheme + SettingsContext.
-const theme = buildAstryxTheme(DEFAULT_SETTINGS);
-
-export default theme;

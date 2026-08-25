@@ -1,12 +1,17 @@
 # Albumwerk — Self-Hosting mit einem Container.
-# Start:  docker compose up -d
+#
+# Diese Datei deckt beide Wege ab:
+#   - Ohne Quellcode: nur docker-compose.yml, Caddyfile und .env in einen Ordner
+#     legen. "docker compose up -d" zieht das fertige Image aus der Registry.
+#   - Mit Quellcode:  "docker compose up -d --build" (bzw. "make prod") baut das
+#     Image aus diesem Repo und legt es unter demselben Namen ab.
+#
 # Update: docker compose pull && docker compose up -d   (bzw. --build)
 # Backup: nächtlich automatisch nach ./pb_data/backups/ + "make backup" (README → Backup).
 services:
   app:
+    image: gitea.robinhm.de/robinmeister/albumwerk:latest
     build: .
-    # Alternativ ein veröffentlichtes Image verwenden:
-    # image: gitea.robinhm.de/robinmeister/albumwerk:latest
     restart: unless-stopped
     ports:
       # Für die Ersteinrichtung / lokalen Zugriff. Läuft die App hinter Caddy

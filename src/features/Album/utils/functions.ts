@@ -1,4 +1,4 @@
-import { deleteImageByUrl } from "../../../config/storage-compat";
+import { deleteImageByUrl } from "../../../config/images";
 
 import { Shooting } from "../../../utils/types";
 

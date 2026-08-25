@@ -11,7 +11,7 @@ import { Text } from "@astryxdesign/core/Text";
 import * as stylex from "@stylexjs/stylex";
 import { ArrowLeft as ArrowBack, ArrowDown as ArrowDownward, ArrowUp as ArrowUpward, ClipboardList as Assignment, CircleCheck as CheckCircle, X as Close, CloudDownload, Printer as Print, Search, Send } from "lucide-react";
 import { toast } from "react-toastify";
-import { addDoc, collection, getDocs } from "../../config/firestore-compat";
+import { pb } from "../../config/pocketbase";
 
 import {
   FinishedOrder,
@@ -316,46 +316,48 @@ export default function OrdersPage(): ReactElement {
   async function loadAll() {
     setLoading(true);
     try {
-      const [ordersSnap, finishedSnap, users, shootingsSnap] = await Promise.all([
-        getDocs(collection("orders")),
-        getDocs(collection("finishedOrders")),
+      const all = (name: string) =>
+        pb.collection(name).getFullList({ requestKey: null });
+      const [orderRecords, finishedRecords, users, shootingRecords] = await Promise.all([
+        all("orders"),
+        all("finishedOrders"),
         getUsersSnapshot(),
-        getDocs(collection("shootings")),
+        all("shootings"),
       ]);
 
-      const shootings: Shooting[] = shootingsSnap.docs.map((d: any) => ({
-        id:                d.id,
-        title:             d.data().title,
-        type:              d.data().type,
-        description:       d.data().description ?? "",
-        packageId:         d.data().packageId ?? "",
-        priceIds:          d.data().priceIds ?? [],
-        userIds:           d.data().userIds ?? [],
-        withUserSelection: d.data().withUserSelection ?? false,
+      const shootings: Shooting[] = shootingRecords.map((r: any) => ({
+        id:                r.id,
+        title:             r.title,
+        type:              r.type,
+        description:       r.description ?? "",
+        packageId:         r.packageId ?? "",
+        priceIds:          r.priceIds ?? [],
+        userIds:           r.userIds ?? [],
+        withUserSelection: r.withUserSelection ?? false,
       }));
 
-      const rawFinished: FinishedOrderLocal[] = finishedSnap.docs.map((d: any) => ({
-        id:                   d.id,
+      const rawFinished: FinishedOrderLocal[] = finishedRecords.map((r: any) => ({
+        id:                   r.id,
         // Rückfall auf `id` für Altbestände, die noch ohne orderId angelegt
         // wurden (siehe OrderDetailsPage.handleFinishOrder).
-        orderId:              d.data().orderId || d.data().id,
-        userId:               d.data().userId,
-        shootingId:           d.data().shootingId,
-        imagePriceObjectList: d.data().imagePriceObjectList,
-        userEmail:            d.data().userEmail,
-        shootingTitle:        d.data().shootingTitle,
-        totalPrice:           d.data().totalPrice,
+        orderId:              r.orderId || r.id,
+        userId:               r.userId,
+        shootingId:           r.shootingId,
+        imagePriceObjectList: r.imagePriceObjectList,
+        userEmail:            r.userEmail,
+        shootingTitle:        r.shootingTitle,
+        totalPrice:           r.totalPrice,
         finished:             true,
-        createdAt:            d.data().created,
+        createdAt:            r.created,
       }));
       setFinishedOrders(rawFinished);
 
-      const rawOrders: (Order & { created?: string })[] = ordersSnap.docs.map((d: any) => ({
-        id:                   d.id,
-        userId:               d.data().userId,
-        shootingId:           d.data().shootingId,
-        imagePriceObjectList: d.data().imagePriceObjectList,
-        created:              d.data().created,
+      const rawOrders: (Order & { created?: string })[] = orderRecords.map((r: any) => ({
+        id:                   r.id,
+        userId:               r.userId,
+        shootingId:           r.shootingId,
+        imagePriceObjectList: r.imagePriceObjectList,
+        created:              r.created,
       }));
 
       const allTable: TableOrderExtended[] = rawOrders.map(order => {
@@ -407,14 +409,11 @@ export default function OrdersPage(): ReactElement {
     if (!selectedOrder) return;
     setFinishing(true);
     try {
-      await addDoc(collection("finishedOrders"), {
+      await pb.collection("finishedOrders").create({
         // orderId verknüpft den Archiveintrag mit der offenen Bestellung —
-        // weiter unten blendet `pending` darüber die erledigten aus. Ohne das
-        // Feld blieb eine abgeschickte Bestellung dauerhaft in der Liste der
-        // offenen stehen: addDoc verwirft `id` (firestore-compat.ts:56), der
-        // Archiveintrag bekam eine neue PocketBase-ID und passte zu nichts.
+        // weiter unten blendet `pending` darüber die erledigten aus. Die eigene
+        // `id` des Archiveintrags vergibt PocketBase und taugt dafür nicht.
         orderId:              selectedOrder.id,
-        id:                   selectedOrder.id,
         userId:               selectedOrder.userId,
         shootingId:           selectedOrder.shootingId,
         userEmail:            selectedOrder.userEmail,

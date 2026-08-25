@@ -7,6 +7,23 @@ const baseUrl: string =
 
 export const pb = new PocketBase(baseUrl);
 
+// `getOne` that yields null instead of throwing when the record is not there.
+// A missing record is an ordinary outcome for most reads here (a customer
+// without a profile row, a shooting that was deleted while the page was open),
+// so the callers branch on null rather than wrap every read in try/catch.
+export async function getRecord<T = any>(
+  collection: string,
+  id: string | undefined | null,
+): Promise<T | null> {
+  if (!id) return null;
+  try {
+    return (await pb.collection(collection).getOne(id, { requestKey: null })) as T;
+  } catch (error: any) {
+    if (error?.status === 404) return null;
+    throw error;
+  }
+}
+
 export async function signUpWithPocketBase(payload: {
   email: string;
   password: string;
@@ -26,7 +43,7 @@ export async function signUpWithPocketBase(payload: {
   });
 }
 
-export type LinkShootingResult = {
+type LinkShootingResult = {
   status: string;
   alreadyLinked: boolean;
   id: string;
@@ -50,10 +67,3 @@ export async function loginWithPocketBase(identity: string, password: string) {
   return pb.collection('users').authWithPassword(identity, password);
 }
 
-export async function clearPocketBaseClientAuth() {
-  try {
-    pb.authStore.clear();
-  } catch (error) {
-    console.warn('PocketBase clear auth failed', error);
-  }
-}

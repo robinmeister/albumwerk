@@ -17,7 +17,7 @@ import {
 } from "../content/help";
 import { fetchCustomArticles, mergeArticles } from "../utils/help";
 
-export function useHelpAudience(): HelpAudience {
+function useHelpAudience(): HelpAudience {
   const { user } = useContext(AuthContext);
   const isAdmin = Boolean((pb.authStore.model as { isAdmin?: boolean } | null)?.isAdmin);
   return audienceFor(Boolean(user), isAdmin);

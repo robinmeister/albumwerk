@@ -9,7 +9,7 @@ import { TextInput } from "@astryxdesign/core/TextInput";
 import { TextArea } from "@astryxdesign/core/TextArea";
 import { Heading } from "@astryxdesign/core/Heading";
 import * as stylex from "@stylexjs/stylex";
-import { addDoc, collection, doc, getDoc, updateDoc } from "../../../config/firestore-compat";
+import { getRecord, pb } from "../../../config/pocketbase";
 import { toast } from "react-toastify";
 import { X as Close } from "lucide-react";
 
@@ -56,18 +56,13 @@ export default function ShootingModal(): ReactElement {
     try {
       await Promise.all(
         (shooting.userIds ?? []).map(async (userId: string) => {
-          const userDoc = doc("users", userId);
-          const userDocRef = await getDoc(userDoc);
-
-          if (userDocRef.exists()) {
-            const user = userDocRef.data();
-            if (user) {
-              const existingShootingIds: string[] = user.shootingIds || [];
-              if (!existingShootingIds.includes(shooting.id)) {
-                await updateDoc(userDoc, {
-                  shootingIds: [...existingShootingIds, shooting.id],
-                });
-              }
+          const user = await getRecord("users", userId);
+          if (user) {
+            const existingShootingIds: string[] = user.shootingIds || [];
+            if (!existingShootingIds.includes(shooting.id)) {
+              await pb.collection("users").update(userId, {
+                shootingIds: [...existingShootingIds, shooting.id],
+              });
             }
           }
         })
@@ -79,9 +74,11 @@ export default function ShootingModal(): ReactElement {
 
     const createShooting = async (shooting: Shooting) => {
       try {
-          const docRef = await addDoc(collection("shootings"), shooting)
+          // `shooting` still carries the empty placeholder id — PB assigns the real one
+          const { id: _unused, ...fields } = shooting
+          const created = await pb.collection("shootings").create(fields)
           const newShooting: Shooting = {
-              id: docRef.id,
+              id: created.id,
               type: shooting.type,
               title: shooting.title,
               description: shooting.description,
@@ -102,12 +99,10 @@ export default function ShootingModal(): ReactElement {
     }
 
     const updateShooting = async (shooting: Shooting | undefined) => {
-        // update newShooting in db with firebase
+        // update the shooting record
         try {
             if(shooting === undefined) { return }
-            const shootingDoc = doc("shootings", shooting.id)
-            await updateDoc(shootingDoc, {
-                id: shooting.id,
+            await pb.collection("shootings").update(shooting.id, {
                 type: shooting.type,
                 title: shooting.title,
                 description: shooting.description,

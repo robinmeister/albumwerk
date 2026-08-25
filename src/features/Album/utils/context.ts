@@ -2,19 +2,16 @@ import { createContext, useContext } from "react";
 
 import { Package, Price, Shooting, User } from "../../../utils/types";
 
-
+// Was der Bearbeiten-Dialog (ShootingModal) und der Upload-Dialog
+// (UploadComponent) von der Album-Seite brauchen — nicht mehr.
 type AlbumContextType = {
     shootings: Shooting[];
     setShootings: (shootings: Shooting[]) => void;
     users: User[];
-    setUsers: (users: User[]) => void;
     prices: Price[];
-    setPrices: (prices: Price[]) => void;
     packages: Package[];
-    setPackages: (packages: Package[]) => void;
     selectedShooting: Shooting | undefined;
     setSelectedShooting: (shooting: Shooting | undefined) => void;
-    selectedUsers: User[];
     setSelectedUsers: (users: User[]) => void;
     selectedPrices: Price[];
     setSelectedPrices: (prices: Price[]) => void;
@@ -25,16 +22,8 @@ type AlbumContextType = {
     setReload: (reload: number) => void;
     openEditModal: boolean;
     setOpenEditModal: (open: boolean) => void;
-    openDeleteModal: boolean;
-    setOpenDeleteModal: (open: boolean) => void;
-    selectMode: boolean;
-    setSelectMode: (selectMode: boolean) => void;
-    selected: string[];
-    setSelected: (selected: string[]) => void;
     openUploadModal: boolean;
     setOpenUploadModal: (open: boolean) => void;
-    handleDeleteShooting: () => void;
-    setShowShooting: (show: boolean) => void;
     addPackage: boolean;
     setAddPackage: (add: boolean) => void;
 };

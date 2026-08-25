@@ -1,16 +1,27 @@
 import { toast } from "react-toastify";
-import { collection, doc, getDoc, getDocs } from "../config/firestore-compat";
 
 import { pb } from "../config/pocketbase";
-import { imageFileUrl } from "../config/storage-compat";
+import { imageFileUrl } from "../config/images";
 import { Package, User } from "./types";
 
 // PB file URLs look like /api/files/{collection}/{recordId}/{storedFilename};
 // the record id of the preview is the only reliable key in the URL (the
 // stored filename carries a random suffix, the original name lives in the
 // record's `name` field).
-export function fileUrlRecordId(url: string): string | null {
+function fileUrlRecordId(url: string): string | null {
   return url.match(/\/api\/files\/[^/]+\/([^/]+)\//)?.[1] ?? null;
+}
+
+// Hand the blob to the browser's downloader. This is all `file-saver` did.
+export function saveBlob(blob: Blob, filename: string): void {
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(objectUrl);
 }
 
 // Resolve preview file URLs to the filenames of the matching originals
@@ -39,29 +50,10 @@ export async function getOriginalImages(urlList: string[], shootingId: string): 
     .filter((name) => wantedNames.has(name));
 }
 
-export const downloadFile = (url : string): Promise<unknown> => {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
-    xhr.responseType = 'arraybuffer';
-    xhr.onload = function(): void {
-      if (this.status === 200) {
-        const blob = new Blob([this.response], {type: 'image/jpeg'});
-        resolve(blob);
-      } else {
-        reject(new Error(`Download-Fehler: ${ this.statusText}`));
-      }
-    };
-    xhr.onerror = function(): void {
-      reject(new Error('Netzwerkfehler'));
-    };
-    xhr.onprogress = function(event): void {
-      if (event.lengthComputable) {
-        console.info("event: ", event.loaded / event.total * 100)
-      }
-    };
-    xhr.send();
-  });
+export const downloadFile = async (url: string): Promise<Blob> => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Download-Fehler: ${res.statusText}`);
+  return res.blob();
 };
 
 // Download the original belonging to a preview file URL: preview record id
@@ -80,15 +72,7 @@ export const downloadImageFromUrl = async (url: string): Promise<void> => {
       );
     // originals live in the protected originalFile field — needs a file token
     const downloadUrl = await imageFileUrl(original);
-    const blob = (await downloadFile(downloadUrl)) as Blob;
-    const objectUrl = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = objectUrl;
-    a.download = original.name || "bild.jpg";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(objectUrl);
+    saveBlob(await downloadFile(downloadUrl), original.name || "bild.jpg");
     toast.success("Download erfolgreich!");
   } catch (error) {
     console.error("Download fehlgeschlagen:", error);

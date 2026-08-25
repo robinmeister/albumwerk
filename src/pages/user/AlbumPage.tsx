@@ -10,9 +10,8 @@ import * as stylex from "@stylexjs/stylex";
 import { useSearchParams } from "react-router-dom";
 import { Plus as Add, ArrowLeft as ArrowBack, Images as Collections, Images as PhotoLibrary, QrCode, Search } from "lucide-react";
 import { currentUser } from "../../config/currentUser";
-import { doc, getDoc } from "../../config/firestore-compat";
-import { linkShootingToCurrentUser, pb } from "../../config/pocketbase";
-import { getShootingCoverUrl } from "../../config/storage-compat";
+import { getRecord, linkShootingToCurrentUser, pb } from "../../config/pocketbase";
+import { getShootingCoverUrl } from "../../config/images";
 
 import EmptyState from "../../components/feedback/EmptyState";
 import Page from "../../components/layout/Page";
@@ -168,9 +167,9 @@ export default function AlbumPage(): ReactElement {
     const user = currentUser();
     if (!user) { setLoading(false); return; }
     try {
-      const snap = await getDoc(doc("users", user.uid));
-      if (!snap.exists()) { setLoading(false); return; }
-      const ids: string[] = snap.data()?.shootingIds ?? [];
+      const profile = await getRecord("users", user.uid);
+      if (!profile) { setLoading(false); return; }
+      const ids: string[] = profile.shootingIds ?? [];
       const results: ShootingInfo[] = [];
       await Promise.all(
         ids.map(async (id) => {

@@ -8,7 +8,7 @@ import { Text } from "@astryxdesign/core/Text";
 import * as stylex from "@stylexjs/stylex";
 import { ArrowLeft as ArrowBack, Check, Send } from "lucide-react";
 import { toast } from "react-toastify";
-import { addDoc, collection } from "../../config/firestore-compat";
+import { pb } from "../../config/pocketbase";
 
 import Page from "../../components/layout/Page";
 import { ImagePriceObject, PriceWithQuantity, TableOrder } from "../../utils/types";
@@ -69,14 +69,11 @@ export default function OrderDetailsPage(): ReactElement {
   async function handleFinishOrder() {
     setFinishing(true);
     try {
-      await addDoc(collection("finishedOrders"), {
+      await pb.collection("finishedOrders").create({
         // orderId verknüpft den Archiveintrag mit der offenen Bestellung —
-        // OrdersPage blendet darüber erledigte Aufträge aus. Ohne das Feld
-        // blieb eine abgeschlossene Bestellung dauerhaft in der Liste der
-        // offenen stehen: `id` wird beim Anlegen von PocketBase vergeben und
-        // ist deshalb nicht die ID der Bestellung.
+        // OrdersPage blendet darüber erledigte Aufträge aus. Die eigene `id`
+        // des Archiveintrags vergibt PocketBase und taugt dafür nicht.
         orderId:              order.id,
-        id:                   order.id,
         userId:               order.userId,
         shootingId:           order.shootingId,
         userEmail:            order.userEmail,

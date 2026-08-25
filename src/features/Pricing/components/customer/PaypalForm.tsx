@@ -27,9 +27,8 @@ export default function PaypalForm(props: Props): ReactElement {
   const { setPaymentCompleted, disabled, userData, imagePriceObjectList, shootingId, onPaid } = props;
   const { settings } = useSettings();
 
-  // configured at runtime on the admin payments page; env var only as dev fallback
-  const clientId =
-    settings.paypalClientId || import.meta.env.VITE_PAYPAL_CLIENT_ID || "";
+  // configured at runtime on the admin payments page — single source
+  const clientId = settings.paypalClientId || "";
 
   if (!clientId) {
     return <PaymentUnavailable />;

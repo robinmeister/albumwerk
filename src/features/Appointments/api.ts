@@ -92,7 +92,7 @@ function toMs(value: string): number {
 }
 
 /** Millisekunden → das Format, das die Collection-API erwartet. */
-export function toPbDate(ms: number): string {
+function toPbDate(ms: number): string {
   return new Date(ms).toISOString().replace("T", " ");
 }
 
@@ -319,7 +319,7 @@ export async function cancelAsOwner(id: string, note?: string): Promise<void> {
   });
 }
 
-export interface ManualBookingInput {
+interface ManualBookingInput {
   type: string;
   startMs: number;
   durationMin?: number;
@@ -399,8 +399,4 @@ export async function findAccountByEmail(
 
 export async function linkAccount(appointmentId: string, userId: string): Promise<void> {
   await pb.collection("appointments").update(appointmentId, { user: userId });
-}
-
-export async function unlinkAccount(appointmentId: string): Promise<void> {
-  await pb.collection("appointments").update(appointmentId, { user: "" });
 }

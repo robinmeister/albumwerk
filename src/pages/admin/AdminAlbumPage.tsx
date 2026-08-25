@@ -8,16 +8,6 @@ import { Text } from "@astryxdesign/core/Text";
 import * as stylex from "@stylexjs/stylex";
 import { Plus as Add, ArrowLeft as ArrowBack, Trash2 as Delete, Pencil as Edit, Camera as PhotoCamera, Search, Upload } from "lucide-react";
 import { toast } from "react-toastify";
-import {
-  collection,
-  deleteDoc,
-  doc,
-  DocumentData,
-  getDoc,
-  getDocs,
-  QuerySnapshot,
-  updateDoc,
-} from "../../config/firestore-compat";
 
 import { Package, Price, Shooting, User } from "../../utils/types";
 import { AlbumContext } from "../../features/Album/utils/context";
@@ -30,8 +20,8 @@ import DeleteModal from "../../components/widgets/DeleteModal";
 import HelpBanner from "../../components/feedback/HelpBanner";
 import HelpHint from "../../components/widgets/HelpHint";
 import { getUsersSnapshot } from "../../utils/functions";
-import { pb } from "../../config/pocketbase";
-import { getShootingCoverUrl } from "../../config/storage-compat";
+import { getRecord, pb } from "../../config/pocketbase";
+import { getShootingCoverUrl } from "../../config/images";
 
 type BadgeVariant = "neutral" | "info" | "success";
 const TYPE_LABELS: Record<string, { label: string; color: BadgeVariant }> = {
@@ -279,13 +269,12 @@ export default function AdminAlbumPage(): ReactElement {
   }, [shootings, search]);
 
   async function fetchShootings() {
-    const snap: QuerySnapshot<DocumentData> = await getDocs(collection("shootings"));
+    const records = await pb.collection("shootings").getFullList({ requestKey: null });
     const list: Shooting[] = [];
     const thumbs: Record<string, string> = {};
-    await Promise.all(snap.docs.map(async (d: any) => {
-      const r = d.data();
+    await Promise.all(records.map(async (r: any) => {
       list.push({
-        id: d.id,
+        id: r.id,
         type: r.type ?? "",
         title: r.title ?? "",
         description: r.description ?? "",
@@ -295,9 +284,9 @@ export default function AdminAlbumPage(): ReactElement {
         withUserSelection: r.withUserSelection ?? false,
       });
       try {
-        const url = await getShootingCoverUrl({ ...r, id: d.id },
+        const url = await getShootingCoverUrl(r,
           { coverThumb: "100x100", previewThumb: "400x0" });
-        if (url) thumbs[d.id] = url;
+        if (url) thumbs[r.id] = url;
       } catch { /* no thumbnail, placeholder is shown */ }
     }));
     setShootings(list);
@@ -309,24 +298,24 @@ export default function AdminAlbumPage(): ReactElement {
   }
 
   async function fetchPrices() {
-    const snap: QuerySnapshot<DocumentData> = await getDocs(collection("prices"));
-    setPrices(snap.docs.map((d: any) => ({
-      id: d.id,
-      title: d.data().title,
-      description: d.data().description,
-      amount: d.data().amount,
-      isDownloadable: d.data().isDownloadable,
+    const records = await pb.collection("prices").getFullList({ requestKey: null });
+    setPrices(records.map((r: any) => ({
+      id: r.id,
+      title: r.title,
+      description: r.description,
+      amount: r.amount,
+      isDownloadable: r.isDownloadable,
     })));
   }
 
   async function fetchPackages() {
-    const snap: QuerySnapshot<DocumentData> = await getDocs(collection("packages"));
-    setPackages(snap.docs.map((d: any) => ({
-      id: d.id,
-      title: d.data().title,
-      numberOfImages: d.data().numberOfImages,
-      totalPrice: d.data().totalPrice,
-      singlePrice: d.data().singlePrice,
+    const records = await pb.collection("packages").getFullList({ requestKey: null });
+    setPackages(records.map((r: any) => ({
+      id: r.id,
+      title: r.title,
+      numberOfImages: r.numberOfImages,
+      totalPrice: r.totalPrice,
+      singlePrice: r.singlePrice,
     })));
   }
 
@@ -336,17 +325,15 @@ export default function AdminAlbumPage(): ReactElement {
     try {
       if (selectedShooting.userIds?.length) {
         await Promise.all(selectedShooting.userIds.map(async userId => {
-          const userRef = doc("users", userId);
-          const userDoc = await getDoc(userRef);
-          if (userDoc.exists()) {
-            const u = userDoc.data();
-            await updateDoc(userRef, {
-              shootingIds: (u?.shootingIds ?? []).filter((id: string) => id !== selectedShooting.id),
+          const u = await getRecord("users", userId);
+          if (u) {
+            await pb.collection("users").update(userId, {
+              shootingIds: (u.shootingIds ?? []).filter((id: string) => id !== selectedShooting.id),
             });
           }
         }));
       }
-      await deleteDoc(doc("shootings", selectedShooting.id));
+      await pb.collection("shootings").delete(selectedShooting.id);
       setShootings(prev => prev.filter(s => s.id !== selectedShooting.id));
       setSelectedShooting(undefined);
       toast.success("Shooting erfolgreich gelöscht");
@@ -375,12 +362,11 @@ export default function AdminAlbumPage(): ReactElement {
 
   return (
     <AlbumContext.Provider value={{
-      selectedShooting, setSelectedShooting, selectedUsers, setSelectedUsers,
+      selectedShooting, setSelectedShooting, setSelectedUsers,
       selectedPrices, setSelectedPrices, selectedPackage, setSelectedPackage,
-      shootings, setShootings, users, setUsers, prices, setPrices, packages, setPackages,
-      reload, setReload, openEditModal, setOpenEditModal, openDeleteModal, setOpenDeleteModal,
-      selectMode, setSelectMode, selected, setSelected, openUploadModal, setOpenUploadModal,
-      handleDeleteShooting, setShowShooting: () => {}, addPackage, setAddPackage,
+      shootings, setShootings, users, prices, packages,
+      reload, setReload, openEditModal, setOpenEditModal,
+      openUploadModal, setOpenUploadModal, addPackage, setAddPackage,
     }}>
       <div {...stylex.props(s.root)}>
         <div {...stylex.props(s.pageTitle)}>

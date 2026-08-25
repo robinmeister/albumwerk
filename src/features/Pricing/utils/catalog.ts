@@ -47,7 +47,7 @@ function sizeValue(price: Price): number {
   return m ? parseInt(m[0], 10) : Number.MAX_SAFE_INTEGER;
 }
 
-export function sortPrices(prices: Price[]): Price[] {
+function sortPrices(prices: Price[]): Price[] {
   return [...prices].sort((a, b) => {
     const catDiff =
       CATEGORY_ORDER.indexOf(categoryOf(a)) - CATEGORY_ORDER.indexOf(categoryOf(b));

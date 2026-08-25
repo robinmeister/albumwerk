@@ -6,22 +6,20 @@ import { Heading } from "@astryxdesign/core/Heading";
 import { Text } from "@astryxdesign/core/Text";
 import * as stylex from "@stylexjs/stylex";
 import { ReactElement, ReactNode, useEffect, useState } from "react";
-import { doc, getDoc } from "../../../config/firestore-compat";
-import { getDownloadURL, listAll, ref } from "../../../config/storage-compat";
-import { onValue, ref as refRT, set } from "../../../config/rtdb-compat";
+import { imageFileUrl, listPreviews, originalFileUrl } from "../../../config/images";
+import { saveSelection, watchSelection } from "../utils/userSelection";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import JSZip from "jszip";
-import saveAs from "file-saver";
 import { Check, Images as PhotoLibrary } from "lucide-react";
 import EmptyState from "../../../components/feedback/EmptyState";
 
-import { fetchShootingPackage, getOriginalImages } from "../../../utils/functions";
+import { downloadFile, fetchShootingPackage, getOriginalImages, saveBlob } from "../../../utils/functions";
 import { handleDelete } from "../utils/functions";
 import useMobileService from "../../../hooks/useMobileService";
 import { Package, Shooting } from "../../../utils/types";
 import { calculateTotalPackagePrice } from "../../Pricing/utils/functions";
-import { pb } from "../../../config/pocketbase";
+import { getRecord, pb } from "../../../config/pocketbase";
 
 import DeleteModal from "../../../components/widgets/DeleteModal";
 import ImagePreview from "./ImagePreview";
@@ -118,20 +116,12 @@ export default function Album(props: Props): ReactElement {
   }, [shootingId, reloadKey]);
 
   useEffect(() => {
-    const realtimeUpload = async () => {
-      const uploadsRef = refRT(`userSelection/${shooting?.id}`);
-      onValue(uploadsRef, (snapshot) => {
-        if(snapshot.exists()) {
-          const data = snapshot.val();
-          setUserSelection(data.selectedImages);
-        }
-      })
-      if(shooting?.packageId && shooting?.packageId !== "") {
-        const pkg: Package | undefined = await fetchShootingPackage(shooting.packageId)
-        setShootingPackage(pkg)
-      }
+    if (!shooting) return;
+    const unwatch = watchSelection(shooting.id, setUserSelection);
+    if (shooting.packageId) {
+      void fetchShootingPackage(shooting.packageId).then(setShootingPackage);
     }
-    void realtimeUpload();
+    return unwatch;
   }, [shooting]);
 
   useEffect(() => {
@@ -168,56 +158,31 @@ export default function Album(props: Props): ReactElement {
   };
 
   const fetchShooting = async (shootingId: string) => {
-    const docRef = doc("shootings", shootingId);
-    getDoc(docRef)
-      .then((doc) => {
-        if (doc.exists() && doc.data()) {
-          const data = doc.data();
-          const shooting : Shooting = {
-            id: doc.id,
-            type: data.type,
-            title: data.title,
-            description: data.description,
-            packageId: data.packageId,
-            priceIds: data.priceIds,
-            userIds: data.userIds,
-            withUserSelection: data.withUserSelection,
-          };
-          setShooting(shooting);
-        }
-      }).catch((error) => {
-        console.error("Error getting document:", error);
+    try {
+      const data = await getRecord("shootings", shootingId);
+      if (!data) return;
+      setShooting({
+        id: data.id,
+        type: data.type,
+        title: data.title,
+        description: data.description,
+        packageId: data.packageId,
+        priceIds: data.priceIds,
+        userIds: data.userIds,
+        withUserSelection: data.withUserSelection,
       });
+    } catch (error) {
+      console.error("Error getting document:", error);
+    }
   }
 
   const handleLoadingPreviewImages = async (shootingId: string) => {
     setLoadingPreview(true);
     try {
-      const imagesRef = ref(`shootings/${shootingId}/preview`);
-      const listResult = await listAll(imagesRef);
-      const numberOfImages = listResult.items.length;
-      setNumPages(Math.ceil(numberOfImages / 18));
+      const previews = await listPreviews(shootingId);
+      setNumPages(Math.ceil(previews.length / 18));
 
-      // Sort by original filename before fetching URLs — items carry the name directly
-      function stemOf(filename: string): string {
-        return (filename.split(".")[0].split("/").pop() ?? "").toLowerCase();
-      }
-      listResult.items.sort((a: any, b: any) => {
-        const stemA = stemOf(a.name ?? "");
-        const stemB = stemOf(b.name ?? "");
-        const numA = stemA.match(/\d+/)?.[0];
-        const numB = stemB.match(/\d+/)?.[0];
-        if (numA && numB && parseInt(numA) !== parseInt(numB)) {
-          return parseInt(numA) - parseInt(numB);
-        }
-        return stemA.localeCompare(stemB);
-      });
-
-      const imageUrls: string[] = [];
-      for (const item of listResult.items) {
-        const url = await getDownloadURL(item);
-        imageUrls.push(url);
-      }
+      const imageUrls = await Promise.all(previews.map(imageFileUrl));
       setPage(1);
       setImages(imageUrls);
       setPreviewImages(imageUrls.slice(0, 18));
@@ -229,18 +194,16 @@ export default function Album(props: Props): ReactElement {
   }
 
   const sendSelectedImages = async (selected: string[]) => {
-    const selectedImagesRef = refRT(`userSelection/${shootingId}`);
-    await set(selectedImagesRef, { selectedImages: selected }).then(() => {
-      setSelected([]);
-      setSelectMode(false);
+    try {
+      await saveSelection(shootingId, selected);
       setUserSelection(selected);
       toast.success("Auswahl erfolgreich abgeschickt");
-    }).catch((error) => {
+    } catch (error) {
       console.error("Error sending selected images to database: ", error);
-      setSelected([]);
-      setSelectMode(false);
       toast.error("Fehler beim Abschicken der Auswahl");
-    })
+    }
+    setSelected([]);
+    setSelectMode(false);
   }
 
   async function downloadImagesAsZip() {
@@ -248,56 +211,29 @@ export default function Album(props: Props): ReactElement {
     try {
       setShowPlaceholder(true);
       const originalImageNames = await getOriginalImages(userSelection, shooting.id);
-      const promises = originalImageNames.map((name) => {
-        const imageRef = ref(`/shootings/${ shootingId }/original/${ name}`
-        );
-        return getDownloadURL(imageRef);
-      });
-      const urls = await Promise.all(promises);
+      const urls = await Promise.all(
+        originalImageNames.map((name) => originalFileUrl(shootingId, name))
+      );
       const zip = new JSZip();
 
       setProgress(0);
-      let totalCompleted = 0; // Verfolgt die insgesamt abgeschlossenen Downloads
-      const updateProgress = (loaded : number) => {
-        totalCompleted += loaded;
-        let progress = totalCompleted / originalImageNames.length;
-        if(progress > 1) { progress = 1; }
-        setProgress(progress);
-      };
+      let completed = 0;
+      const downloadedFiles = await Promise.all(
+        urls.map(async (url) => {
+          const blob = await downloadFile(url);
+          completed += 1;
+          setProgress(completed / urls.length);
+          return blob;
+        })
+      );
 
-      const downloadFile = (url : string) => {
-        return new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open('GET', url, true);
-          xhr.responseType = 'blob';
-          xhr.onload = function() {
-            if (this.status === 200) {
-              resolve(this.response);
-            } else {
-              reject(new Error(`Download-Fehler: ${ this.statusText}`));
-            }
-          };
-          xhr.onerror = function() {
-            reject(new Error('Netzwerkfehler'));
-          };
-          xhr.onprogress = function(event) {
-            if (event.lengthComputable) {
-              updateProgress(event.loaded / event.total);
-            }
-          };
-          xhr.send();
-        });
-      };
-
-      const downloadedFiles = await Promise.all(urls.map(downloadFile));
-
-      downloadedFiles.forEach((file: any, index : number) => {
+      downloadedFiles.forEach((file, index) => {
         zip.file(originalImageNames[index] ?? `bild-${index + 1}.jpg`, file);
       });
 
       const content = await zip.generateAsync({ type: "blob" });
       const zipName = (shooting?.title || "fotos").replace(/[\\/:*?"<>|]/g, "-");
-      saveAs(content, `${zipName}.zip`);
+      saveBlob(content, `${zipName}.zip`);
     } catch (error) {
       console.error("Fehler beim Herunterladen der Bilder als ZIP: ", error);
     }

@@ -114,8 +114,3 @@ export function mergeArticles(
   const overridden = new Set(custom.map((a) => a.slug));
   return [...shipped.filter((a) => !overridden.has(a.slug)), ...custom];
 }
-
-/** Slug suggestion for the admin form: lowercase, umlauts spelled out. */
-// Wohnt jetzt in utils/slug.ts (auch von den Termin-Arten gebraucht); hier
-// nur noch re-exportiert, damit bestehende Importe unverändert bleiben.
-export { slugify } from "./slug";

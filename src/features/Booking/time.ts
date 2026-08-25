@@ -17,15 +17,6 @@
 /** Kalenderdatum ohne Zeitanteil, immer als lokales Datum der Instanz-Zone. */
 export type CalendarDate = { year: number; month: number; day: number };
 
-const WEEKDAYS_LONG = [
-  "Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag",
-];
-const WEEKDAYS_SHORT = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
-const MONTHS_LONG = [
-  "Januar", "Februar", "März", "April", "Mai", "Juni",
-  "Juli", "August", "September", "Oktober", "November", "Dezember",
-];
-
 const pad2 = (value: number) => (value < 10 ? `0${value}` : `${value}`);
 
 // --- Kalenderarithmetik ----------------------------------------------------
@@ -59,7 +50,7 @@ export function daysInMonth(year: number, month: number): number {
   return new Date(Date.UTC(year, month, 0)).getUTCDate();
 }
 
-export function compareDates(a: CalendarDate, b: CalendarDate): number {
+function compareDates(a: CalendarDate, b: CalendarDate): number {
   if (a.year !== b.year) return a.year - b.year;
   if (a.month !== b.month) return a.month - b.month;
   return a.day - b.day;
@@ -84,6 +75,18 @@ export function fromIsoDate(value: string): CalendarDate | null {
 
 const formatterCache = new Map<string, Intl.DateTimeFormat>();
 
+// Formatierer sind teuer zu bauen und werden je Zone/Format wiederverwendet.
+const germanCache = new Map<string, Intl.DateTimeFormat>();
+function german(timezone: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const key = timezone + JSON.stringify(options);
+  let formatter = germanCache.get(key);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat("de-DE", { timeZone: timezone, ...options });
+    germanCache.set(key, formatter);
+  }
+  return formatter;
+}
+
 function partsFormatter(timezone: string): Intl.DateTimeFormat {
   let formatter = formatterCache.get(timezone);
   if (!formatter) {
@@ -105,7 +108,7 @@ function partsFormatter(timezone: string): Intl.DateTimeFormat {
 type ZonedParts = CalendarDate & { hour: number; minute: number; weekday: number };
 
 /** Ein UTC-Zeitpunkt zerlegt in die Wanduhrzeit der angegebenen Zone. */
-export function zonedParts(ms: number, timezone: string): ZonedParts {
+function zonedParts(ms: number, timezone: string): ZonedParts {
   const parts = partsFormatter(timezone).formatToParts(new Date(ms));
   const value: Record<string, string> = {};
   for (const part of parts) value[part.type] = part.value;
@@ -163,28 +166,35 @@ export function todayIn(timezone: string): CalendarDate {
 
 /** "09:30" */
 export function formatTime(ms: number, timezone: string): string {
-  const parts = zonedParts(ms, timezone);
-  return `${pad2(parts.hour)}:${pad2(parts.minute)}`;
+  return german(timezone, { hour: "2-digit", minute: "2-digit", hour12: false })
+    .format(new Date(ms));
 }
 
-/** "Sa, 15. August 2026" */
-export function formatDateLong(ms: number, timezone: string): string {
-  const parts = zonedParts(ms, timezone);
-  return `${WEEKDAYS_SHORT[parts.weekday]}, ${parts.day}. ${MONTHS_LONG[parts.month - 1]} ${parts.year}`;
+/** "Sa., 15. August 2026" */
+function formatDateLong(ms: number, timezone: string): string {
+  return german(timezone, {
+    weekday: "short", day: "numeric", month: "long", year: "numeric",
+  }).format(new Date(ms));
+}
+
+// Ein Kalendertag hat keine Zone — er wird als UTC-Mitternacht formatiert.
+function calendarDateAsUtc(date: CalendarDate): Date {
+  return new Date(Date.UTC(date.year, date.month - 1, date.day));
 }
 
 /** "Samstag, 15. August 2026" */
 export function formatCalendarDateLong(date: CalendarDate): string {
-  const weekday = new Date(Date.UTC(date.year, date.month - 1, date.day)).getUTCDay();
-  return `${WEEKDAYS_LONG[weekday]}, ${date.day}. ${MONTHS_LONG[date.month - 1]} ${date.year}`;
+  return german("UTC", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  }).format(calendarDateAsUtc(date));
 }
 
 /** "August 2026" */
 export function formatMonth(date: CalendarDate): string {
-  return `${MONTHS_LONG[date.month - 1]} ${date.year}`;
+  return german("UTC", { month: "long", year: "numeric" }).format(calendarDateAsUtc(date));
 }
 
-/** "Sa, 15. August 2026, 09:30 Uhr" */
+/** "Sa., 15. August 2026, 09:30 Uhr" */
 export function formatDateTime(ms: number, timezone: string): string {
   return `${formatDateLong(ms, timezone)}, ${formatTime(ms, timezone)} Uhr`;
 }

@@ -115,12 +115,9 @@ function buildReport(app, ticket, note) {
   };
 }
 
+// Eine einzige Fassung, die in emaillib.js — hier nur unter kurzem Namen.
 function escapeHtml(value) {
-  return String(value == null ? "" : value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  return require(__hooks + "/lib/emaillib.js").escapeHtml(value);
 }
 
 // Fallback channel: the whole report as a readable mail, with the raw payload

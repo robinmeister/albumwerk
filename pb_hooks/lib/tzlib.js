@@ -41,7 +41,7 @@
 //   abstürzt und nichts still um eine Stunde verrutscht.
 
 function pad2(value) {
-  return value < 10 ? "0" + value : "" + value;
+  return String(value).padStart(2, "0");
 }
 
 // "2026-08-15 09:30:00" aus den Kalenderbestandteilen. Kein Date-Objekt im

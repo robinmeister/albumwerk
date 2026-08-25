@@ -13,14 +13,7 @@ import { Text } from "@astryxdesign/core/Text";
 import * as stylex from "@stylexjs/stylex";
 import { Plus as Add, ArrowLeft as ArrowBack, Sparkles as AutoAwesome, Trash2 as Delete, Euro, Tag as LocalOffer, Search } from "lucide-react";
 import { toast } from "react-toastify";
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  updateDoc,
-} from "../../config/firestore-compat";
+import { pb } from "../../config/pocketbase";
 
 import { Package, Price } from "../../utils/types";
 import DeleteModal from "../../components/widgets/DeleteModal";
@@ -185,13 +178,13 @@ export default function AdminPricingPage(): ReactElement {
   }, []);
 
   async function fetchPrices() {
-    const snap = await getDocs(collection("prices"));
-    setPrices(snap.docs.map((d: any) => ({ ...d.data(), id: d.id } as Price)));
+    const records = await pb.collection("prices").getFullList({ requestKey: null });
+    setPrices(records as unknown as Price[]);
   }
 
   async function fetchPackages() {
-    const snap = await getDocs(collection("packages"));
-    setPackages(snap.docs.map((d: any) => ({ ...d.data(), id: d.id } as Package)));
+    const records = await pb.collection("packages").getFullList({ requestKey: null });
+    setPackages(records as unknown as Package[]);
   }
 
   function selectPrice(price: Price) {
@@ -227,7 +220,7 @@ export default function AdminPricingPage(): ReactElement {
         prices.some(p => categoryOf(p) === category && (p.size ?? "") === size);
       const missing = STANDARD_CATALOG.filter(e => !exists(e.category, e.size));
       for (const entry of missing) {
-        await addDoc(collection("prices"), {
+        await pb.collection("prices").create({
           title:          priceTitle(entry.category, entry.size),
           amount:         entry.amount,
           description:    entry.description,
@@ -260,12 +253,12 @@ export default function AdminPricingPage(): ReactElement {
         size:           priceForm.size,
       };
       if (selectedPriceId === "") {
-        const ref = await addDoc(collection("prices"), data);
+        const ref = await pb.collection("prices").create(data);
         await fetchPrices();
         setSelectedPriceId(ref.id as string);
         toast.success("Preis erstellt");
       } else {
-        await updateDoc(doc("prices", selectedPriceId!), data);
+        await pb.collection("prices").update(selectedPriceId!, data);
         await fetchPrices();
         toast.success("Preis gespeichert");
       }
@@ -279,7 +272,7 @@ export default function AdminPricingPage(): ReactElement {
     if (!selectedPriceId) return;
     setSaving(true);
     try {
-      await deleteDoc(doc("prices", selectedPriceId));
+      await pb.collection("prices").delete(selectedPriceId);
       await fetchPrices();
       setSelectedPriceId(undefined);
       toast.success("Preis gelöscht");
@@ -313,7 +306,7 @@ export default function AdminPricingPage(): ReactElement {
         e => !packages.some(p => Number(p.numberOfImages) === e.numberOfImages)
       );
       for (const entry of missing) {
-        await addDoc(collection("packages"), {
+        await pb.collection("packages").create({
           name:           entry.title,
           title:          entry.title,
           numberOfImages: entry.numberOfImages,
@@ -347,12 +340,12 @@ export default function AdminPricingPage(): ReactElement {
         description:    packageForm.description,
       };
       if (selectedPackageId === "") {
-        const ref = await addDoc(collection("packages"), data);
+        const ref = await pb.collection("packages").create(data);
         await fetchPackages();
         setSelectedPackageId(ref.id as string);
         toast.success("Paket erstellt");
       } else {
-        await updateDoc(doc("packages", selectedPackageId!), data);
+        await pb.collection("packages").update(selectedPackageId!, data);
         await fetchPackages();
         toast.success("Paket gespeichert");
       }
@@ -366,7 +359,7 @@ export default function AdminPricingPage(): ReactElement {
     if (!selectedPackageId) return;
     setSaving(true);
     try {
-      await deleteDoc(doc("packages", selectedPackageId));
+      await pb.collection("packages").delete(selectedPackageId);
       await fetchPackages();
       setSelectedPackageId(undefined);
       toast.success("Paket gelöscht");

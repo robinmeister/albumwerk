@@ -12,16 +12,6 @@
 //      niemand einen Zwischenspeicher hierher schreibt.
 //   3. KEIN App-Kontext (Auth, Router, Settings-Provider).
 //
-// Die Basis-URL ist normalerweise leer (gleiche Herkunft, weil der iframe von
-// der Instanz ausgeliefert wird). Sie ist nur konfigurierbar, damit die
-// Oberfläche auch im Dev-Server gegen eine andere Instanz laufen kann.
-
-let baseUrl = "";
-
-export function setApiBase(url: string): void {
-  baseUrl = url.replace(/\/+$/, "");
-}
-
 export interface BookingType {
   id: string;
   slug: string;
@@ -54,7 +44,7 @@ export interface BookingError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(baseUrl + path, {
+  const response = await fetch(path, {
     ...init,
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
     // Kein `credentials: "include"` — die Buchung ist bewusst anonym, und im
@@ -121,7 +111,7 @@ export async function fetchBranding(): Promise<BookingBranding> {
 
 // --- Verfügbarkeit ---------------------------------------------------------
 
-export interface AvailabilityResult {
+interface AvailabilityResult {
   timezone: string;
   horizonDays: number;
   type: BookingType & { currency: string };
@@ -167,7 +157,7 @@ export async function fetchAvailability(
 
 // --- Buchen ----------------------------------------------------------------
 
-export interface BookingInput {
+interface BookingInput {
   type: string;
   start: string;
   name: string;
@@ -181,7 +171,7 @@ export interface BookingInput {
   renderedAt: number;
 }
 
-export interface BookingResult {
+interface BookingResult {
   token: string;
   start: string;
   end: string;
@@ -197,7 +187,7 @@ export async function book(input: BookingInput): Promise<BookingResult> {
 
 // --- Termin verwalten (Token-Link aus der Mail) ----------------------------
 
-export interface ManagedAppointment {
+interface ManagedAppointment {
   start: string;
   end: string;
   startMs: number;

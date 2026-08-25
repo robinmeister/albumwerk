@@ -23,7 +23,7 @@ function escapeText(value) {
 }
 
 function pad2(value) {
-  return value < 10 ? "0" + value : "" + value;
+  return String(value).padStart(2, "0");
 }
 
 // Millisekunden → "20260815T070000Z"

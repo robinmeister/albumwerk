@@ -5,13 +5,12 @@ import { Text } from "@astryxdesign/core/Text";
 import * as stylex from "@stylexjs/stylex";
 import { CircleCheck as CheckCircle, CloudDownload } from "lucide-react";
 import JSZip from "jszip";
-import { saveAs } from "file-saver";
-import { ref, getDownloadURL } from "../../../../config/storage-compat";
+import { originalFileUrl } from "../../../../config/images";
 import { ReactElement, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
-import { getOriginalImages } from "../../../../utils/functions";
+import { getOriginalImages, saveBlob } from "../../../../utils/functions";
 import { pb } from "../../../../config/pocketbase";
 
 type Props = {
@@ -70,7 +69,7 @@ export default function DownloadForm(props: Props): ReactElement {
         const folder = zip.folder(sanitize(title || `Shooting-${id}`))!;
         await Promise.all(
           names.map(async (filename) => {
-            const url = await getDownloadURL(ref(`/shootings/${id}/original/${filename}`));
+            const url = await originalFileUrl(id, filename);
             const res = await fetch(url);
             if (!res.ok) throw new Error(`Download-Fehler (${res.status})`);
             const blob = await res.blob();
@@ -82,7 +81,7 @@ export default function DownloadForm(props: Props): ReactElement {
       }
       const content = await zip.generateAsync({ type: "blob" });
       const single = shootingsWithNames.length === 1 ? shootingsWithNames[0].title : "";
-      saveAs(content, `${sanitize(single || "fotos")}.zip`);
+      saveBlob(content, `${sanitize(single || "fotos")}.zip`);
     } catch (error) {
       console.error("Fehler beim ZIP-Download:", error);
       toast.error("Der Download konnte nicht abgeschlossen werden. Bitte versuche es erneut.");

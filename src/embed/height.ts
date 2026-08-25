@@ -13,7 +13,7 @@
 // andere Richtung (wer darf uns überhaupt einbetten) macht der
 // CSP-Header `frame-ancestors`, nicht diese Nachricht.
 
-export const HEIGHT_MESSAGE = 'albumwerk:booking:height'
+const HEIGHT_MESSAGE = 'albumwerk:booking:height'
 
 /**
  * Meldet die Dokumenthöhe an das Elternfenster, sobald sie sich ändert.

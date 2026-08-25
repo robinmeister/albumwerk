@@ -7,12 +7,12 @@
 // PocketBase autogenerates shooting ids as 15 lowercase alphanumerics.
 const SHOOTING_ID_RE = /^[a-z0-9]{15}$/;
 
-export function isShootingId(value: string): boolean {
+function isShootingId(value: string): boolean {
   return SHOOTING_ID_RE.test(value);
 }
 
 /** Path a customer is sent to by a shared link / QR code. */
-export function addAlbumPath(shootingId: string): string {
+function addAlbumPath(shootingId: string): string {
   return `/addAlbum/${shootingId}`;
 }
 

@@ -1,6 +1,6 @@
 import { ReactElement, useEffect, useState } from "react";
 import { currentUser } from "../../config/currentUser";
-import { doc, getDoc } from "../../config/firestore-compat";
+import { getRecord } from "../../config/pocketbase";
 import { Button } from "@astryxdesign/core/Button";
 import { Heading } from "@astryxdesign/core/Heading";
 import * as stylex from "@stylexjs/stylex";
@@ -53,10 +53,9 @@ export default function DownloadsPage(): ReactElement {
     async function fetchUserInfo() {
         setLoading(true);
         if(currentUser()?.uid === undefined) { return; }
-        const userDoc = await getDoc(doc("users", currentUser()?.uid));
-        if(userDoc.exists()) {
-          const userData = userDoc.data();
-          setUserInfo(userData as User);
+        const userData = await getRecord<User>("users", currentUser()?.uid);
+        if(userData) {
+          setUserInfo(userData);
         }
         setLoading(false);
     }
