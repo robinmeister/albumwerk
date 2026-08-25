@@ -36,6 +36,22 @@ export interface AppSettings {
   watermarkOpacity: number;
   previewMaxSize: number;
   setupCompleted: boolean;
+  // Terminbuchung (docs/terminbuchung.md). Die art-bezogenen Werte (Dauer,
+  // Puffer, Vorlauf, Startintervall) stehen nicht hier, sondern auf der
+  // jeweiligen Termin-Art — hier liegt nur, was für die ganze Instanz gilt.
+  bookingEnabled: boolean;
+  timezone: string;
+  bookingHorizonDays: number;
+  bookingMaxPerDay: number;
+  bookingPendingExpiryHours: number;
+  bookingCancelDeadlineHours: number;
+  bookingReminderHours: number;
+  bookingRetentionMonths: number;
+  bookingDoubleOptIn: boolean;
+  bookingNotificationEmail: string;
+  bookingEmbedOrigins: string;
+  bookingRateHour: number;
+  bookingRateDay: number;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -67,6 +83,22 @@ export const DEFAULT_SETTINGS: AppSettings = {
   watermarkOpacity: 40,
   previewMaxSize: 1200,
   setupCompleted: true, // defaults never trigger the wizard; only a loaded record can
+  // gespiegelt aus pb_hooks/lib/bookinglib.js readConfig() — die Vorgaben
+  // müssen zusammenpassen, sonst zeigt die Oberfläche etwas anderes an, als
+  // der Server rechnet
+  bookingEnabled: false,
+  timezone: "Europe/Berlin",
+  bookingHorizonDays: 90,
+  bookingMaxPerDay: 0,
+  bookingPendingExpiryHours: 48,
+  bookingCancelDeadlineHours: 24,
+  bookingReminderHours: 24,
+  bookingRetentionMonths: 12,
+  bookingDoubleOptIn: false,
+  bookingNotificationEmail: "",
+  bookingEmbedOrigins: "",
+  bookingRateHour: 10,
+  bookingRateDay: 30,
 };
 
 const CACHE_KEY = "app_settings_cache_v1";

@@ -20,6 +20,10 @@ import ProfilePage from "./pages/user/ProfilePage";
 import SignUpPage from "./pages/auth/SignUpPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import AdminAlbumPage from "./pages/admin/AdminAlbumPage";
+import AppointmentsPage from "./pages/admin/AppointmentsPage";
+import AppointmentTypesPage from "./pages/admin/AppointmentTypesPage";
+import AvailabilityPage from "./pages/admin/AvailabilityPage";
+import EmbedPage from "./pages/admin/EmbedPage";
 import AdminPricingPage from "./pages/admin/AdminPricingPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminPaymentsPage from "./pages/admin/AdminPaymentsPage";
@@ -33,6 +37,8 @@ import OrderDetailsPage from "./pages/user/OrderDetailsPage";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
 import SupportPage from "./pages/user/SupportPage";
 import PublicAlbumPage from "./pages/public/PublicAlbumPage";
+import BookingPage from "./pages/public/BookingPage";
+import ManageAppointmentPage from "./pages/public/ManageAppointmentPage";
 import PublicDownloadsPage from "./pages/public/PublicDownloadsPage";
 import LegalPage from "./pages/public/LegalPage";
 import HelpPage from "./pages/help/HelpPage";
@@ -117,6 +123,13 @@ function ThemedApp(): ReactElement {
                   so it sits above the role-specific layouts. */}
               <Route path="addAlbum" element={<AddShootingPage />} />
               <Route path="addAlbum/:shootingId" element={<AddShootingPage />} />
+              {/* Terminbuchung und der Storno-Link aus der Bestätigungsmail —
+                  wie das QR-Ziel oben müssen sie für alle gleich aufgehen:
+                  eingeloggte Kund:innen, Admins und Leute ohne Konto. Ein
+                  Login davor wäre eine Sackgasse, denn die meisten, die einen
+                  Termin buchen oder absagen, haben gar keins. */}
+              <Route path="buchen" element={<BookingPage />} />
+              <Route path="termin/:token" element={<ManageAppointmentPage />} />
               {!isAdmin && user && (
                 <Route path="/" element={<Layout user={user} isAdmin={isAdmin} />}>
                   <Route index element={<Navigate to="/album" />} />
@@ -144,6 +157,12 @@ function ThemedApp(): ReactElement {
                 >
                   <Route index element={<Navigate to="/album" />} />
                   <Route path="album" element={<AdminAlbumPage />} />
+                  {/* Die statischen Unterseiten stehen vor der Übersicht, damit
+                      /appointments/types nicht als Kalender aufgelöst wird. */}
+                  <Route path="appointments/types" element={<AppointmentTypesPage />} />
+                  <Route path="appointments/availability" element={<AvailabilityPage />} />
+                  <Route path="appointments/embed" element={<EmbedPage />} />
+                  <Route path="appointments" element={<AppointmentsPage />} />
                   <Route path="pricing" element={<AdminPricingPage />} />
                   <Route path="profile" element={<ProfilePage />} />
                   <Route path="orders" element={<OrdersPage />}/>

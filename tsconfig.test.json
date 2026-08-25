@@ -1,0 +1,23 @@
+// Typprüfung für die Vitest-Suite. Wie tsconfig.e2e.json getrennt vom
+// App-tsconfig gehalten: die Tests laufen in Node, nicht im Browser-Build, und
+// `npm run build` soll nicht an ihnen hängen.
+//
+// Ausgeführt über `npm run test:check`.
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["node"],
+    "strict": true,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true
+  },
+  "include": ["tests/**/*.ts", "vitest.config.ts"]
+}

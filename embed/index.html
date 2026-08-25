@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Eingebettete Terminbuchung (docs/terminbuchung.md §9). Diese Seite
+         läuft im iframe auf der Website der Fotograf:in.
+
+         Bewusst NICHT hier drin, anders als in der App-index.html:
+         - kein <link rel="manifest">   — das hier ist keine installierbare App
+         - kein Service Worker          — siehe vite.config.ts, injectRegister
+         - keine externen Ressourcen    — Schriften und Stile kommen aus dem
+                                          eigenen Bundle, nie von einem CDN
+
+         Ohne Indexierung, weil der Inhalt zur Website der Fotograf:in gehört
+         und nicht als eigene Seite in den Suchergebnissen auftauchen soll. -->
+    <meta name="robots" content="noindex" />
+    <title>Termin buchen</title>
+  </head>
+  <body>
+    <div id="booking"></div>
+    <script type="module" src="/src/embed/main.tsx"></script>
+  </body>
+</html>

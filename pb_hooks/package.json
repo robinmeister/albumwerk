@@ -1,0 +1,4 @@
+{
+  "//": "Das Wurzel-package.json setzt \"type\": \"module\". Die Hook-Bibliotheken hier sind CommonJS (module.exports/require), weil die PocketBase-JSVM nur das kennt. Ohne diese Datei würde Node die .js-Dateien als ESM lesen und die Unit-Tests (tests/) könnten sie nicht laden. PocketBase lädt nur *.pb.js als Hooks und ignoriert diese Datei.",
+  "type": "commonjs"
+}

@@ -16,6 +16,10 @@ RUN npm ci
 COPY tsconfig.json tsconfig.node.json vite.config.ts index.html ./
 COPY public ./public
 COPY src ./src
+# Zweiter Vite-Einstiegspunkt: die eingebettete Terminbuchung
+# (vite.config.ts, build.rollupOptions.input). Ohne diese Zeile bricht der
+# Build mit "Could not resolve entry module embed/index.html" ab.
+COPY embed ./embed
 # vite.config.ts bakes APP_VERSION into the bundle for support/error reports
 RUN APP_VERSION="${APP_VERSION}" npm run build
 

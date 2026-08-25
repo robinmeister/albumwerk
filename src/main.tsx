@@ -17,7 +17,18 @@ import "@fontsource/montserrat/600.css";
 import "@fontsource/montserrat/700.css";
 import "./index.css";
 
+import { registerSW } from "virtual:pwa-register";
+
 import App from "./App";
+
+// Der Service Worker wird hier von Hand registriert statt vom PWA-Plugin in
+// jede HTML-Datei injiziert (`injectRegister: null` in vite.config.ts).
+// Grund: Seit es einen zweiten Einstiegspunkt für die eingebettete
+// Terminbuchung gibt (embed/index.html), würde die automatische Injektion auch
+// dort landen — und damit auf der Website fremder Fotograf:innen bei jedem
+// Besucher einen Service Worker samt Precache installieren. Die Registrierung
+// gehört ausschließlich in die App.
+registerSW({ immediate: true });
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
