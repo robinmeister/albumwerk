@@ -8,12 +8,13 @@
 
 ---
 
-## ⏭️ Als Nächstes (Stand 2026-08-25)
+## ⏭️ Als Nächstes (Stand 2026-08-26)
 
 1. Phase 0 abschließen — die drei offenen Punkte sind reine Dashboard-Arbeit (SendGrid, Passwörter).
 2. Terminbuchung fertigstellen: Etappe 5 (Kalender-Import) + Etappe 6 (Abschluss) — siehe Phase 5.
-3. SaaS-Abnahme auf dem VPS zu Ende bringen (Backups + Monitoring).
-4. Business-Block starten: Gewerbe + Steuerberatung entscheiden die Abrechnung mit.
+3. Business-Block starten: Gewerbe + Steuerberatung entscheiden die Abrechnung mit.
+
+Die SaaS-Abnahme auf dem VPS ist seit 2026-08-26 durch (Phase 3).
 
 ---
 
@@ -53,8 +54,8 @@
 - [x] **Provisioning-Wrapper**: `saas/provision/` gegen die Coolify-API (App + Volume + Subdomain + Instanz-Bootstrap)
 - [x] Reverse-Proxy mit automatischem Let's-Encrypt (Traefik via Coolify)
 - [x] Zentrale Backups (`saas/backup-sync.sh` + rclone) + Uptime-Kuma-Monitoring/Statusseite **gebaut** (Abnahme im Live-Betrieb siehe unten)
-- [x] Self-Service Signup + Trial (14 Tage, ohne Kreditkarte) — Control-Plane `saas/control/` (lokal end-to-end getestet; VPS-Abnahme-Checkliste in `saas/README.md`)
-- [~] **VPS-Abnahme**: Instanz-Provisionierung läuft live; **offen**: zentrale Backups (`saas/backup-sync.sh` + rclone) und Uptime-Kuma-Monitoring abnehmen — Checkliste in `saas/README.md`
+- [x] Self-Service Signup + Trial (14 Tage, ohne Kreditkarte) — Control-Plane `saas/control/`, auf dem VPS end-to-end bis Status `trial` abgenommen
+- [x] **VPS-Abnahme (2026-08-26)**: Checkliste in `saas/README.md` §5 komplett durchlaufen — Provisioning, Kuma-Monitore + öffentliche Statusseite, Suspend/Resume, Self-Service-Signup, Backup-Sync inkl. Restore-Stichprobe, Trial-Erinnerung + -Ablauf, Deprovision. Vier dabei gefundene Fehler behoben (Coolify-URL aus Container-Sicht, Deploy-Timeout ab `updated`, SMTP der Control-Plane, `kuma-sync.py`)
 - [~] Abrechnung: vorbereitet (manueller Status-Schalter + Webhook-Stub); Anbieterwahl Stripe/Paddle **weiterhin offen**, hängt an der Steuerberatung
 
 ### Phase 5 — Terminbuchung (aktive Baustelle)

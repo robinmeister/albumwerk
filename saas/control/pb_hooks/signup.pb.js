@@ -83,9 +83,10 @@ cronAdd("saas-provisioner", "* * * * *", () => {
   for (const r of deploying) {
     const url = r.getString("instanceUrl");
     if (!lib.isHealthy(url)) {
-      // Timeout: 30 Minuten nach Erstellung
-      const created = new Date(r.getString("created")).getTime();
-      if (Date.now() - created > 30 * 60 * 1000) {
+      // Timeout: 30 Minuten ab Deploy-Start (= letzte Statusänderung,
+      // fehlgeschlagene Health-Checks speichern den Record nicht)
+      const since = new Date(r.getString("updated")).getTime();
+      if (Date.now() - since > 30 * 60 * 1000) {
         r.set("status", "error");
         r.set("lastError", "Instanz wurde nicht gesund (Timeout) — in Coolify prüfen.");
         $app.save(r);

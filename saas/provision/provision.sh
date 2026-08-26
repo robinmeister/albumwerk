@@ -2,7 +2,7 @@
 # Legt eine komplette Kunden-Instanz an: Coolify-App (gepinntes Image) +
 # persistentes Volume + Subdomain (SSL macht Traefik/Let's Encrypt) +
 # Instanz-Bootstrap (SMTP, Fotografen-Account, Willkommensmail) + optional
-# Uptime-Kuma-Monitor.
+# Uptime-Kuma-Monitor (über kuma-sync.py).
 #
 # Aufruf:  provision.sh <subdomain> <kunden-email> [kunden-name]
 # Flags:   DRY_RUN=1 provision.sh …   (druckt API-Calls statt sie zu senden)
@@ -95,25 +95,12 @@ if [ "$DRY_RUN" != "1" ]; then
   "$SCRIPT_DIR/bootstrap-instance.sh" "$URL" "$OPS_EMAIL" "$OPS_PASS" "$CUSTOMER_EMAIL" "$CUSTOMER_NAME" >&2
 fi
 
-# --- 6) Optional: Uptime-Kuma-Monitor ------------------------------------------
+# --- 6) Uptime-Kuma-Monitor ----------------------------------------------------
+# kuma-sync.py gleicht die Monitore mit allen laufenden Coolify-Apps ab und
+# deckt damit auch den Self-Service-Weg über die Control-Plane ab.
 if [ -n "${KUMA_URL:-}" ] && [ "$DRY_RUN" != "1" ]; then
-  if python3 - "$SUB" "$URL" <<'EOF'
-import os, sys
-try:
-    from uptime_kuma_api import UptimeKumaApi, MonitorType
-except ImportError:
-    print("  Hinweis: python-Paket 'uptime-kuma-api' fehlt — Monitor bitte manuell anlegen.", file=sys.stderr)
-    sys.exit(0)
-sub, url = sys.argv[1], sys.argv[2]
-api = UptimeKumaApi(os.environ["KUMA_URL"])
-api.login(os.environ["KUMA_USER"], os.environ["KUMA_PASS"])
-api.add_monitor(type=MonitorType.HTTP, name=f"kunde-{sub}", url=f"{url}/api/health", interval=60)
-api.disconnect()
-print(f"  Kuma-Monitor 'kunde-{sub}' angelegt.", file=sys.stderr)
-EOF
-  then :; else
-    echo "  Warnung: Kuma-Monitor konnte nicht angelegt werden (Provisionierung ist trotzdem ok)." >&2
-  fi
+  python3 "$SCRIPT_DIR/../kuma-sync.py" >&2 \
+    || echo "  Warnung: Kuma-Monitor konnte nicht angelegt werden (Provisionierung ist trotzdem ok)." >&2
 fi
 
 echo "== Fertig: $URL ==" >&2

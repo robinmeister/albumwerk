@@ -30,22 +30,39 @@ Signup (control.SAAS_DOMAIN/signup.html)
 5. **`saas/.env`** aus `.env.example` erstellen und komplett ausfüllen
    (Coolify-URL/-Token/-UUIDs, `SAAS_DOMAIN`, Image-Tag, SMTP-Relay, rclone).
 6. **Uptime Kuma** als Coolify-Service deployen (Template in Coolify vorhanden),
-   Domain `status.SAAS_DOMAIN`; im Kuma-UI Admin anlegen und eine öffentliche
-   **Statusseite** erstellen. Zugangsdaten in `saas/.env` (`KUMA_*`) eintragen;
-   auf dem VPS `pip install uptime-kuma-api` (für die automatische
-   Monitor-Anlage durch `provision.sh`).
+   Domain `status.SAAS_DOMAIN`; im Kuma-UI Admin anlegen, Zugangsdaten in
+   `saas/.env` (`KUMA_*`) eintragen und auf dem VPS `pip install uptime-kuma-api`.
+   Monitore und die öffentliche Statusseite legt `kuma-sync.py` an (s. u.).
 7. **Control-Plane deployen**: in Coolify eine App aus diesem Repo-Verzeichnis
    (`saas/control/`, Dockerfile-Build) mit Domain `control.SAAS_DOMAIN`
    anlegen; alle Variablen aus `saas/.env` als App-Envs setzen (inkl.
-   `PB_SUPERUSER_*` für das Dashboard). SMTP der Control-Plane im
-   PB-Dashboard (Settings → Mail) auf das Relay stellen.
+   `PB_SUPERUSER_*` für das Dashboard).
+
+   Zwei Fallstricke:
+   - `COOLIFY_URL` muss **aus Sicht des Containers** gelten. Die Control-Plane
+     läuft im Docker-Netz `coolify`, dort ist Coolify als `http://coolify:8080`
+     erreichbar (`http://localhost:8000` gilt nur auf dem Host, für die
+     `provision/*.sh`-Skripte).
+   - Ein Coolify-*Restart* übernimmt geänderte Env-Variablen **nicht** —
+     dafür braucht es einen Redeploy (`POST /api/v1/deploy?uuid=…&force=true`).
+
+   Eigenes SMTP muss die Control-Plane nicht bekommen: `pb_hooks/settings.pb.js`
+   setzt es beim Start aus den `SAAS_SMTP_*`-Envs (ohne das fällt PocketBase auf
+   `sendmail` zurück, das im Alpine-Image fehlt → `GoError: exit status 1`).
 8. **Zentrale Backups**: auf dem VPS `rclone` installieren, `rclone config`
    (Remote wie `RCLONE_REMOTE` in der .env, z. B. Hetzner Storage Box), dann
    als root-Cron:
 
    ```
-   30 4 * * *  /pfad/zum/repo/saas/backup-sync.sh >> /var/log/fg-backup.log 2>&1
+   30 4 * * *  root  /pfad/zum/repo/saas/backup-sync.sh >> /var/log/albumwerk-backup.log 2>&1
+   */15 * * * * root  /pfad/zum/repo/saas/kuma-sync.py  >> /var/log/albumwerk-kuma.log 2>&1
    ```
+
+   `kuma-sync.py` gleicht die Kuma-Monitore und die öffentliche Statusseite mit
+   den laufenden Coolify-Apps ab: laufende Instanz → Monitor, gestoppte oder
+   gelöschte Instanz → Monitor weg. Damit sind beide Provisionierungswege
+   (`provision.sh` und Self-Service) abgedeckt und pausierte Kunden alarmieren
+   nicht.
 
 ## 2. Täglicher Betrieb
 
@@ -119,15 +136,28 @@ Zum Anbinden sind genau drei Stellen zu füllen (`control/pb_hooks/billing.pb.js
 3. Checkout-Link erzeugen (customers-Record-ID als Referenz mitgeben) und in
    Erinnerungs-/Ablauf-Mails in `lifecycle.pb.js` einsetzen.
 
-## 5. Abnahme-Checkliste auf dem VPS (nicht lokal testbar)
+## 5. Abnahme-Checkliste auf dem VPS (durchlaufen am 2026-08-26)
 
-- [ ] `provision.sh testkunde <deine-mail>` → `https://testkunde.SAAS_DOMAIN`
-      lädt mit gültigem Zertifikat; Willkommensmail kommt an; Login → Wizard.
-- [ ] Kuma zeigt den neuen Monitor grün; Statusseite öffentlich erreichbar.
-- [ ] `suspend.sh`/`resume.sh` stoppen/starten die Instanz sichtbar.
-- [ ] Signup-Formular end-to-end (zweiter Testkunde, andere Mail-Adresse).
-- [ ] `backup-sync.sh` von Hand laufen lassen → ZIPs liegen auf dem Remote
-      (`rclone ls $RCLONE_REMOTE`); Restore einer Datei stichprobenartig.
-- [ ] Trial-Ablauf: `trialEndsAt` eines Testkunden auf gestern setzen →
-      nächster Cron-Lauf pausiert die Instanz + Mail kommt.
-- [ ] `deprovision.sh` für die Testkunden.
+- [x] `provision.sh testkunde <mail>` → `https://testkunde.SAAS_DOMAIN` lädt mit
+      gültigem Zertifikat; Willkommensmail kommt an; Login → Wizard.
+- [x] Kuma zeigt die Monitore grün; Statusseite `.../status/albumwerk` ist
+      öffentlich erreichbar.
+- [x] `suspend.sh`/`resume.sh` stoppen/starten die Instanz sichtbar.
+- [x] Signup-Formular end-to-end (zweiter Testkunde) → Status `trial`.
+- [x] `backup-sync.sh` von Hand → ZIPs auf dem Remote, Restore stichprobenartig
+      geprüft (identische MD5).
+- [x] Trial-Ablauf: Erinnerung 2 Tage vorher + Pausieren nach Ablauf, beide
+      Mails raus.
+- [x] `deprovision.sh` für den Signup-Testkunden (App + Volume weg).
+
+Dabei gefundene und behobene Fehler:
+
+| Symptom | Ursache | Fix |
+|---|---|---|
+| Signup bleibt auf `provisioning` | Control-Plane erreicht Coolify nicht unter `172.17.0.1:8000` | `COOLIFY_URL=http://coolify:8080` (Docker-Netz `coolify`) |
+| Instanz läuft, Kunde bleibt auf `error` | Deploy-Timeout wurde ab `created` statt ab Deploy-Start gemessen | `signup.pb.js` rechnet ab `updated` |
+| `saas reminder failed: GoError: exit status 1` | Control-Plane hatte kein eigenes SMTP, PocketBase fiel auf fehlendes `sendmail` zurück | `pb_hooks/settings.pb.js` setzt SMTP beim Start aus den Envs |
+| Kuma leer, Self-Service legt keine Monitore an | Monitor-Anlage steckte nur inline in `provision.sh` | `kuma-sync.py` gleicht gegen Coolify ab, per Cron |
+
+Offen: `testkunde` läuft als Referenz-Instanz weiter und ist bewusst **nicht**
+deprovisioniert.
