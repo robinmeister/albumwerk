@@ -8,6 +8,7 @@ import { pb } from "../../config/pocketbase";
 import { settingsFileUrl } from "../../config/settings";
 import { useSettings } from "../../context/SettingsContext";
 import { NavItem } from "../../utils/routes";
+import StorageMeter from "./StorageMeter";
 
 export const SIDEBAR_WIDTH = 240;
 
@@ -234,6 +235,8 @@ export default function AppShell(props: Props): ReactElement {
           </Text>
         </button>
       </nav>
+
+      <StorageMeter />
 
       <div {...stylex.props(s.footer)}>
         <Text type="supporting" color="secondary">
