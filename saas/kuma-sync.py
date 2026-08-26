@@ -2,7 +2,7 @@
 """Gleicht die Uptime-Kuma-Monitore mit den laufenden Coolify-Apps ab.
 
 Quelle der Wahrheit ist Coolify: jede App namens ``kunde-<subdomain>`` sowie
-die Control-Plane bekommen einen Monitor auf ``<fqdn>/api/health``.  Apps, die
+Control-Plane und Marketing-Website bekommen einen Monitor auf ihrer URL.  Apps, die
 gestoppt sind (Suspend, Trial abgelaufen) oder gar nicht mehr existieren,
 verlieren ihren Monitor wieder -- sonst alarmiert Kuma für Instanzen, die
 absichtlich aus sind.
@@ -20,6 +20,7 @@ import urllib.request
 from uptime_kuma_api import UptimeKumaApi, MonitorType
 
 STATUS_SLUG = "albumwerk"
+INFRA = ("control-plane", "website")
 
 
 def load_env(path=None):
@@ -53,11 +54,13 @@ def main():
     want = {}
     for app in coolify_apps(env):
         name, fqdn = app.get("name") or "", app.get("fqdn") or ""
-        if not fqdn or not (name.startswith("kunde-") or name == "control-plane"):
+        if not fqdn or not (name.startswith("kunde-") or name in INFRA):
             continue
         if not str(app.get("status") or "").startswith("running"):
             continue
-        want[name] = fqdn.split(",")[0].rstrip("/") + "/api/health"
+        # Die Website ist statisch und hat keinen Health-Endpunkt.
+        path = "" if name == "website" else "/api/health"
+        want[name] = fqdn.split(",")[0].rstrip("/") + path
 
     api = UptimeKumaApi(env["KUMA_URL"])
     api.login(env["KUMA_USER"], env["KUMA_PASS"])
@@ -75,7 +78,7 @@ def main():
             print(f"angelegt: {name} -> {url}")
 
         for name, mon in have.items():
-            if name not in want and (name.startswith("kunde-") or name == "control-plane"):
+            if name not in want and (name.startswith("kunde-") or name in INFRA):
                 api.delete_monitor(mon["id"])
                 print(f"entfernt: {name}")
 

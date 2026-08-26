@@ -56,7 +56,10 @@ Die SaaS-Abnahme auf dem VPS ist seit 2026-08-26 durch (Phase 3).
 - [x] Zentrale Backups (`saas/backup-sync.sh` + rclone) + Uptime-Kuma-Monitoring/Statusseite **gebaut** (Abnahme im Live-Betrieb siehe unten)
 - [x] Self-Service Signup + Trial (14 Tage, ohne Kreditkarte) — Control-Plane `saas/control/`, auf dem VPS end-to-end bis Status `trial` abgenommen
 - [x] **VPS-Abnahme (2026-08-26)**: Checkliste in `saas/README.md` §5 komplett durchlaufen — Provisioning, Kuma-Monitore + öffentliche Statusseite, Suspend/Resume, Self-Service-Signup, Backup-Sync inkl. Restore-Stichprobe, Trial-Erinnerung + -Ablauf, Deprovision. Vier dabei gefundene Fehler behoben (Coolify-URL aus Container-Sicht, Deploy-Timeout ab `updated`, SMTP der Control-Plane, `kuma-sync.py`)
-- [~] Abrechnung: vorbereitet (manueller Status-Schalter + Webhook-Stub); Anbieterwahl Stripe/Paddle **weiterhin offen**, hängt an der Steuerberatung
+- [~] Abrechnung: vorbereitet (manueller Status-Schalter + Webhook-Stub). Entschieden: **Stripe, Kleinunternehmer §19**, 12 €/Monat inkl. 25 GB + 0,10 €/GB darüber — Umsetzung ist Stufe 3 des Onboarding-Ausbaus
+- [x] **Onboarding Stufe 1 — Funnel dicht (2026-08-26)**: Double-Opt-In vor dem Provisioning, Warteseite mit Statusabfrage, Direkteinstieg per Impersonate-Token (keine Passwort-Mail mehr), `MAX_TRIALS` mit Warteliste, Signup-Seite im Website-Design. Marketing-Website als Coolify-App auf demselben VPS (nginx-Image + Gitea-Actions-Deploy), live unter `www.albumwerk.de`. Prüfskript `saas/test-signup.py`, Kette im Browser end-to-end bewiesen. **Offen: A-Record für den Apex** — der liegt noch auf netcups Domainpark
+- [ ] **Onboarding Stufe 2 — rechtlich launchfähig** (*vorher darf nicht öffentlich geworben werden*): AGB-Seite, Zustimmungs-Checkbox mit Protokoll (Zeitpunkt, Textversion, IP), AVV als PDF zur Bestätigungsmail, Off-Site-Backups (Hetzner Storage Box statt lokalem Pfad), Löschjob Tag 30 mit Vorwarnung Tag 23 und Backup-Nachlauf bis Tag 60, `KEEP_DAYS` 14 → 60
+- [ ] **Onboarding Stufe 3 — Bezahlung**: Stripe im Testmodus, Speichermessung über `_data/storage`, Verbrauchsanzeige in der App, Warnmails bei 80 %/100 %
 
 ### Phase 5 — Terminbuchung (aktive Baustelle)
 

@@ -25,8 +25,10 @@ Signup (control.SAAS_DOMAIN/signup.html)
 3. **Registry-Zugang**: `docker login gitea.robinhm.de` auf dem VPS (damit
    Coolify das Produkt-Image ziehen kann); alternativ in Coolify unter
    *Registries* hinterlegen.
-4. **Wildcard-DNS**: `*.SAAS_DOMAIN` als A-Record auf die VPS-IP. Zusätzlich
-   `control.SAAS_DOMAIN` (Control-Plane) und `status.SAAS_DOMAIN` (Kuma).
+4. **DNS**: `*.SAAS_DOMAIN` als Wildcard-A-Record auf die VPS-IP, dazu
+   `control.SAAS_DOMAIN` (Control-Plane), `status.SAAS_DOMAIN` (Kuma) sowie
+   `SAAS_DOMAIN` selbst und `www.SAAS_DOMAIN` (Marketing-Website — die läuft
+   als eigene Coolify-App auf derselben Maschine, Repo `albumwerk-website`).
 5. **`saas/.env`** aus `.env.example` erstellen und komplett ausfüllen
    (Coolify-URL/-Token/-UUIDs, `SAAS_DOMAIN`, Image-Tag, SMTP-Relay, rclone).
 6. **Uptime Kuma** als Coolify-Service deployen (Template in Coolify vorhanden),
@@ -70,7 +72,8 @@ Signup (control.SAAS_DOMAIN/signup.html)
   — legt App+Volume+Domain an, wartet auf Gesundheit, richtet SMTP ein, legt den
   Fotografen-Account an und verschickt die Willkommensmail (= Passwort setzen).
 - **Self-Service**: Kunden registrieren sich selbst unter
-  `https://control.SAAS_DOMAIN/signup.html` → 14-Tage-Trial, vollautomatisch.
+  `https://control.SAAS_DOMAIN/signup` → 14-Tage-Trial, vollautomatisch.
+  Der Knopf „Kostenlos testen" auf der Marketing-Website zeigt hierher.
 - **Kundenliste/Verwaltung**: PB-Dashboard der Control-Plane
   (`https://control.SAAS_DOMAIN/_/`, Collection `customers`) — oder
   `provision/list.sh` für die Coolify-Sicht.
@@ -83,6 +86,43 @@ Signup (control.SAAS_DOMAIN/signup.html)
   `saas/.env` `APP_TAG` hochziehen → neue Instanzen nutzen sie sofort.
   Bestandsinstanzen: in Coolify das Image-Tag der App ändern + Redeploy
   (Migrationen laufen automatisch; erst bei 1–2 Kunden testen).
+
+## 2b. Self-Service-Signup im Detail
+
+```
+albumwerk.de  ──►  control.albumwerk.de/signup
+                        │  POST /api/saas/signup      → Status "pending", KEIN Container
+                        ▼
+                   Bestätigungsmail (die einzige Mail im Onboarding)
+                        │  GET /api/saas/confirm      → "provisioning", Trial startet
+                        ▼
+                   warten.html pollt /api/saas/status
+                        │  Worker: Coolify-App → Health → Bootstrap → "trial"
+                        ▼
+                   Sprung in die Instanz mit ?authToken=…  → eingeloggt im Wizard
+```
+
+**Warum der Umweg über die Mail:** ohne Bestätigung legt ein Skript mit
+Wegwerf-Adressen in Minuten so viele Container an, bis der VPS steht.
+Unbestätigte Anmeldungen kosten nur eine Datenbankzeile.
+
+**Warum kein Passwort:** die Control-Plane kennt den Ops-Superuser der Instanz
+und lässt sich von PocketBase per `impersonate` ein Nutzer-Token ausstellen
+(`instanceLoginToken` in `pb_hooks/lib/provisionlib.js`). Die Warteseite hängt
+es als `?authToken=` an, das Produkt übernimmt es beim Start und entfernt es
+sofort aus der Adresszeile (`src/main.tsx`). Das spart die Passwort-Mail und
+macht das Onboarding unabhängig vom SMTP der frisch gebauten Instanz. Das
+Token gilt 30 Minuten, der Mail-Link taugt 24 Stunden lang zum Nachholen —
+danach führt „Passwort vergessen" auf der Instanz zum Ziel.
+
+**Kapazität:** `MAX_TRIALS` (Standard 12) begrenzt gleichzeitige Instanzen in
+`provisioning`/`deploying`/`trial`/`active`. Ist die Grenze erreicht, landet
+die Anmeldung auf Status `waitlist` — Adresse notiert, nichts provisioniert.
+Faustregel: ~400 MB RAM pro Instanz.
+
+**Prüfen:** `./test-signup.py <subdomain> <mail>` geht den kompletten Weg
+durch und prüft am Ende, dass der Login-Token wirklich als Admin der Instanz
+authentifiziert. `./test-signup.py --cleanup <subdomain>` räumt wieder auf.
 
 ## 3. Trial-Lebenszyklus (automatisch)
 

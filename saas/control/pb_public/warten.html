@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Albumwerk — dein Album wird eingerichtet</title>
+  <link rel="stylesheet" href="albumwerk.css">
+</head>
+<body>
+  <main class="card">
+    <p class="overline">Fast fertig</p>
+    <h1 id="head">Dein Album wird eingerichtet</h1>
+    <p class="sub" id="lead">Das dauert ein paar Minuten — du kannst diesen Tab
+      offen lassen. Wir bringen dich automatisch hinein, sobald es soweit ist.</p>
+
+    <ul class="steps" id="steps">
+      <li data-step="confirm">E-Mail-Adresse bestätigt</li>
+      <li data-step="build">Album wird eingerichtet</li>
+      <li data-step="ready">Los geht’s</li>
+    </ul>
+
+    <div class="msg" id="msg" role="status" aria-live="polite"></div>
+    <a class="btn" id="go" href="#" hidden>Zu deinem Album</a>
+
+    <p class="fine" id="fine">Tab geschlossen? Der Link aus unserer
+      Bestätigungsmail bringt dich jederzeit hierher zurück.</p>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const token = params.get("token") || "";
+    const steps = {};
+    document.querySelectorAll("#steps li").forEach((li) => (steps[li.dataset.step] = li));
+    const msg = document.getElementById("msg");
+    const head = document.getElementById("head");
+    const lead = document.getElementById("lead");
+    const go = document.getElementById("go");
+
+    function mark(name, state) {
+      steps[name].classList.toggle("done", state === "done");
+      steps[name].classList.toggle("active", state === "active");
+    }
+
+    function fail(text) {
+      msg.className = "msg err";
+      msg.textContent = text;
+    }
+
+    if (!token || params.get("fehler")) {
+      head.textContent = "Dieser Link stimmt nicht";
+      lead.textContent = "";
+      document.getElementById("steps").hidden = true;
+      fail("Bitte benutze den Link aus unserer Bestätigungsmail. Falls das nicht klappt, melde dich einfach bei uns.");
+    } else {
+      mark("confirm", "done");
+      mark("build", "active");
+      poll();
+    }
+
+    // Kein Backoff: der Vorgang dauert regulär 3–5 Minuten, und ein Poll alle
+    // vier Sekunden auf einen Datenbank-Lookup ist billiger als die Erklärung,
+    // warum die Seite manchmal eine halbe Minute nachhinkt.
+    async function poll() {
+      let misses = 0;
+      while (true) {
+        try {
+          const res = await fetch("/api/saas/status?token=" + encodeURIComponent(token));
+          const data = await res.json().catch(() => ({}));
+
+          if (!res.ok) {
+            fail(data.message || "Wir finden diese Anmeldung gerade nicht. Bitte melde dich bei uns.");
+            return;
+          }
+          if (data.status === "error") {
+            mark("build", "");
+            fail("Bei der Einrichtung ist etwas schiefgegangen. Wir haben eine Meldung bekommen und kümmern uns — du hörst von uns.");
+            return;
+          }
+          if (data.status === "trial" || data.status === "active") {
+            mark("build", "done");
+            mark("ready", "active");
+            enter(data);
+            return;
+          }
+          misses = 0;
+        } catch (_) {
+          // Netzwerkaussetzer sind unterwegs normal; erst nach einer Minute
+          // ohne Antwort verunsichern wir den Kunden.
+          if (++misses === 15) fail("Keine Verbindung zum Server. Wir versuchen es weiter.");
+        }
+        await new Promise((r) => setTimeout(r, 4000));
+      }
+    }
+
+    function enter(data) {
+      head.textContent = "Dein Album steht";
+      lead.textContent = data.url ? data.url.replace(/^https:\/\//, "") : "";
+
+      // Ohne Login-Token (z. B. wenn der Mail-Link älter als 24 Stunden ist)
+      // führt der Knopf einfach auf die Anmeldeseite der Instanz.
+      const target = data.loginToken
+        ? data.url + "/?authToken=" + encodeURIComponent(data.loginToken)
+        : data.url;
+
+      go.href = target;
+      go.hidden = false;
+      document.getElementById("fine").textContent = data.loginToken
+        ? "Falls es nicht von selbst weitergeht, tippe auf den Knopf."
+        : "Melde dich mit deiner E-Mail-Adresse an — über „Passwort vergessen“ setzt du dein Passwort.";
+
+      if (data.loginToken) location.href = target;
+    }
+  </script>
+</body>
+</html>

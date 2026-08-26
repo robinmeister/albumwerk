@@ -20,6 +20,7 @@ import "./index.css";
 import { registerSW } from "virtual:pwa-register";
 
 import App from "./App";
+import { pb } from "./config/pocketbase";
 
 // Der Service Worker wird hier von Hand registriert statt vom PWA-Plugin in
 // jede HTML-Datei injiziert (`injectRegister: null` in vite.config.ts).
@@ -30,10 +31,34 @@ import App from "./App";
 // gehört ausschließlich in die App.
 registerSW({ immediate: true });
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
-    <Suspense fallback={null}>
-      <App />
-    </Suspense>
-  </React.StrictMode>
-);
+// Direkteinstieg aus dem Self-Service-Signup: die Control-Plane übergibt ein
+// kurzlebiges PocketBase-Token in der Adresszeile, damit der erste Login ohne
+// Passwort und ohne zweite E-Mail auskommt (saas/control/pb_public/warten.html).
+// Das Token wird sofort aus der URL entfernt, damit es nicht in Verlauf,
+// Lesezeichen oder Referrer landet. Schlägt es fehl, startet die App ganz
+// normal mit der Anmeldemaske.
+async function adoptHandoffToken(): Promise<void> {
+  const url = new URL(window.location.href);
+  const token = url.searchParams.get("authToken");
+  if (!token) return;
+
+  url.searchParams.delete("authToken");
+  window.history.replaceState({}, "", url.toString());
+
+  try {
+    pb.authStore.save(token, null);
+    await pb.collection("users").authRefresh();
+  } catch {
+    pb.authStore.clear();
+  }
+}
+
+adoptHandoffToken().finally(() => {
+  ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+    <React.StrictMode>
+      <Suspense fallback={null}>
+        <App />
+      </Suspense>
+    </React.StrictMode>
+  );
+});

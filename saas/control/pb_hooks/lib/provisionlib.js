@@ -104,7 +104,7 @@ function isHealthy(url) {
 
 // Schritt 5 aus provision.sh / bootstrap-instance.sh: SMTP + appURL setzen,
 // Fotografen-Account (isAdmin) anlegen, Passwort-Setzen-Mail auslösen.
-function bootstrapInstance(url, opsEmail, opsPass, customerEmail, customerName) {
+function bootstrapInstance(url, opsEmail, opsPass, customerEmail, customerName, sendWelcome) {
   const auth = $http.send({
     url: url + "/api/collections/_superusers/auth-with-password",
     method: "POST",
@@ -161,6 +161,12 @@ function bootstrapInstance(url, opsEmail, opsPass, customerEmail, customerName) 
     throw new Error("Fotografen-Account fehlgeschlagen (HTTP " + create.statusCode + ")");
   }
 
+  // Passwort-setzen-Mail nur auf dem CLI-Weg: dort ist sie der einzige Zugang.
+  // Beim Self-Service loggt die Warteseite den Kunden direkt ein (siehe
+  // instanceLoginToken) — eine Mail weniger, und das Onboarding hängt nicht am
+  // SMTP der gerade erst gebauten Instanz.
+  if (sendWelcome === false) return;
+
   const reset = $http.send({
     url: url + "/api/collections/users/request-password-reset",
     method: "POST",
@@ -171,6 +177,50 @@ function bootstrapInstance(url, opsEmail, opsPass, customerEmail, customerName) 
   if (reset.statusCode !== 204) {
     throw new Error("Willkommensmail fehlgeschlagen (HTTP " + reset.statusCode + ")");
   }
+}
+
+// Direkteinstieg ohne Passwort: die Control-Plane kennt den Ops-Superuser der
+// Instanz und lässt sich von PocketBase ein Nutzer-Token für den Fotografen
+// ausstellen. Die Warteseite übergibt es beim Sprung in die App.
+// Gilt bewusst kurz — wer es verpasst, kommt über "Passwort vergessen" rein.
+function instanceLoginToken(url, opsEmail, opsPass, customerEmail, seconds) {
+  const auth = $http.send({
+    url: url + "/api/collections/_superusers/auth-with-password",
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ identity: opsEmail, password: opsPass }),
+    timeout: 30,
+  });
+  if (auth.statusCode !== 200) {
+    throw new Error("Instanz-Login fehlgeschlagen (HTTP " + auth.statusCode + ")");
+  }
+  const token = auth.json.token;
+
+  const list = $http.send({
+    url: url + "/api/collections/users/records?perPage=1&filter=" +
+      encodeURIComponent('email="' + customerEmail + '"'),
+    headers: { "Authorization": token },
+    timeout: 30,
+  });
+  const items = (list.json || {}).items || [];
+  if (!items.length) throw new Error("Fotografen-Account nicht gefunden");
+
+  const imp = $http.send({
+    url: url + "/api/collections/users/impersonate/" + items[0].id,
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": token },
+    body: JSON.stringify({ duration: seconds || 1800 }),
+    timeout: 30,
+  });
+  if (imp.statusCode !== 200) {
+    throw new Error("Login-Token fehlgeschlagen (HTTP " + imp.statusCode + ")");
+  }
+  return imp.json.token;
+}
+
+// Öffentliche Adresse der Control-Plane (Bestätigungslinks, Warteseite).
+function controlUrl() {
+  return env("CONTROL_URL", "https://control." + env("SAAS_DOMAIN"));
 }
 
 // Einfache Control-Plane-Mail (nutzt das SMTP der Control-Plane-Instanz)
@@ -196,6 +246,8 @@ module.exports = {
   startInstance: startInstance,
   isHealthy: isHealthy,
   bootstrapInstance: bootstrapInstance,
+  instanceLoginToken: instanceLoginToken,
+  controlUrl: controlUrl,
   sendMail: sendMail,
   randomPassword: randomPassword,
 };
