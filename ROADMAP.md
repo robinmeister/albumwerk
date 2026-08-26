@@ -10,11 +10,16 @@
 
 ## ⏭️ Als Nächstes (Stand 2026-08-26)
 
-1. Phase 0 abschließen — die drei offenen Punkte sind reine Dashboard-Arbeit (SendGrid, Passwörter).
-2. Terminbuchung fertigstellen: Etappe 5 (Kalender-Import) + Etappe 6 (Abschluss) — siehe Phase 5.
-3. Business-Block starten: Gewerbe + Steuerberatung entscheiden die Abrechnung mit.
+Der SaaS-Weg ist technisch fertig: Registrierung, Provisionierung, Trial,
+Löschfristen, Speicherabrechnung und Stripe laufen auf dem VPS. Website und
+Registrierung stehen bewusst geschlossen. Was noch fehlt, ist **nicht Technik**:
 
-Die SaaS-Abnahme auf dem VPS ist seit 2026-08-26 durch (Phase 3).
+1. **Gewerbe anmelden** — blockiert die Stripe-Verifizierung, die selbst Tage braucht.
+2. **Rechtstexte kaufen und einsetzen** (AGB + AVV) — blockiert das Öffnen von Website und Registrierung.
+3. **Hetzner Storage Box** bestellen — bis dahin liegen die Backups auf derselben Platte wie die Daten.
+4. **A-Record** für `albumwerk.de` auf den VPS; `www` zeigt schon richtig.
+5. Phase 0 abschließen — reine Dashboard-Arbeit (SendGrid, Passwörter).
+6. Terminbuchung: Etappe 5 + 6 — siehe Phase 5.
 
 ---
 
@@ -56,10 +61,16 @@ Die SaaS-Abnahme auf dem VPS ist seit 2026-08-26 durch (Phase 3).
 - [x] Zentrale Backups (`backup-sync.sh` in `albumwerk-saas` + rclone) + Uptime-Kuma-Monitoring/Statusseite **gebaut** (Abnahme im Live-Betrieb siehe unten)
 - [x] Self-Service Signup + Trial (14 Tage, ohne Kreditkarte) — Control-Plane `control/` in `albumwerk-saas`, auf dem VPS end-to-end bis Status `trial` abgenommen
 - [x] **VPS-Abnahme (2026-08-26)**: Checkliste in das Runbook in `albumwerk-saas` §5 komplett durchlaufen — Provisioning, Kuma-Monitore + öffentliche Statusseite, Suspend/Resume, Self-Service-Signup, Backup-Sync inkl. Restore-Stichprobe, Trial-Erinnerung + -Ablauf, Deprovision. Vier dabei gefundene Fehler behoben (Coolify-URL aus Container-Sicht, Deploy-Timeout ab `updated`, SMTP der Control-Plane, `kuma-sync.py`)
-- [~] Abrechnung: vorbereitet (manueller Status-Schalter + Webhook-Stub). Entschieden: **Stripe, Kleinunternehmer §19**, 12 €/Monat inkl. 25 GB + 0,10 €/GB darüber — Umsetzung ist Stufe 3 des Onboarding-Ausbaus
+- [x] **Abrechnung**: Stripe-Abo (12 €/Monat inkl. 25 GB, 0,10 € je weiterem GB als Rechnungsposten), Checkout aus den Trial-Mails, signaturgeprüfter Webhook — im **Testmodus** fertig und durchgemessen. Live fehlen nur Gewerbe, Verifizierung und der Schlüsseltausch
 - [x] **Onboarding Stufe 1 — Funnel dicht (2026-08-26)**: Double-Opt-In vor dem Provisioning, Warteseite mit Statusabfrage, Direkteinstieg per Impersonate-Token (keine Passwort-Mail mehr), `MAX_TRIALS` mit Warteliste, Signup-Seite im Website-Design. Marketing-Website als Coolify-App auf demselben VPS (nginx-Image + Gitea-Actions-Deploy), live unter `www.albumwerk.de`. Prüfskript `test-signup.py` in `albumwerk-saas`, Kette im Browser end-to-end bewiesen. **Offen: A-Record für den Apex** — der liegt noch auf netcups Domainpark
-- [ ] **Onboarding Stufe 2 — rechtlich launchfähig** (*vorher darf nicht öffentlich geworben werden*): AGB-Seite, Zustimmungs-Checkbox mit Protokoll (Zeitpunkt, Textversion, IP), AVV als PDF zur Bestätigungsmail, Off-Site-Backups (Hetzner Storage Box statt lokalem Pfad), Löschjob Tag 30 mit Vorwarnung Tag 23 und Backup-Nachlauf bis Tag 60, `KEEP_DAYS` 14 → 60
-- [ ] **Onboarding Stufe 3 — Bezahlung**: Stripe im Testmodus, Speichermessung über `_data/storage`, Verbrauchsanzeige in der App, Warnmails bei 80 %/100 %
+- [~] **Onboarding Stufe 2 — rechtlich launchfähig** (*vorher darf nicht öffentlich geworben werden*)
+  - [x] Löschjob: Vorwarnung Tag 23, Löschung Tag 30, Backup-Nachlauf 30 Tage (`GRAVE_DAYS`; `KEEP_DAYS` bleibt bei 14 für aktive Kunden — 60 Tagessicherungen pro Kunde wären nicht bezahlbar)
+  - [x] Zustimmung beim Signup, serverseitig erzwungen, mit Protokoll aus Zeitpunkt, Textfassung und IP (`trustedProxy` nötig, sonst steht dort Traefik)
+  - [x] AGB- und AVV-Seite: technische Abschnitte ausgefüllt, rechtliche Boilerplate als Platzhalter
+  - [x] Website und Registrierung standardmäßig geschlossen (`SITE_MODE`, `SIGNUP_OPEN`)
+  - [ ] **Rechtstexte einsetzen** (gekaufte Vorlage) ← *Nutzer-Aktion*
+  - [ ] **Off-Site-Backups**: Hetzner Storage Box bestellen, dann ist es eine `.env`-Zeile ← *Nutzer-Aktion*
+- [x] **Onboarding Stufe 3 — Bezahlung**: Speichermessung über `_data/storage` (host-seitig, stündlich), Verbrauchsanzeige in der Seitenleiste, Warnmails bei 80 %/100 %, Stripe-Abo im Testmodus. Dabei gefunden: Stripes **Managed Payments** ist auf neuen Konten voreingestellt und hätte 19 % USt. aufgeschlagen — für Kleinunternehmer nach § 19 falsch ausgewiesenes Geld (§ 14c UStG). Muss zusammen mit `automatic_tax` abgeschaltet bleiben
 
 ### Phase 5 — Terminbuchung (aktive Baustelle)
 
