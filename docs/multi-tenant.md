@@ -10,7 +10,7 @@
 Bewusste Entscheidung vom 2026-07-08: jede Kundin bekommt einen eigenen
 Container (eigene SQLite-DB, eigener Datei-Speicher, eigenes Branding über das
 Settings-Singleton). Provisionierung, SSL, Monitoring und Backups sind seit
-Phase 3 automatisiert (`saas/`, Coolify, Uptime Kuma, rclone-Sync).
+Phase 3 automatisiert (Repo `albumwerk-saas`, Coolify, Uptime Kuma, rclone-Sync).
 
 **Reale Betriebskosten pro Kunde (Hetzner, Stand heute):**
 
@@ -31,7 +31,7 @@ Das heutige Modell skaliert linear, ohne Code-Umbau:
 1. **Mehr/größere VPS**: Coolify verwaltet mehrere Server; `provision.sh`
    übergibt `server_uuid` pro App — neue Kunden auf den am wenigsten
    ausgelasteten Server zu legen ist eine Kleinigkeit (Auswahl-Logik in
-   `saas/provision/provision.sh` bzw. `provisionlib.js`).
+   `provision/provision.sh` in `albumwerk-saas` bzw. `provisionlib.js`).
 2. **Updates in O(n)** sind durch `rollout.yml` (CI) bereits gestaffelt
    automatisiert; die Dauer wächst linear, bleibt aber unbeaufsichtigt.
 3. Zentrale Backups/Monitoring skalieren mit (rclone-Sync iteriert Volumes,

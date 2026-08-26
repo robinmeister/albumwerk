@@ -33,7 +33,7 @@ registerSW({ immediate: true });
 
 // Direkteinstieg aus dem Self-Service-Signup: die Control-Plane übergibt ein
 // kurzlebiges PocketBase-Token in der Adresszeile, damit der erste Login ohne
-// Passwort und ohne zweite E-Mail auskommt (saas/control/pb_public/warten.html).
+// Passwort und ohne zweite E-Mail auskommt (albumwerk-saas: control/pb_public/warten.html).
 // Das Token wird sofort aus der URL entfernt, damit es nicht in Verlauf,
 // Lesezeichen oder Referrer landet. Schlägt es fehl, startet die App ganz
 // normal mit der Anmeldemaske.

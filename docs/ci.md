@@ -35,7 +35,7 @@ Drei Workflows in `.gitea/workflows/`:
    - `REGISTRY_USER` — Gitea-Benutzername
    - `REGISTRY_TOKEN` — Personal Access Token mit `package:write`
      (Gitea → Settings → Applications → Generate Token)
-   - `COOLIFY_URL`, `COOLIFY_TOKEN` — nur für `rollout.yml` (wie `saas/.env`)
+   - `COOLIFY_URL`, `COOLIFY_TOKEN` — nur für `rollout.yml` (wie der `.env` im Repo `albumwerk-saas`)
 
 ## Release-Ablauf
 
@@ -50,8 +50,8 @@ Manueller Fallback ohne CI: `make release` (macht dasselbe lokal).
 **Gestaffelt ausrollen:**
 
 1. Gitea → Actions → „Rollout" → Run workflow: neues Tag + **nur 1–2
-   Test-Instanz-UUIDs** (aus `saas/provision/list.sh`).
+   Test-Instanz-UUIDs** (aus `provision/list.sh` in `albumwerk-saas`).
 2. Instanzen prüfen (Login, Album, Logs in Coolify).
 3. Workflow erneut mit den restlichen UUIDs ausführen.
-4. `APP_TAG` in `saas/.env` nachziehen, damit neue Kunden direkt die neue
+4. `APP_TAG` in der `.env` im Repo `albumwerk-saas` nachziehen, damit neue Kunden direkt die neue
    Version bekommen.

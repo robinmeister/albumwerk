@@ -18,7 +18,6 @@ pb_data/
 
 # instance credentials (copied from .env.example)
 .env
-saas/.env
 
 # backups created by `make backup`
 backup-*.tar.gz
