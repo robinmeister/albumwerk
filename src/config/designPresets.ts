@@ -39,7 +39,13 @@ export interface DesignPreset {
 // die Markierungsfarbe Markierung bleibt und nie zur Fläche wird.
 function flachesRegister(tinte: string) {
   return {
-    heading: { base: { fontWeight: "600", letterSpacing: "-0.035em" } },
+    heading: {
+      base: { fontWeight: "600", letterSpacing: "-0.035em" },
+      "level:3": { fontSize: "var(--font-size-3xl)" },
+      "level:4": { fontSize: "var(--font-size-2xl)" },
+      "level:5": { fontSize: "var(--font-size-xl)" },
+      "level:6": { fontSize: "var(--font-size-lg)" },
+    },
     button: { base: { borderRadius: "0", boxShadow: "none", backgroundColor: tinte } },
     card: { base: { boxShadow: "none", borderWidth: "1px" } },
   };
@@ -95,7 +101,7 @@ export const DESIGN_PRESETS: Record<DesignPresetKey, DesignPreset> = {
     name: "Passepartout",
     description: "Das fertige Album. Karton, Buchleinen, tiefe Passepartouts.",
     defaults: {
-      primaryColor: "#5a2231",
+      primaryColor: "#5e3128",
       secondaryColor: "#17181a",
       fontFamily: "newsreader",
       borderRadius: 0,
@@ -110,7 +116,13 @@ export const DESIGN_PRESETS: Record<DesignPresetKey, DesignPreset> = {
       bodyFamily: "newsreader",
       monoFamily: "public-sans",
       components: {
-        heading: { base: { fontWeight: "400", letterSpacing: "0" } },
+        heading: {
+          base: { fontWeight: "400", letterSpacing: "0" },
+          "level:3": { fontSize: "var(--font-size-3xl)" },
+          "level:4": { fontSize: "var(--font-size-2xl)" },
+          "level:5": { fontSize: "var(--font-size-xl)" },
+          "level:6": { fontSize: "var(--font-size-lg)" },
+        },
         button: { base: { borderRadius: "0", boxShadow: "none", backgroundColor: "#17181a" } },
         card: { base: { boxShadow: "none", borderWidth: "1px" } },
       },
