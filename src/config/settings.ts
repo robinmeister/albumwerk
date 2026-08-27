@@ -4,7 +4,14 @@ import { pb } from "./pocketbase";
 // A single record with a fixed id holds all instance branding/configuration.
 export const SETTINGS_RECORD_ID = "appsettings0001";
 
-export type FontKey = "inter" | "lora" | "playfair" | "montserrat";
+// Was Admins im Branding-Formular auswählen können.
+export type FontKey =
+  | "inter" | "lora" | "playfair" | "montserrat"
+  | "familjen-grotesk" | "public-sans" | "instrument-serif" | "newsreader";
+
+// Obermenge: enthält zusätzlich reine Register-Schriften, die als
+// Fließtextschrift nie zur Wahl stehen (Auszeichnung, Maßangaben).
+export type FontStackKey = FontKey | "martian-mono";
 export type ThemeMode = "light" | "dark" | "auto";
 
 export interface AppSettings {

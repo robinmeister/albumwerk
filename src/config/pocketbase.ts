@@ -3,7 +3,7 @@ import PocketBase from 'pocketbase';
 // In production PocketBase serves the built SPA itself (pb_public), so the API
 // lives on the same origin. For local dev point VITE_PB_URL at your instance.
 const baseUrl: string =
-  import.meta.env.VITE_PB_URL || window.location.origin;
+  import.meta.env.VITE_PB_URL || (typeof window !== 'undefined' ? window.location.origin : '');
 
 export const pb = new PocketBase(baseUrl);
 

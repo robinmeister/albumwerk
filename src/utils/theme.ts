@@ -1,17 +1,23 @@
 import { defineTheme, type DefinedTheme, type ThemeMode } from "@astryxdesign/core";
 import { neutralTheme } from "@astryxdesign/theme-neutral";
 
-import { AppSettings, DEFAULT_SETTINGS, FontKey } from "../config/settings";
+import { AppSettings, DEFAULT_SETTINGS, FontStackKey } from "../config/settings";
 
 // Self-hosted font stacks; the families are loaded via @fontsource imports in
 // main.tsx so no external font CDN is contacted (DSGVO). Split into primary
 // family + fallbacks for Astryx's typography config.
-type FontStack = { family: string; fallbacks: string };
-const FONT_STACKS: Record<FontKey, FontStack> = {
+export type FontStack = { family: string; fallbacks: string };
+
+export const FONT_STACKS: Record<FontStackKey, FontStack> = {
   inter: { family: "Inter", fallbacks: '"Helvetica", "Arial", sans-serif' },
   lora: { family: "Lora", fallbacks: '"Georgia", serif' },
   playfair: { family: "Playfair Display", fallbacks: '"Georgia", serif' },
   montserrat: { family: "Montserrat", fallbacks: '"Helvetica", "Arial", sans-serif' },
+  "familjen-grotesk": { family: "Familjen Grotesk", fallbacks: '"Helvetica", "Arial", sans-serif' },
+  "public-sans": { family: "Public Sans", fallbacks: '"Helvetica", "Arial", sans-serif' },
+  "martian-mono": { family: "Martian Mono", fallbacks: 'ui-monospace, "Menlo", monospace' },
+  "instrument-serif": { family: "Instrument Serif", fallbacks: '"Georgia", serif' },
+  newsreader: { family: "Newsreader", fallbacks: '"Georgia", serif' },
 };
 
 const HEX_COLOR = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;

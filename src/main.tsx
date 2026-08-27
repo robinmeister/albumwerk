@@ -15,6 +15,14 @@ import "@fontsource/playfair-display/700.css";
 import "@fontsource/montserrat/400.css";
 import "@fontsource/montserrat/600.css";
 import "@fontsource/montserrat/700.css";
+import "@fontsource/familjen-grotesk/500.css";
+import "@fontsource/familjen-grotesk/600.css";
+import "@fontsource/public-sans/400.css";
+import "@fontsource/public-sans/600.css";
+import "@fontsource/martian-mono/400.css";
+import "@fontsource/instrument-serif/400.css";
+import "@fontsource/newsreader/400.css";
+import "@fontsource/newsreader/600.css";
 import "./index.css";
 
 import { registerSW } from "virtual:pwa-register";

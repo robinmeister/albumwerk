@@ -1,5 +1,8 @@
 // Typprüfung für die Vitest-Suite. Ausgeführt über `npm run test:check`.
 {
   "extends": "./tsconfig.base.json",
-  "include": ["tests/**/*.ts", "vitest.config.ts"]
+  "compilerOptions": {
+    "types": ["vite/client"]
+  },
+  "include": ["tests/**/*.ts", "vitest.config.ts", "src/vite-env.d.ts"]
 }
