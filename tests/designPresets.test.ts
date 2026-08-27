@@ -230,3 +230,29 @@ describe("buildAstryxTheme mit Register", () => {
     },
   );
 });
+
+const componentsVon = (theme: unknown) =>
+  (theme as { components: Record<string, Record<string, Record<string, string>>> }).components;
+
+describe("buildAstryxTheme: Component-Overrides aus dem Register", () => {
+  // Regressionswächter: die level:3-6 Overrides leben in components, nicht
+  // in tokens — die Snapshot-Tests oben sehen sie nicht. Genau das ließ sie
+  // unbemerkt verschwinden. Prüft das gebaute Theme, nicht den Katalog
+  // direkt, damit ein Bruch in der Verdrahtung (buildAstryxTheme) auch
+  // auffällt.
+  // Astryx' neutralTheme definiert level:3-6 selbst (mit der gestauchten
+  // Standard-Fontsize) — der Schlüssel existiert also so oder so. Ohne
+  // unseren Override würde hier `var(--text-heading-6-size)` &Co. stehen
+  // statt unserer Werte, deshalb auf den konkreten fontSize-Wert prüfen,
+  // nicht nur auf toBeDefined().
+  it.each(["kontaktbogen", "riss", "passepartout"] as const)(
+    "behält die Überschriften-Level-Overrides von %s im gebauten Theme",
+    (key) => {
+      const heading = componentsVon(buildAstryxTheme({ ...DEFAULT_SETTINGS, designPreset: key })).heading;
+      expect(heading["level:3"]?.fontSize, key).toBe("var(--font-size-3xl)");
+      expect(heading["level:4"]?.fontSize, key).toBe("var(--font-size-2xl)");
+      expect(heading["level:5"]?.fontSize, key).toBe("var(--font-size-xl)");
+      expect(heading["level:6"]?.fontSize, key).toBe("var(--font-size-lg)");
+    },
+  );
+});
