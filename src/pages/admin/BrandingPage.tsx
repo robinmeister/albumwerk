@@ -18,20 +18,28 @@ import Page from "../../components/layout/Page";
 import { pb } from "../../config/pocketbase";
 import {
   AppSettings,
+  DesignPresetKey,
   FontKey,
+  OverridableField,
   SETTINGS_RECORD_ID,
   ThemeMode,
   settingsFileUrl,
 } from "../../config/settings";
 import { useSettings } from "../../context/SettingsContext";
 import { buildAstryxTheme, themeModeProp } from "../../utils/theme";
+import { applyPreset, clearOverride, isOverridden, setOverride } from "../../utils/themeOverrides";
 import PaymentSettings from "../../features/Settings/components/PaymentSettings";
+import PresetPicker from "../../features/Settings/components/PresetPicker";
 
 const FONT_OPTIONS: { value: FontKey; label: string }[] = [
   { value: "inter", label: "Inter (modern, serifenlos)" },
   { value: "lora", label: "Lora (klassisch, Serifen)" },
   { value: "playfair", label: "Playfair Display (elegant, Serifen)" },
   { value: "montserrat", label: "Montserrat (geometrisch, serifenlos)" },
+  { value: "familjen-grotesk", label: "Familjen Grotesk (kantig, serifenlos)" },
+  { value: "public-sans", label: "Public Sans (nüchtern, serifenlos)" },
+  { value: "instrument-serif", label: "Instrument Serif (hoher Kontrast, Serifen)" },
+  { value: "newsreader", label: "Newsreader (Lesetext, Serifen)" },
 ];
 
 const MODE_OPTIONS: { value: ThemeMode; label: string }[] = [
@@ -76,6 +84,7 @@ const f = stylex.create({
   colorField: { display: "flex", flexDirection: "column", gap: 4 },
   colorInput: { width: "100%", height: 40, borderRadius: "var(--radius-element)", border: "1px solid var(--color-border)", background: "none", cursor: "pointer", padding: 2 },
   sliderWrap: { display: "flex", flexDirection: "column", gap: 6 },
+  presetWrap: { marginBottom: 16 },
   ol: { paddingLeft: 20, margin: "8px 0 0", display: "flex", flexDirection: "column", gap: 6 },
   layout: { display: "grid", gridTemplateColumns: { default: "1fr", "@media (min-width: 900px)": "8fr 4fr" }, gap: 16, alignItems: "start" },
   sections: { display: "flex", flexDirection: "column", gap: 16 },
@@ -232,6 +241,16 @@ export default function BrandingPage(): ReactElement {
 
   const set = (patch: Partial<AppSettings>) => setDraft((d) => ({ ...d, ...patch }));
 
+  // Zeigt neben einem der vier Register-Felder, ob der Wert vom Preset stammt
+  // oder bewusst gesetzt wurde — und im zweiten Fall einen Weg zurück.
+  const Herkunft = ({ feld }: { feld: OverridableField }): ReactElement =>
+    isOverridden(draft, feld) ? (
+      <Button variant="ghost" label="Auf Preset zurücksetzen"
+        onClick={() => setDraft((d) => clearOverride(d, feld))} />
+    ) : (
+      <Text type="supporting" color="secondary">vom Preset</Text>
+    );
+
   const save = async (markCompleted = false) => {
     setSaving(true);
     try {
@@ -239,10 +258,11 @@ export default function BrandingPage(): ReactElement {
       const textFields: (keyof AppSettings)[] = [
         "businessName", "shortName", "tagline", "primaryColor", "secondaryColor",
         "fontFamily", "themeMode", "contactEmail", "orderNotificationEmail",
-        "websiteUrl", "customDomain", "currency", "watermarkText",
+        "websiteUrl", "customDomain", "currency", "watermarkText", "designPreset",
       ];
       textFields.forEach((k) => fd.append(k, String(draft[k] ?? "")));
       fd.append("borderRadius", String(draft.borderRadius ?? 8));
+      fd.append("themeOverrides", JSON.stringify(draft.themeOverrides ?? []));
       fd.append("watermarkOpacity", String(draft.watermarkOpacity ?? 40));
       fd.append("previewMaxSize", String(draft.previewMaxSize ?? 1200));
       if (markCompleted || draft.setupCompleted) fd.append("setupCompleted", "true");
@@ -304,6 +324,9 @@ export default function BrandingPage(): ReactElement {
 
   const brandingSection = (
     <SectionCard title="Branding" subtitle="Name, Logo, Farben und Schrift" helpSlug="branding-einrichten">
+      <div {...stylex.props(f.presetWrap)}>
+        <PresetPicker settings={draft} onChange={(key: DesignPresetKey) => setDraft((d) => applyPreset(d, key))} />
+      </div>
       <div {...stylex.props(f.grid2)}>
         <div {...stylex.props(f.full)}>
           <TextInput width="100%" label="Name des Geschäfts" value={draft.businessName}
@@ -311,8 +334,12 @@ export default function BrandingPage(): ReactElement {
         </div>
         <TextInput width="100%" label="Kurzname (App)" value={draft.shortName}
           onChange={(v) => set({ shortName: v.slice(0, 12) })} />
-        <Selector width="100%" label="Schriftart" value={draft.fontFamily}
-          options={FONT_OPTIONS} onChange={(v) => v && set({ fontFamily: v as FontKey })} />
+        <div {...stylex.props(f.sliderWrap)}>
+          <Selector width="100%" label="Schriftart" value={draft.fontFamily}
+            options={FONT_OPTIONS}
+            onChange={(v) => v && setDraft((d) => setOverride(d, "fontFamily", v as FontKey))} />
+          <Herkunft feld="fontFamily" />
+        </div>
         <Selector width="100%" label="Erscheinungsbild" value={draft.themeMode}
           options={MODE_OPTIONS} onChange={(v) => v && set({ themeMode: v as ThemeMode })} />
         <div {...stylex.props(f.full)}>
@@ -325,12 +352,21 @@ export default function BrandingPage(): ReactElement {
         <ImageDrop label="Favicon (optional)" file={files.favicon}
           currentUrl={settingsFileUrl(settings, "favicon")}
           onFile={(file) => setFiles((s) => ({ ...s, favicon: file }))} />
-        <ColorField label="Primärfarbe" value={draft.primaryColor} onChange={(v) => set({ primaryColor: v })} />
-        <ColorField label="Sekundärfarbe" value={draft.secondaryColor} onChange={(v) => set({ secondaryColor: v })} />
+        <div {...stylex.props(f.sliderWrap)}>
+          <ColorField label="Primärfarbe" value={draft.primaryColor}
+            onChange={(v) => setDraft((d) => setOverride(d, "primaryColor", v))} />
+          <Herkunft feld="primaryColor" />
+        </div>
+        <div {...stylex.props(f.sliderWrap)}>
+          <ColorField label="Sekundärfarbe" value={draft.secondaryColor}
+            onChange={(v) => setDraft((d) => setOverride(d, "secondaryColor", v))} />
+          <Herkunft feld="secondaryColor" />
+        </div>
         <div {...stylex.props(f.sliderWrap, f.full)}>
           <Text type="supporting" color="secondary">Eckenradius: {draft.borderRadius}px</Text>
           <Slider label="Eckenradius" isLabelHidden min={0} max={24}
-            value={draft.borderRadius} onChange={(v) => set({ borderRadius: v })} />
+            value={draft.borderRadius} onChange={(v) => setDraft((d) => setOverride(d, "borderRadius", v))} />
+          <Herkunft feld="borderRadius" />
         </div>
       </div>
     </SectionCard>
