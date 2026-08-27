@@ -28,6 +28,12 @@ export interface DesignPreset {
   };
 }
 
+// Astryx' Überschriftenskala ist am unteren Ende gestaucht: level 5 rendert
+// 12px, level 6 noch kleiner — also KLEINER als der Fließtext (14px)
+// darunter. Die App nutzt fast nur 4/5/6 (7/17/36 Stellen), damit stand auf
+// fast jeder Seite die Überschrift unter ihrem eigenen Text. Hier einmal
+// geradegerückt statt an 60 Aufrufstellen.
+//
 // Gemeinsam für kontaktbogen und riss: flache Flächen, rechteckige Ecken,
 // straffe Überschriften. Die Knopffüllung setzt jedes Register selbst, damit
 // die Markierungsfarbe Markierung bleibt und nie zur Fläche wird.

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { FONT_STACKS } from "../src/utils/theme";
+import { buildAstryxTheme, FONT_STACKS } from "../src/utils/theme";
 import { DESIGN_PRESETS, getPreset } from "../src/config/designPresets";
 import {
   applyPreset, clearOverride, isOverridden, setOverride, type ThemeFields,
@@ -180,4 +180,53 @@ describe("Settings-Normalisierung", () => {
     expect(settings.designPreset).toBe("kontaktbogen");
     expect(settings.themeOverrides).toEqual([]);
   });
+});
+
+const tokensVon = (theme: unknown) =>
+  (theme as { tokens: Record<string, string> }).tokens;
+
+describe("buildAstryxTheme mit Register", () => {
+  it("nimmt die Flächen aus dem gewählten Register", () => {
+    const t = buildAstryxTheme({ ...DEFAULT_SETTINGS, designPreset: "riss" });
+    // defineTheme wandelt [light, dark]-Tupel in light-dark() um (siehe
+    // @astryxdesign/core/src/theme/defineTheme.ts) — kein rohes Tupel mehr.
+    expect(tokensVon(t)["--color-background-body"]).toEqual("light-dark(#dfe7eb, #0d3550)");
+  });
+
+  it("nutzt bei geerbter Schrift das Paar des Registers", () => {
+    const t = buildAstryxTheme({ ...DEFAULT_SETTINGS, designPreset: "kontaktbogen" });
+    const tokens = tokensVon(t);
+    expect(String(tokens["--font-family-heading"])).toContain("Familjen Grotesk");
+    expect(String(tokens["--font-family-body"])).toContain("Public Sans");
+    expect(String(tokens["--font-family-code"])).toContain("Martian Mono");
+  });
+
+  it("nutzt bei gesetzter Schrift eine Familie für alles", () => {
+    const t = buildAstryxTheme({
+      ...DEFAULT_SETTINGS,
+      designPreset: "kontaktbogen",
+      fontFamily: "lora",
+      themeOverrides: ["fontFamily"],
+    });
+    const tokens = tokensVon(t);
+    expect(String(tokens["--font-family-heading"])).toContain("Lora");
+    expect(String(tokens["--font-family-body"])).toContain("Lora");
+  });
+
+  it("fällt bei unbekanntem Register auf kontaktbogen zurück", () => {
+    const t = buildAstryxTheme({
+      ...DEFAULT_SETTINGS,
+      designPreset: "gibtesnicht" as never,
+    });
+    expect(tokensVon(t)["--color-background-body"]).toEqual("light-dark(#e4e1d6, #191814)");
+  });
+
+  // Fängt versehentliche Token-Dreher, die kein gezielter Test abdeckt.
+  it.each(["kontaktbogen", "riss", "passepartout"] as const)(
+    "hält die Tokens von %s stabil",
+    (key) => {
+      const t = buildAstryxTheme({ ...DEFAULT_SETTINGS, designPreset: key });
+      expect(tokensVon(t)).toMatchSnapshot();
+    },
+  );
 });

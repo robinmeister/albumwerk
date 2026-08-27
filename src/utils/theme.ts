@@ -2,6 +2,8 @@ import { defineTheme, type DefinedTheme, type ThemeMode } from "@astryxdesign/co
 import { neutralTheme } from "@astryxdesign/theme-neutral";
 
 import { AppSettings, DEFAULT_SETTINGS, FontStackKey } from "../config/settings";
+import { getPreset } from "../config/designPresets";
+import { isOverridden } from "./themeOverrides";
 
 // Self-hosted font stacks; the families are loaded via @fontsource imports in
 // main.tsx so no external font CDN is contacted (DSGVO). Split into primary
@@ -59,61 +61,43 @@ export function buildAstryxTheme(settings: AppSettings): DefinedTheme {
     settings.secondaryColor,
     DEFAULT_SETTINGS.secondaryColor,
   );
-  const font = FONT_STACKS[settings.fontFamily] ?? FONT_STACKS[DEFAULT_SETTINGS.fontFamily];
+
+  const preset = getPreset(settings.designPreset);
   const radiusPx = Number.isFinite(settings.borderRadius)
     ? Math.min(Math.max(settings.borderRadius, 0), 32)
-    : DEFAULT_SETTINGS.borderRadius;
+    : preset.defaults.borderRadius;
 
-  // Custom / non-core token names aren't in Astryx's TokenName union, so the
-  // token map is built loosely and cast at the call site.
+  // Schriftregel (docs/design-presets.md): geerbt -> das Paar des Registers,
+  // gesetzt -> eine Familie für alles, wie vor den Presets.
+  const eigeneSchrift = isOverridden(settings, "fontFamily");
+  const heading = eigeneSchrift
+    ? FONT_STACKS[settings.fontFamily]
+    : FONT_STACKS[preset.register.headingFamily];
+  const body = eigeneSchrift
+    ? FONT_STACKS[settings.fontFamily]
+    : FONT_STACKS[preset.register.bodyFamily];
+  const mono = FONT_STACKS[preset.register.monoFamily];
+
   const tokens: Record<string, string | [string, string]> = {
-    // brand secondary accent (custom token consumed by a handful of components)
     "--color-brand-secondary": secondary,
-    // instance corner radius drives interactive elements + containers
     "--radius-element": `${radiusPx}px`,
     "--radius-container": `${radiusPx}px`,
-    // near-monochrome surfaces matching the current editorial palette [light, dark]
-    "--color-background-body": ["#fafafa", "#0e0e0e"],
-    "--color-background-surface": ["#ffffff", "#161616"],
-    "--color-background-card": ["#ffffff", "#161616"],
+    "--color-background-body": preset.register.surfaces.body,
+    "--color-background-surface": preset.register.surfaces.surface,
+    "--color-background-card": preset.register.surfaces.card,
+    "--font-family-code": `"${mono.family}", ${mono.fallbacks}`,
   };
 
   return defineTheme({
-    name: "albumwerk",
+    name: `albumwerk-${preset.key}`,
     extends: neutralTheme,
     color: { accent: primary },
     typography: {
-      body: { family: font.family, fallbacks: font.fallbacks },
-      heading: { family: font.family, fallbacks: font.fallbacks },
+      body: { family: body.family, fallbacks: body.fallbacks },
+      heading: { family: heading.family, fallbacks: heading.fallbacks },
     },
     tokens: tokens as DefineThemeTokens,
-    components: {
-      // large, light headlines with tight tracking — editorial/portfolio look
-      //
-      // Astryx' Überschriftenskala ist am unteren Ende gestaucht: level 5
-      // rendert 12px, level 6 noch kleiner — also KLEINER als der Fließtext
-      // (14px) darunter. Die App nutzt fast nur 4/5/6 (7/17/36 Stellen), damit
-      // stand auf fast jeder Seite die Überschrift unter ihrem eigenen Text.
-      // Hier einmal geradegerückt statt an 60 Aufrufstellen.
-      heading: {
-        base: { fontWeight: "300", letterSpacing: "-0.02em" },
-        "level:3": { fontSize: "var(--font-size-3xl)" }, // 29px  Seitentitel groß
-        "level:4": { fontSize: "var(--font-size-2xl)" }, // 24px  Seitentitel
-        "level:5": { fontSize: "var(--font-size-xl)" },  // 20px  Kartentitel
-        "level:6": { fontSize: "var(--font-size-lg)" },  // 17px  Abschnitt
-      },
-      // flache Knöpfe ohne Schlagschatten. Die Rundung folgt der Instanz-
-      // Einstellung: als feste Pille (9999px) standen in einem Formular drei
-      // verschiedene Rundungen übereinander — Karte, Feld, Knopf.
-      // Pillen zurück: borderRadius wieder auf "9999px".
-      button: {
-        base: { borderRadius: "var(--radius-element)", paddingInline: "20px", boxShadow: "none" },
-      },
-      // flat, hairline-bordered cards
-      card: {
-        base: { boxShadow: "none", borderWidth: "1px" },
-      },
-    },
+    components: preset.register.components,
   });
 }
 
