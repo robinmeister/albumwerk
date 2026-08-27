@@ -182,8 +182,22 @@ Backfill des vorhandenen Datensatzes:
 Wer nie etwas eingestellt hat, bekommt also das neue Design; wer bewusst
 Farben gesetzt hat, behält sie.
 
-`down()` setzt die alten Voreinstellungen zurück und entfernt die beiden
-Felder samt der neuen `fontFamily`-Werte.
+`down()` entfernt die beiden Felder samt der neuen `fontFamily`-Werte und
+setzt die alten Voreinstellungen **nur für Felder zurück, die nicht in
+`themeOverrides` stehen**.
+
+**Korrigiert am 2026-08-27 nach dem Task-4-Review.** Ursprünglich sollte
+`down()` alle vier Werte bedingungslos zurücksetzen. Das ist Datenverlust:
+`up()` bewahrt einen bewusst gesetzten Wert gerade deshalb, weil er bewusst
+ist — ihn beim Rollback zu überschreiben macht aus einer Rücknahme eine
+Löschung. Schlimmer noch, `down()` entfernt `themeOverrides`, also die
+einzige Aufzeichnung darüber, welche Felder bewusst waren; ein danach
+erneut laufendes `up()` liest die überschriebene Marken­farbe als „nie
+konfiguriert" und ersetzt sie ein zweites Mal.
+
+Einzige Ausnahme ist `fontFamily`: steht dort eine der neu hinzugekommenen
+Familien, muss sie zurückgesetzt werden, sonst ist der Datensatz gegen die
+wieder verengte Auswahlliste ungültig und scheitert beim nächsten Speichern.
 
 `DEFAULT_SETTINGS` in `src/config/settings.ts` wird auf die
 kontaktbogen-Werte gezogen: `designPreset: "kontaktbogen"`,
