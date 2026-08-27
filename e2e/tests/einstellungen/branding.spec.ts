@@ -48,3 +48,39 @@ test("Fotograf ändert den Namen des Geschäfts", async ({ page, pb, anmelden })
   const settings = await pb.get("settings", "appsettings0001");
   expect(settings.businessName).toBe(NEUER_NAME);
 });
+
+test("Fotograf wechselt das Design-Register und es überlebt den Neuladen", async ({ page, anmelden }) => {
+  await anmelden(page, DEMO_ADMIN.email, DEMO_ADMIN.password);
+  await page.goto("/branding");
+
+  // document.body selbst trägt keine Hintergrundfarbe — die AppShell malt sie
+  // auf ihren eigenen Wurzel-Container. Die Seitenleiste (<aside>, Landmark
+  // "complementary") ist ein stabiler, IDs-freier Ankerpunkt dafür und ihre
+  // Fläche (--color-background-surface) unterscheidet sich zwischen den
+  // Registern tatsächlich (Kontaktbogen #edeae1 vs. Riss #e9eef1 im Hellmodus).
+  const seitenleiste = () =>
+    page.getByRole("complementary").evaluate((el) => getComputedStyle(el).backgroundColor);
+  const vorher = await seitenleiste();
+
+  await page.getByTestId("preset:riss").click();
+  // exact: die Zahlungs-Abschnitte haben Knöpfe namens "Speichern & prüfen",
+  // ein /Speichern/-Regex greift den falschen (und deaktivierten) davon.
+  await page.getByRole("button", { name: "Speichern", exact: true }).click();
+  await expect(page.getByText("Einstellungen gespeichert")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByTestId("preset:riss")).toHaveAttribute("aria-pressed", "true");
+  expect(await seitenleiste()).not.toBe(vorher);
+});
+
+test("eine eigene Farbe überlebt den Registerwechsel", async ({ page, anmelden }) => {
+  await anmelden(page, DEMO_ADMIN.email, DEMO_ADMIN.password);
+  await page.goto("/branding");
+
+  const abschnitt = page.getByTestId("abschnitt:Branding");
+  await abschnitt.getByLabel("Primärfarbe").fill("#0066ff");
+  await page.getByTestId("preset:passepartout").click();
+
+  await expect(abschnitt.getByLabel("Primärfarbe")).toHaveValue("#0066ff");
+  await expect(abschnitt.getByRole("button", { name: "Auf Preset zurücksetzen" }).first()).toBeVisible();
+});
