@@ -1,7 +1,10 @@
 // Typprüfung für die Vitest-Suite. Ausgeführt über `npm run test:check`.
+// Braucht zusätzlich die DOM-Typen: Tests importieren aus src/config/pocketbase.ts,
+// das unter Node.js (vitest) auf window zugreift.
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
     "types": ["vite/client"]
   },
   "include": ["tests/**/*.ts", "vitest.config.ts", "src/vite-env.d.ts"]
