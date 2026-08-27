@@ -214,6 +214,15 @@ Component-Overrides, Schriftrollen — kommt zusätzlich aus
 Unbekannter Preset-Key fällt auf `kontaktbogen` zurück, damit ein Downgrade
 nicht auf einer ungestylten Seite endet.
 
+**Der Theme-Name muss die Werte widerspiegeln, nicht nur das Register.**
+Astryx spritzt das erzeugte CSS einmal pro `theme.name` ein und merkt sich das
+in einem modulweiten `Set` (`Theme.tsx:98,117-120`); wer denselben Namen mit
+anderen Werten mountet, bekommt stillschweigend das zuerst eingespritzte CSS.
+Vor diesem Vorhaben hiess das Theme konstant `"albumwerk"` — deshalb hat die
+Live-Vorschau auf der Branding-Seite nie den Entwurf gezeigt, sondern immer
+das gespeicherte Theme. Der Name enthält daher jetzt einen Fingerabdruck der
+Werte, die das CSS bestimmen. Aufgefallen im Task-6-Review.
+
 **Geprüft am 2026-08-27 (ersetzt das ursprünglich offene Risiko).** Astryx
 normalisiert die Helligkeit des Akzents und behält nur den Farbton. Gemessen
 über `defineTheme({ color: { accent } })`:
