@@ -126,6 +126,20 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
   );
 }
 
+// Zeigt neben einem der vier Register-Felder, ob der Wert vom Preset stammt
+// oder bewusst gesetzt wurde — und im zweiten Fall einen Weg zurück. Auf
+// Modulebene definiert (statt innerhalb von BrandingPage), damit die
+// Komponente bei jedem Tastendruck im Formular ihre Identität behält — sonst
+// hängt React sie bei jedem Re-Render neu ein und der Fokus (z. B. auf dem
+// "Auf Preset zurücksetzen"-Knopf) springt zurück zum document.body.
+function Herkunft({ istGesetzt, onReset }: { istGesetzt: boolean; onReset: () => void }): ReactElement {
+  return istGesetzt ? (
+    <Button variant="ghost" label="Auf Preset zurücksetzen" onClick={onReset} />
+  ) : (
+    <Text type="supporting" color="secondary">vom Preset</Text>
+  );
+}
+
 function ImageDrop(props: {
   label: string;
   currentUrl: string;
@@ -240,16 +254,7 @@ export default function BrandingPage(): ReactElement {
   }, [loaded]);
 
   const set = (patch: Partial<AppSettings>) => setDraft((d) => ({ ...d, ...patch }));
-
-  // Zeigt neben einem der vier Register-Felder, ob der Wert vom Preset stammt
-  // oder bewusst gesetzt wurde — und im zweiten Fall einen Weg zurück.
-  const Herkunft = ({ feld }: { feld: OverridableField }): ReactElement =>
-    isOverridden(draft, feld) ? (
-      <Button variant="ghost" label="Auf Preset zurücksetzen"
-        onClick={() => setDraft((d) => clearOverride(d, feld))} />
-    ) : (
-      <Text type="supporting" color="secondary">vom Preset</Text>
-    );
+  const resetToPreset = (feld: OverridableField) => setDraft((d) => clearOverride(d, feld));
 
   const save = async (markCompleted = false) => {
     setSaving(true);
@@ -338,7 +343,7 @@ export default function BrandingPage(): ReactElement {
           <Selector width="100%" label="Schriftart" value={draft.fontFamily}
             options={FONT_OPTIONS}
             onChange={(v) => v && setDraft((d) => setOverride(d, "fontFamily", v as FontKey))} />
-          <Herkunft feld="fontFamily" />
+          <Herkunft istGesetzt={isOverridden(draft, "fontFamily")} onReset={() => resetToPreset("fontFamily")} />
         </div>
         <Selector width="100%" label="Erscheinungsbild" value={draft.themeMode}
           options={MODE_OPTIONS} onChange={(v) => v && set({ themeMode: v as ThemeMode })} />
@@ -355,18 +360,18 @@ export default function BrandingPage(): ReactElement {
         <div {...stylex.props(f.sliderWrap)}>
           <ColorField label="Primärfarbe" value={draft.primaryColor}
             onChange={(v) => setDraft((d) => setOverride(d, "primaryColor", v))} />
-          <Herkunft feld="primaryColor" />
+          <Herkunft istGesetzt={isOverridden(draft, "primaryColor")} onReset={() => resetToPreset("primaryColor")} />
         </div>
         <div {...stylex.props(f.sliderWrap)}>
           <ColorField label="Sekundärfarbe" value={draft.secondaryColor}
             onChange={(v) => setDraft((d) => setOverride(d, "secondaryColor", v))} />
-          <Herkunft feld="secondaryColor" />
+          <Herkunft istGesetzt={isOverridden(draft, "secondaryColor")} onReset={() => resetToPreset("secondaryColor")} />
         </div>
         <div {...stylex.props(f.sliderWrap, f.full)}>
           <Text type="supporting" color="secondary">Eckenradius: {draft.borderRadius}px</Text>
           <Slider label="Eckenradius" isLabelHidden min={0} max={24}
             value={draft.borderRadius} onChange={(v) => setDraft((d) => setOverride(d, "borderRadius", v))} />
-          <Herkunft feld="borderRadius" />
+          <Herkunft istGesetzt={isOverridden(draft, "borderRadius")} onReset={() => resetToPreset("borderRadius")} />
         </div>
       </div>
     </SectionCard>

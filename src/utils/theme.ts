@@ -28,6 +28,25 @@ function safeColor(value: string, fallback: string): string {
   return HEX_COLOR.test(value) ? value : fallback;
 }
 
+// Astryx injects a theme's CSS exactly once per `theme.name` and remembers
+// that module-wide (node_modules/@astryxdesign/core/src/theme/Theme.tsx:98,
+// 117-120) — whichever <Theme> mounts a name first owns that name's CSS for
+// the page's lifetime, no matter what values a later mount passes. The preset
+// key alone isn't enough to name a theme: an override on the active preset
+// changes the values without changing the key, so the root theme, the
+// branding page's live preview and the preset-card probes can end up sharing
+// a name while disagreeing on values. Fold the values that actually determine
+// the CSS into the name, so identical settings always produce the same name
+// and different settings never collide.
+function fingerprint(parts: (string | number)[]): string {
+  const str = parts.join("|");
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 31 + str.charCodeAt(i)) | 0;
+  }
+  return (hash >>> 0).toString(36);
+}
+
 // Concrete light/dark for callers that need a resolved value (e.g. the
 // theme-color meta tag in useBranding). `auto` follows the OS preference.
 export function resolveMode(settings: AppSettings): "light" | "dark" {
@@ -88,8 +107,10 @@ export function buildAstryxTheme(settings: AppSettings): DefinedTheme {
     "--font-family-code": `"${mono.family}", ${mono.fallbacks}`,
   };
 
+  const name = `albumwerk-${preset.key}-${fingerprint([primary, secondary, heading.family, body.family, radiusPx])}`;
+
   return defineTheme({
-    name: `albumwerk-${preset.key}`,
+    name,
     extends: neutralTheme,
     color: { accent: primary },
     typography: {
