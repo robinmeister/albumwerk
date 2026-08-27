@@ -128,7 +128,7 @@ Das fertige Album. Karton, Buchleinen, tiefe Passepartouts.
 | `--color-background-surface` | `#ece9e1` | `#242119` |
 | `--color-background-card` | `#ece9e1` | `#242119` |
 
-- `defaults`: primary `#5a2231` (Buchleinen), secondary `#17181a` (Tiefdruck), font `newsreader`, radius `0`
+- `defaults`: primary `#5e3128` (Buchleinen), secondary `#17181a` (Tiefdruck), font `newsreader`, radius `0`
 - Schriften: Instrument Serif (Überschrift) · Newsreader (Text) · Public Sans (Auszeichnung, versal und gesperrt)
 - `components`: heading `fontWeight: 400, letterSpacing: 0` · button `borderRadius: 0, boxShadow: none` · card `boxShadow: none, borderWidth: 1px`
 
@@ -238,10 +238,27 @@ gewahrt, weil die Knopffüllung über einen `components.button`-Override auf die
 Tinte gesetzt wird. `secondaryColor` trägt jetzt die Tinte und bleibt wie
 bisher als `--color-brand-secondary` verfügbar.
 
-Bei passepartout driftet die abgeleitete Skala nach Himbeere (`#A43657` statt
-Ochsenblut). Für Links und Fokus tragbar; die Identität steckt ohnehin in den
-Register-Tokens. Sollte es im Bild stören, ist der Eingabefarbton zu tunen —
-das ist eine Justierung, keine Architekturfrage.
+**Nachgemessen am 2026-08-27, nachdem der Task-5-Sichttest die Drift
+bestätigt hat.** Astryx pinnt nicht nur bei dunklen Eingaben die Helligkeit,
+sondern *immer*: sechs Kandidaten von `#5a2231` bis `#701c24` landen alle bei
+rund `#A0` Helligkeit, nur der Farbton wandert.
+
+| eingespeist | erzeugter Akzent (hell / dunkel) |
+|---|---|
+| `#5a2231` | `#A43657` / `#FFB0C1` — Himbeere |
+| `#5c2b2b` | `#A33B40` / `#FFB2AF` |
+| `#5e3128` | `#9F4031` / `#FFB3A2` — Ziegelrot |
+| `#63302a` | `#A13E36` / `#FFB3A7` |
+
+Ein wirklich dunkles Ochsenblut als Akzent ist über `color.accent` also
+grundsätzlich nicht erreichbar. Erreichbar ist nur die Wahl zwischen Himbeere
+und Ziegelrot. **Beschluss:** `#5e3128`, weil Ziegelrot dem Charakter von
+Buchleinen näher steht als Himbeere. Die Registeridentität trägt ohnehin die
+Fläche, nicht der Akzent.
+
+Nicht geändert wurde riss: dass `#f2c400` im Hellmodus zu `#775B00` wird, ist
+kein Defekt, sondern die Absicht — die Website nutzt auf der Weißpause
+denselben abgedunkelten Bernstein (`#7d5806`), weil heller Grund es verlangt.
 
 ## Oberfläche
 

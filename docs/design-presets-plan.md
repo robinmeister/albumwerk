@@ -252,7 +252,17 @@ export interface DesignPreset {
 // die Markierungsfarbe Markierung bleibt und nie zur Fläche wird.
 function flachesRegister(tinte: string) {
   return {
-    heading: { base: { fontWeight: "600", letterSpacing: "-0.035em" } },
+    heading: {
+      base: { fontWeight: "600", letterSpacing: "-0.035em" },
+      // Astryx' Ueberschriftenskala ist am unteren Ende gestaucht: level 5
+      // rendert 12px, level 6 noch kleiner — also KLEINER als der Fliesstext.
+      // Die App nutzt fast nur 4/5/6, ohne diese vier Zeilen steht auf fast
+      // jeder Seite die Ueberschrift unter ihrem eigenen Text.
+      "level:3": { fontSize: "var(--font-size-3xl)" },
+      "level:4": { fontSize: "var(--font-size-2xl)" },
+      "level:5": { fontSize: "var(--font-size-xl)" },
+      "level:6": { fontSize: "var(--font-size-lg)" },
+    },
     button: { base: { borderRadius: "0", boxShadow: "none", backgroundColor: tinte } },
     card: { base: { boxShadow: "none", borderWidth: "1px" } },
   };
