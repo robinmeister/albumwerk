@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { FONT_STACKS } from "../src/utils/theme";
 import { DESIGN_PRESETS, getPreset } from "../src/config/designPresets";
+import {
+  applyPreset, clearOverride, isOverridden, setOverride, type ThemeFields,
+} from "../src/utils/themeOverrides";
 
 describe("Schrift-Stacks", () => {
   it("kennt jede Familie, die ein Register belegen kann", () => {
@@ -46,5 +49,60 @@ describe("Preset-Katalog", () => {
     expect(getPreset("gibtesnicht").key).toBe("kontaktbogen");
     expect(getPreset(undefined).key).toBe("kontaktbogen");
     expect(getPreset("riss").key).toBe("riss");
+  });
+});
+
+const basis: ThemeFields = {
+  designPreset: "kontaktbogen",
+  themeOverrides: [],
+  primaryColor: "#cf2f22",
+  secondaryColor: "#14130f",
+  fontFamily: "public-sans",
+  borderRadius: 0,
+};
+
+describe("Override-Logik", () => {
+  it("übernimmt beim Preset-Wechsel alle geerbten Felder", () => {
+    const nachher = applyPreset(basis, "riss");
+    expect(nachher.designPreset).toBe("riss");
+    expect(nachher.primaryColor).toBe("#f2c400");
+    expect(nachher.secondaryColor).toBe("#0a2233");
+    expect(nachher.borderRadius).toBe(0);
+  });
+
+  it("lässt gesetzte Felder beim Preset-Wechsel stehen", () => {
+    const eigen = setOverride(basis, "primaryColor", "#0066ff");
+    const nachher = applyPreset(eigen, "riss");
+    expect(nachher.primaryColor).toBe("#0066ff");
+    expect(nachher.secondaryColor).toBe("#0a2233"); // geerbt, zieht mit
+    expect(nachher.themeOverrides).toEqual(["primaryColor"]);
+  });
+
+  it("merkt sich borderRadius 0 als bewusst gesetzt", () => {
+    // 0 ist ein gültiger Wert — genau deshalb eine Namensliste statt Leerwerten
+    const eigen = setOverride(basis, "borderRadius", 0);
+    expect(isOverridden(eigen, "borderRadius")).toBe(true);
+    expect(applyPreset(eigen, "passepartout").borderRadius).toBe(0);
+  });
+
+  it("stellt beim Zurücksetzen den Preset-Wert wieder her", () => {
+    const eigen = setOverride(basis, "primaryColor", "#0066ff");
+    const zurueck = clearOverride(eigen, "primaryColor");
+    expect(zurueck.primaryColor).toBe("#cf2f22");
+    expect(zurueck.themeOverrides).toEqual([]);
+    expect(isOverridden(zurueck, "primaryColor")).toBe(false);
+  });
+
+  it("nimmt denselben Override nicht doppelt auf", () => {
+    const zweimal = setOverride(setOverride(basis, "fontFamily", "lora"), "fontFamily", "inter");
+    expect(zweimal.themeOverrides).toEqual(["fontFamily"]);
+    expect(zweimal.fontFamily).toBe("inter");
+  });
+
+  it("verändert die Eingabe nicht", () => {
+    const vorher = { ...basis, themeOverrides: [...basis.themeOverrides] };
+    applyPreset(basis, "riss");
+    setOverride(basis, "primaryColor", "#0066ff");
+    expect(basis).toEqual(vorher);
   });
 });
