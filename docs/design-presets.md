@@ -372,3 +372,46 @@ widerspricht dem White-Label-Versprechen.
 **Adminoberfläche fest im Register, Kundengalerie White-Label.** War der
 ursprüngliche Vorschlag. Hinfällig, sobald der Admin das Register selbst
 wählt: dann ist es seine Markenentscheidung, und die Galerie darf ihr folgen.
+
+## Bekannte Restpunkte
+
+Aus der Schlussrevision und ihrem Re-Review, bewusst nicht mehr in diesem
+Vorhaben behoben. In der Reihenfolge, in der sie jemanden beißen werden.
+
+**1. Der helle Primärknopf hängt am `secondaryColor` des Betriebs.**
+`buildAstryxTheme` malt im Hellmodus `--color-on-dark` (weiß) auf die
+ungeprüfte Tinte. Die drei Register bringen alle eine fast schwarze Tinte
+mit, die eines Betriebs muss das nicht. Wer eine helle Markentinte wählt —
+etwa ein Gold `#d4af37` — bekommt weiß auf Gold bei rund 1,9:1, auf jedem
+Primärknopf, in der Adminoberfläche **und in der Kundengalerie**. Erreichbar
+ohne Zutun: die Migration behält jedes vom alten Standard abweichende
+`secondaryColor` als bewussten Override. Es ist derselbe Fehlermodus wie der
+in der Schlussrevision behobene Critical, nur durch eine engere Tür. Der
+Dunkelmodus ist nicht betroffen. Abhilfe wäre klein: `secondary` ist zwanzig
+Zeilen weiter oben schon als Hex validiert, die Textfarbe ließe sich aus
+seiner relativen Helligkeit wählen statt sie anzunehmen.
+
+**2. `!important` in `buildAstryxTheme` steht für einen Konfigurationsfehler.**
+Der Vite/StyleX-Plugin extrahiert `stylex.create()`-Aufrufe app-weit in ein
+**unlayered** `stylex.css`. Unlayered schlägt jede `@layer`-Regel, unabhängig
+von Spezifität — damit ist die Zusage des Designsystems, Component-Overrides
+säßen über StyleX, **app-weit** gebrochen, nicht nur für Knöpfe. Jeder künftige
+Theme-Override, dessen Wert zufällig irgendwo in `src/` wörtlich vorkommt,
+wird still ausgehebelt. Astryx' eigenes `variant:destructive` funktioniert
+heute nur, weil `--color-error-muted` nirgends als Hintergrund geschrieben
+steht; `color: var(--color-error)` steht dagegen schon dreimal in `src/`.
+Abhilfe: den extrahierten StyleX-Output in eine `@layer` wickeln — eine
+Änderung an `vite.config.ts`, danach kann das `!important` weg. Die Layerliste
+dafür steht bereits in `src/index.css:8`.
+
+**3. Die zwei Themefarb-Kanäle widersprechen sich.** `manifest.pb.js` liefert
+die Tinte als PWA-`theme_color`, `useBranding.ts` die Papierfläche des
+Registers als `<meta name="theme-color">`. Beide steuern die
+Android-Statusleiste: im Browser gewinnt das Meta-Tag, bei installierter App
+das Manifest. Dieselbe Instanz zeigt also eine papierfarbene Leiste beim
+Surfen und einen tintenfarbenen Startbildschirm nach der Installation. Jede
+Hälfte ist für sich richtig, niemand hat sie gegeneinander geprüft.
+
+**4. `manifest.pb.js` fällt auf `#3d4a3d` zurück**, den alten Standard-
+*Primärwert*, wo jetzt die Tinte hingehört (kontaktbogen: `#14130f`). Greift
+nur, wenn der Einstellungsdatensatz fehlt.
