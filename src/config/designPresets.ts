@@ -31,13 +31,18 @@ export interface DesignPreset {
 // Astryx' Überschriftenskala ist am unteren Ende gestaucht: level 5 rendert
 // 12px, level 6 noch kleiner — also KLEINER als der Fließtext (14px)
 // darunter. Die App nutzt fast nur 4/5/6 (7/17/36 Stellen), damit stand auf
-// fast jeder Seite die Überschrift unter ihrem eigenen Text. Hier einmal
-// geradegerückt statt an 60 Aufrufstellen.
+// fast jeder Seite die Überschrift unter ihrem eigenen Text. Zweimal
+// geradegerückt statt an 60 Aufrufstellen — einmal hier für kontaktbogen und
+// riss, einmal unten in passepartouts eigenem components-Block. Die zweite
+// Kopie ist ein bekannter, kleiner Fleck (siehe Abschlussreview) und bleibt
+// bewusst stehen.
 //
 // Gemeinsam für kontaktbogen und riss: flache Flächen, rechteckige Ecken,
-// straffe Überschriften. Die Knopffüllung setzt jedes Register selbst, damit
-// die Markierungsfarbe Markierung bleibt und nie zur Fläche wird.
-function flachesRegister(tinte: string) {
+// straffe Überschriften. Die Knopffüllung steht nicht hier — die setzt
+// buildAstryxTheme (src/utils/theme.ts) aus der aufgelösten secondaryColor
+// zusammen, damit ein individuell gesetztes Branding nicht die Registertinte
+// behält (docs/design-presets.md, "Die Knopfregel").
+function flachesRegister() {
   return {
     heading: {
       base: { fontWeight: "600", letterSpacing: "-0.035em" },
@@ -46,7 +51,7 @@ function flachesRegister(tinte: string) {
       "level:5": { fontSize: "var(--font-size-xl)" },
       "level:6": { fontSize: "var(--font-size-lg)" },
     },
-    button: { base: { borderRadius: "0", boxShadow: "none", backgroundColor: tinte } },
+    button: { base: { boxShadow: "none" } },
     card: { base: { boxShadow: "none", borderWidth: "1px" } },
   };
 }
@@ -71,7 +76,7 @@ export const DESIGN_PRESETS: Record<DesignPresetKey, DesignPreset> = {
       headingFamily: "familjen-grotesk",
       bodyFamily: "public-sans",
       monoFamily: "martian-mono",
-      components: flachesRegister("#14130f"),
+      components: flachesRegister(),
     },
   },
   riss: {
@@ -93,7 +98,7 @@ export const DESIGN_PRESETS: Record<DesignPresetKey, DesignPreset> = {
       headingFamily: "familjen-grotesk",
       bodyFamily: "public-sans",
       monoFamily: "martian-mono",
-      components: flachesRegister("#0a2233"),
+      components: flachesRegister(),
     },
   },
   passepartout: {
@@ -123,7 +128,7 @@ export const DESIGN_PRESETS: Record<DesignPresetKey, DesignPreset> = {
           "level:5": { fontSize: "var(--font-size-xl)" },
           "level:6": { fontSize: "var(--font-size-lg)" },
         },
-        button: { base: { borderRadius: "0", boxShadow: "none", backgroundColor: "#17181a" } },
+        button: { base: { boxShadow: "none" } },
         card: { base: { boxShadow: "none", borderWidth: "1px" } },
       },
     },

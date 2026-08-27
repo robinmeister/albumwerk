@@ -131,10 +131,14 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
 // Modulebene definiert (statt innerhalb von BrandingPage), damit die
 // Komponente bei jedem Tastendruck im Formular ihre Identität behält — sonst
 // hängt React sie bei jedem Re-Render neu ein und der Fokus (z. B. auf dem
-// "Auf Preset zurücksetzen"-Knopf) springt zurück zum document.body.
-function Herkunft({ istGesetzt, onReset }: { istGesetzt: boolean; onReset: () => void }): ReactElement {
+// "… auf Preset zurücksetzen"-Knopf) springt zurück zum document.body.
+//
+// `feld` geht in den Button-Namen ein, sonst hätten alle vier Zurücksetzen-
+// Knöpfe denselben Accessible Name "Auf Preset zurücksetzen" — für
+// Screenreader-Nutzer:innen vier ununterscheidbare Knöpfe.
+function Herkunft({ feld, istGesetzt, onReset }: { feld: string; istGesetzt: boolean; onReset: () => void }): ReactElement {
   return istGesetzt ? (
-    <Button variant="ghost" label="Auf Preset zurücksetzen" onClick={onReset} />
+    <Button variant="ghost" label={`${feld} auf Preset zurücksetzen`} onClick={onReset} />
   ) : (
     <Text type="supporting" color="secondary">vom Preset</Text>
   );
@@ -266,7 +270,7 @@ export default function BrandingPage(): ReactElement {
         "websiteUrl", "customDomain", "currency", "watermarkText", "designPreset",
       ];
       textFields.forEach((k) => fd.append(k, String(draft[k] ?? "")));
-      fd.append("borderRadius", String(draft.borderRadius ?? 8));
+      fd.append("borderRadius", String(draft.borderRadius ?? 0));
       fd.append("themeOverrides", JSON.stringify(draft.themeOverrides ?? []));
       fd.append("watermarkOpacity", String(draft.watermarkOpacity ?? 40));
       fd.append("previewMaxSize", String(draft.previewMaxSize ?? 1200));
@@ -343,7 +347,7 @@ export default function BrandingPage(): ReactElement {
           <Selector width="100%" label="Schriftart" value={draft.fontFamily}
             options={FONT_OPTIONS}
             onChange={(v) => v && setDraft((d) => setOverride(d, "fontFamily", v as FontKey))} />
-          <Herkunft istGesetzt={isOverridden(draft, "fontFamily")} onReset={() => resetToPreset("fontFamily")} />
+          <Herkunft feld="Schriftart" istGesetzt={isOverridden(draft, "fontFamily")} onReset={() => resetToPreset("fontFamily")} />
         </div>
         <Selector width="100%" label="Erscheinungsbild" value={draft.themeMode}
           options={MODE_OPTIONS} onChange={(v) => v && set({ themeMode: v as ThemeMode })} />
@@ -360,18 +364,18 @@ export default function BrandingPage(): ReactElement {
         <div {...stylex.props(f.sliderWrap)}>
           <ColorField label="Primärfarbe" value={draft.primaryColor}
             onChange={(v) => setDraft((d) => setOverride(d, "primaryColor", v))} />
-          <Herkunft istGesetzt={isOverridden(draft, "primaryColor")} onReset={() => resetToPreset("primaryColor")} />
+          <Herkunft feld="Primärfarbe" istGesetzt={isOverridden(draft, "primaryColor")} onReset={() => resetToPreset("primaryColor")} />
         </div>
         <div {...stylex.props(f.sliderWrap)}>
           <ColorField label="Sekundärfarbe" value={draft.secondaryColor}
             onChange={(v) => setDraft((d) => setOverride(d, "secondaryColor", v))} />
-          <Herkunft istGesetzt={isOverridden(draft, "secondaryColor")} onReset={() => resetToPreset("secondaryColor")} />
+          <Herkunft feld="Sekundärfarbe" istGesetzt={isOverridden(draft, "secondaryColor")} onReset={() => resetToPreset("secondaryColor")} />
         </div>
         <div {...stylex.props(f.sliderWrap, f.full)}>
           <Text type="supporting" color="secondary">Eckenradius: {draft.borderRadius}px</Text>
           <Slider label="Eckenradius" isLabelHidden min={0} max={24}
             value={draft.borderRadius} onChange={(v) => setDraft((d) => setOverride(d, "borderRadius", v))} />
-          <Herkunft istGesetzt={isOverridden(draft, "borderRadius")} onReset={() => resetToPreset("borderRadius")} />
+          <Herkunft feld="Eckenradius" istGesetzt={isOverridden(draft, "borderRadius")} onReset={() => resetToPreset("borderRadius")} />
         </div>
       </div>
     </SectionCard>

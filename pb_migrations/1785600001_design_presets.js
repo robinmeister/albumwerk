@@ -80,7 +80,11 @@ migrate((app) => {
   // die individuelle Markenfarbe, die `up()` gerade deshalb erhalten hatte.
   try {
     const record = app.findRecordById("settings", "appsettings0001");
-    const overrides = JSON.parse(record.getString("themeOverrides") || "[]");
+    // "|| []" auch nach dem Parse: die literale Zeichenkette "null" ist kein
+    // leerer String, parst aber zu null, und null.includes() würde sonst in
+    // den blanket catch unten laufen und down() ohne Rücksetzung beenden
+    // (siehe pb_hooks/lib/supportlib.js:97 für dasselbe Muster).
+    const overrides = JSON.parse(record.getString("themeOverrides") || "[]") || [];
 
     for (const feld of ["primaryColor", "secondaryColor", "borderRadius"]) {
       if (!overrides.includes(feld)) record.set(feld, ALT[feld]);

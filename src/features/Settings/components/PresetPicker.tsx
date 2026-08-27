@@ -1,7 +1,7 @@
 import { Theme } from "@astryxdesign/core";
 import { Text } from "@astryxdesign/core/Text";
 import * as stylex from "@stylexjs/stylex";
-import { ReactElement } from "react";
+import { ReactElement, useMemo } from "react";
 
 import { DESIGN_PRESETS, DesignPreset } from "../../../config/designPresets";
 import { AppSettings, DesignPresetKey } from "../../../config/settings";
@@ -27,10 +27,25 @@ const s = stylex.create({
 // Zeigt jedes Register an sich selbst: die kleine Probe rendert in einem
 // eigenen <Theme>, damit man Fläche, Akzent und Knopfform sieht, statt sie
 // zu lesen.
+//
+// Die Probe ignoriert bewusst jeden Override (themeOverrides: []) — das
+// gebaute Theme hängt also nur von preset.key und settings.themeMode ab, nie
+// vom Rest des Drafts. buildAstryxTheme(draft) ohne Memo erzeugt bei jedem
+// Tastendruck im Formular ein neues Theme-Objekt (anderer Name, siehe
+// fingerprint() in theme.ts), und Theme's Injection-Effekt entfernt dafür bei
+// jedem Re-Render die eingespritzten <style>-Tags und hängt sie neu an — pro
+// Tastendruck dreimal, einmal je Preset-Karte. Auf die tatsächlich
+// relevanten Werte memoisieren vermeidet das.
 function Probe({ preset, settings }: { preset: DesignPreset; settings: AppSettings }): ReactElement {
-  const draft = applyPreset({ ...settings, themeOverrides: [] }, preset.key);
+  const themeMode = settings.themeMode;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- draft hängt absichtlich nur von preset.key/themeMode ab, siehe Kommentar oben
+  const draft = useMemo(
+    () => applyPreset({ ...settings, themeOverrides: [] }, preset.key),
+    [preset.key, themeMode],
+  );
+  const theme = useMemo(() => buildAstryxTheme(draft), [draft]);
   return (
-    <Theme theme={buildAstryxTheme(draft)} mode={themeModeProp(draft)}>
+    <Theme theme={theme} mode={themeModeProp(draft)}>
       <div {...stylex.props(s.probe)}>
         <div {...stylex.props(s.flaeche)} style={{ background: "var(--color-background-card)" }} />
         <div {...stylex.props(s.knopf)} style={{ background: "var(--color-accent)" }} />

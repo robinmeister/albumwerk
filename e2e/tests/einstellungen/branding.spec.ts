@@ -73,7 +73,7 @@ test("Fotograf wechselt das Design-Register und es überlebt den Neuladen", asyn
   expect(await seitenleiste()).not.toBe(vorher);
 });
 
-test("eine eigene Farbe überlebt den Registerwechsel", async ({ page, anmelden }) => {
+test("eine eigene Farbe überlebt den Registerwechsel und den PocketBase-Roundtrip", async ({ page, pb, anmelden }) => {
   await anmelden(page, DEMO_ADMIN.email, DEMO_ADMIN.password);
   await page.goto("/branding");
 
@@ -82,5 +82,25 @@ test("eine eigene Farbe überlebt den Registerwechsel", async ({ page, anmelden 
   await page.getByTestId("preset:passepartout").click();
 
   await expect(abschnitt.getByLabel("Primärfarbe")).toHaveValue("#0066ff");
-  await expect(abschnitt.getByRole("button", { name: "Auf Preset zurücksetzen" }).first()).toBeVisible();
+  // exact statt .first(): seit die vier Zurücksetzen-Knöpfe je Feld einen
+  // eigenen Accessible Name tragen, ist "Primärfarbe auf Preset zurücksetzen"
+  // eindeutig.
+  await expect(abschnitt.getByRole("button", { name: "Primärfarbe auf Preset zurücksetzen" })).toBeVisible();
+
+  // themeOverrides ist ein JSON-Feld, das übers Formular als String in ein
+  // FormData-Multipart geschrieben wird (BrandingPage.tsx) — der einzige Weg,
+  // auf dem ein Fehlschlag unsichtbar wäre: käme das Feld als String statt
+  // als Array zurück, würde normalizeThemeFields (settings.ts) es still auf
+  // [] zurückfallen lassen und die bewusste Farbe beim nächsten
+  // Registerwechsel überschreiben. Speichern, neu laden, am Datensatz selbst
+  // prüfen.
+  await page.getByRole("button", { name: "Speichern", exact: true }).click();
+  await expect(page.getByText("Einstellungen gespeichert")).toBeVisible();
+
+  await page.reload();
+  await expect(abschnitt.getByLabel("Primärfarbe")).toHaveValue("#0066ff");
+  await expect(abschnitt.getByRole("button", { name: "Primärfarbe auf Preset zurücksetzen" })).toBeVisible();
+
+  const settings = await pb.get("settings", "appsettings0001");
+  expect(settings.themeOverrides).toEqual(["primaryColor"]);
 });

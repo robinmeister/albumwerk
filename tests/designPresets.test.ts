@@ -180,6 +180,19 @@ describe("Settings-Normalisierung", () => {
     expect(settings.designPreset).toBe("kontaktbogen");
     expect(settings.themeOverrides).toEqual([]);
   });
+
+  // Die vier Tests oben prüfen alle nur den Fallback-Pfad — keiner belegt,
+  // dass ein gültiger, vom Standard abweichender Wert unangetastet
+  // durchgereicht wird.
+  it("readSettingsCache: ein gültiges, nicht-standardmäßiges Preset und ein gültiger Override bleiben erhalten", () => {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({ ...DEFAULT_SETTINGS, designPreset: "riss", themeOverrides: ["primaryColor"] }),
+    );
+    const settings = readSettingsCache();
+    expect(settings?.designPreset).toBe("riss");
+    expect(settings?.themeOverrides).toEqual(["primaryColor"]);
+  });
 });
 
 const tokensVon = (theme: unknown) =>

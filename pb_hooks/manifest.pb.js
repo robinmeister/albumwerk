@@ -18,7 +18,11 @@ routerAdd("GET", "/api/custom/manifest.webmanifest", (e) => {
     name = settings.getString("businessName") || name;
     shortName = settings.getString("shortName") || name;
     description = settings.getString("tagline") || name;
-    themeColor = settings.getString("primaryColor") || themeColor;
+    // secondaryColor is the register's ink, not its mark color — theme_color
+    // (Android status bar / splash background) wants the neutral ink, not a
+    // saturated accent (docs/design-presets.md, "Was pb_hooks mit
+    // primaryColor macht").
+    themeColor = settings.getString("secondaryColor") || themeColor;
 
     const logo = settings.getString("logo");
     if (logo) {

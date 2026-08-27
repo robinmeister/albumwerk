@@ -66,14 +66,19 @@ export function themeModeProp(settings: AppSettings): ThemeMode {
   return settings.themeMode === "auto" ? "system" : settings.themeMode;
 }
 
-// Builds the Astryx theme from the instance settings. Photography-first look:
-// near-monochrome chrome, the brand colors only appear as accents; images do
-// the talking. Used by App.tsx and the branding page's live preview.
+// Builds the Astryx theme from the instance settings. Colors, font and radius
+// come from the flat settings fields; the design register (kontaktbogen /
+// riss / passepartout) supplies the surfaces, font roles and component
+// overrides layered on top of them — see docs/design-presets.md. Used by
+// App.tsx, the branding page's live preview and the preset-picker probes.
 //
-// The brand primary drives Astryx's full accent scale (HCT-derived). The brand
-// secondary is exposed as a custom `--color-brand-secondary` token for the few
-// spots that reference it. Editorial identity (light headlines, pill buttons,
-// flat hairline cards) is applied as component overrides.
+// The brand primary drives Astryx's full accent scale (HCT-derived) — it's
+// the register's mark color, never a filled area. The brand secondary is the
+// ink: it is exposed as `--color-brand-secondary` for the few spots that
+// reference it directly, and it fills `variant:primary` buttons (below),
+// resolved here rather than baked into the preset catalogue so a
+// custom-branded instance keeps its own ink instead of the register's
+// ("Die Knopfregel", docs/design-presets.md).
 export function buildAstryxTheme(settings: AppSettings): DefinedTheme {
   const primary = safeColor(settings.primaryColor, DEFAULT_SETTINGS.primaryColor);
   const secondary = safeColor(
@@ -109,6 +114,38 @@ export function buildAstryxTheme(settings: AppSettings): DefinedTheme {
 
   const name = `albumwerk-${preset.key}-${fingerprint([primary, secondary, heading.family, body.family, radiusPx])}`;
 
+  // Nur `variant:primary` bekommt die Füllung — `base` träfe jede Variante
+  // (secondary, ghost, jeder <Button> ohne Variantenangabe) und Astryx' eigene
+  // Variantenregeln liegen in einer früheren @layer, die diese Theme-Ebene
+  // überschreibt (docs/design-presets.md, "Die Knopfregel"). `secondary` ist
+  // ein einzelner Wert für beide Modi (kein [hell, dunkel]-Paar wie die
+  // Flächen); light-dark() hellt ihn im Dunkelmodus auf, statt der dunklen
+  // Tinte auf dunkler Karte. Text folgt denselben neutralen Kontrast-Tokens,
+  // die Astryx selbst für "hell auf dunkel" / "dunkel auf hell" bereithält.
+  //
+  // !important ist hier kein Stilmittel, sondern eine Notbremse gegen einen
+  // Build-Zufall: `Button.tsx`s eigenes `variants.primary` (backgroundColor:
+  // var(--color-accent), color: var(--color-on-accent)) landet — weil exakt
+  // dieselben Werte wörtlich auch in eigenem App-Code stehen (z. B.
+  // BrandingPage.tsx, PricingPage.tsx, BrandLogo.tsx) — als atomare StyleX-
+  // Klasse ZUSÄTZLICH unlayered in dist/stylex.css (Vite extrahiert
+  // stylex.create()-Aufrufe app-weit, nicht nur aus eigenem Code). Unlayered
+  // schlägt jede @layer-Regel, unabhängig von Spezifität oder Layer-
+  // Reihenfolge — die eigentlich vorgesehene Priorität "Component-Overrides
+  // sitzen über StyleX" (astryxdesign/core generateThemeRules.ts) greift für
+  // genau diese zwei Deklarationen deshalb nicht. Nachgemessen im laufenden
+  // Dev-Container: ohne !important bleibt der Primär-Knopf bei
+  // var(--color-accent) statt der Tinte, in main.css UND stylex.css
+  // gleichermaßen vorhanden. Kein Vite/StyleX-Konfigurationseingriff hier —
+  // das wäre ein eigenes, größeres Vorhaben.
+  const button = {
+    ...preset.register.components.button,
+    "variant:primary": {
+      backgroundColor: `light-dark(${secondary}, color-mix(in srgb, ${secondary} 35%, white)) !important`,
+      color: "light-dark(var(--color-on-dark), var(--color-on-light)) !important",
+    },
+  };
+
   return defineTheme({
     name,
     extends: neutralTheme,
@@ -118,7 +155,7 @@ export function buildAstryxTheme(settings: AppSettings): DefinedTheme {
       heading: { family: heading.family, fallbacks: heading.fallbacks },
     },
     tokens: tokens as DefineThemeTokens,
-    components: preset.register.components,
+    components: { ...preset.register.components, button },
   });
 }
 

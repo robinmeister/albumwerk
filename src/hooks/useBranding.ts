@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 
+import { getPreset } from "../config/designPresets";
 import { settingsFileUrl } from "../config/settings";
 import { useSettings } from "../context/SettingsContext";
 import { resolveMode } from "../utils/theme";
@@ -32,8 +33,10 @@ export function useBranding(): void {
 
   useEffect(() => {
     document.title = settings.businessName || "Fotogalerie";
-    // status bar follows the (neutral) header, not the accent color
-    upsertMeta("theme-color", resolveMode(settings) === "dark" ? "#161616" : "#ffffff");
+    // status bar follows the active register's (neutral) body surface, not
+    // the accent color
+    const body = getPreset(settings.designPreset).register.surfaces.body;
+    upsertMeta("theme-color", resolveMode(settings) === "dark" ? body[1] : body[0]);
     upsertMeta("description", settings.tagline || settings.businessName);
 
     const favicon =
