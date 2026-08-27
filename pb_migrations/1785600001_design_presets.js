@@ -14,6 +14,7 @@ const ALT = {
   fontFamily: "inter",
   borderRadius: 8,
 };
+const ALT_FONTS = ["inter", "lora", "playfair", "montserrat"];
 
 const KONTAKTBOGEN = {
   primaryColor: "#cf2f22",
@@ -75,19 +76,28 @@ migrate((app) => {
 }, (app) => {
   const collection = app.findCollectionByNameOrId("settings");
 
+  // Nur zurücksetzen, was NICHT bewusst gesetzt war — sonst verliert ein Downgrade
+  // die individuelle Markenfarbe, die `up()` gerade deshalb erhalten hatte.
   try {
     const record = app.findRecordById("settings", "appsettings0001");
-    record.set("primaryColor", ALT.primaryColor);
-    record.set("secondaryColor", ALT.secondaryColor);
-    record.set("fontFamily", ALT.fontFamily);
-    record.set("borderRadius", ALT.borderRadius);
+    const overrides = JSON.parse(record.getString("themeOverrides") || "[]");
+
+    for (const feld of ["primaryColor", "secondaryColor", "borderRadius"]) {
+      if (!overrides.includes(feld)) record.set(feld, ALT[feld]);
+    }
+    // fontFamily: einen Override nur behalten, wenn er in der alten Auswahlliste
+    // steht — sonst wäre der Datensatz nach der Narrowing unten ungültig.
+    if (!overrides.includes("fontFamily") || !ALT_FONTS.includes(record.getString("fontFamily"))) {
+      record.set("fontFamily", ALT.fontFamily);
+    }
+
     app.save(record);
   } catch (_) {
     // nichts zurückzusetzen
   }
 
   const font = collection.fields.getByName("fontFamily");
-  font.values = ["inter", "lora", "playfair", "montserrat"];
+  font.values = ALT_FONTS;
   collection.fields.removeByName("designPreset");
   collection.fields.removeByName("themeOverrides");
   app.save(collection);
