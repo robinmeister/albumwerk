@@ -33,6 +33,11 @@ export interface AppSettings {
   fontFamily: FontKey;
   themeMode: ThemeMode;
   borderRadius: number;
+  // Gewähltes Design-Register (docs/design-presets.md).
+  designPreset: DesignPresetKey;
+  // Welche der vier Branding-Werte der Admin bewusst gesetzt hat. Alles, was
+  // hier nicht steht, stammt aus dem Preset und zieht beim Wechsel mit.
+  themeOverrides: OverridableField[];
   contactEmail: string;
   orderNotificationEmail: string;
   websiteUrl: string;
@@ -75,11 +80,13 @@ export const DEFAULT_SETTINGS: AppSettings = {
   tagline: "",
   logo: "",
   favicon: "",
-  primaryColor: "#3d4a3d",
-  secondaryColor: "#b08d57",
-  fontFamily: "inter",
+  primaryColor: "#cf2f22",
+  secondaryColor: "#14130f",
+  fontFamily: "public-sans",
   themeMode: "light",
-  borderRadius: 8,
+  borderRadius: 0,
+  designPreset: "kontaktbogen",
+  themeOverrides: [],
   contactEmail: "",
   orderNotificationEmail: "",
   websiteUrl: "",
@@ -117,11 +124,34 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 const CACHE_KEY = "app_settings_cache_v1";
 
+const DESIGN_PRESET_KEYS: DesignPresetKey[] = ["kontaktbogen", "riss", "passepartout"];
+const OVERRIDABLE_FIELDS: OverridableField[] = [
+  "primaryColor", "secondaryColor", "fontFamily", "borderRadius",
+];
+
+// PocketBase liefert ein nie beschriebenes JSON-Feld als `null`, ein alter
+// localStorage-Cache kennt die Felder eventuell noch gar nicht — beides würde
+// den Default `[]`/`"kontaktbogen"` überschreiben statt ihn zu ergänzen.
+// themeOverrides ist zudem client-schreibbar: unbekannte Einträge werden
+// verworfen statt vertraut.
+function normalizeThemeFields(settings: AppSettings): AppSettings {
+  return {
+    ...settings,
+    designPreset: DESIGN_PRESET_KEYS.includes(settings.designPreset)
+      ? settings.designPreset
+      : DEFAULT_SETTINGS.designPreset,
+    themeOverrides: Array.isArray(settings.themeOverrides)
+      ? settings.themeOverrides.filter((f): f is OverridableField =>
+          OVERRIDABLE_FIELDS.includes(f as OverridableField))
+      : [],
+  };
+}
+
 export function readSettingsCache(): AppSettings | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    return normalizeThemeFields({ ...DEFAULT_SETTINGS, ...JSON.parse(raw) });
   } catch {
     return null;
   }
@@ -139,7 +169,10 @@ export async function fetchSettings(): Promise<AppSettings> {
   const record = await pb
     .collection("settings")
     .getOne(SETTINGS_RECORD_ID, { requestKey: null });
-  return { ...DEFAULT_SETTINGS, ...(record as unknown as Partial<AppSettings>) };
+  return normalizeThemeFields({
+    ...DEFAULT_SETTINGS,
+    ...(record as unknown as Partial<AppSettings>),
+  });
 }
 
 // URL for a settings file field (logo, favicon, watermarkLogo); "" when unset.

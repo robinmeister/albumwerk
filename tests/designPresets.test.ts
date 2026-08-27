@@ -1,10 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { FONT_STACKS } from "../src/utils/theme";
 import { DESIGN_PRESETS, getPreset } from "../src/config/designPresets";
 import {
   applyPreset, clearOverride, isOverridden, setOverride, type ThemeFields,
 } from "../src/utils/themeOverrides";
+import { DEFAULT_SETTINGS, fetchSettings, readSettingsCache, SETTINGS_RECORD_ID } from "../src/config/settings";
+import { pb } from "../src/config/pocketbase";
 
 describe("Schrift-Stacks", () => {
   it("kennt jede Familie, die ein Register belegen kann", () => {
@@ -109,5 +111,73 @@ describe("Override-Logik", () => {
   it("lässt keinen falsch typisierten Wert durch", () => {
     // @ts-expect-error borderRadius ist eine Zahl, kein String
     setOverride(basis, "borderRadius", "null");
+  });
+});
+
+describe("Settings-Normalisierung", () => {
+  const CACHE_KEY = "app_settings_cache_v1";
+
+  // vitest läuft hier mit environment: "node" (siehe vite.config.ts) — kein
+  // localStorage vorhanden. Minimaler In-Memory-Ersatz nur für diesen Block.
+  class MemoryStorage {
+    private store = new Map<string, string>();
+    getItem(key: string) { return this.store.has(key) ? this.store.get(key)! : null; }
+    setItem(key: string, value: string) { this.store.set(key, value); }
+    clear() { this.store.clear(); }
+  }
+
+  beforeEach(() => {
+    (globalThis as unknown as { localStorage: MemoryStorage }).localStorage = new MemoryStorage();
+  });
+  afterEach(() => {
+    delete (globalThis as unknown as { localStorage?: MemoryStorage }).localStorage;
+    vi.restoreAllMocks();
+  });
+
+  it("readSettingsCache: ein alter Cache ohne die neuen Felder bekommt die Defaults", () => {
+    const { designPreset: _p, themeOverrides: _o, ...alterCache } = DEFAULT_SETTINGS;
+    localStorage.setItem(CACHE_KEY, JSON.stringify(alterCache));
+    const settings = readSettingsCache();
+    expect(settings?.designPreset).toBe("kontaktbogen");
+    expect(settings?.themeOverrides).toEqual([]);
+  });
+
+  it("readSettingsCache: null aus einem nie beschriebenen Feld wird zum leeren Array", () => {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({ ...DEFAULT_SETTINGS, designPreset: null, themeOverrides: null }),
+    );
+    const settings = readSettingsCache();
+    expect(settings?.designPreset).toBe("kontaktbogen");
+    expect(settings?.themeOverrides).toEqual([]);
+  });
+
+  it("readSettingsCache: unbekannte Werte fliegen raus statt durchgereicht zu werden", () => {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({
+        ...DEFAULT_SETTINGS,
+        designPreset: "gibtesnicht",
+        themeOverrides: ["primaryColor", "unbekanntesFeld"],
+      }),
+    );
+    const settings = readSettingsCache();
+    expect(settings?.designPreset).toBe("kontaktbogen");
+    expect(settings?.themeOverrides).toEqual(["primaryColor"]);
+  });
+
+  it("fetchSettings: ein nie beschriebenes PocketBase-JSON-Feld (null) wird normalisiert", async () => {
+    vi.spyOn(pb, "collection").mockReturnValue({
+      getOne: async () => ({
+        ...DEFAULT_SETTINGS,
+        id: SETTINGS_RECORD_ID,
+        designPreset: null,
+        themeOverrides: null,
+      }),
+    } as never);
+
+    const settings = await fetchSettings();
+    expect(settings.designPreset).toBe("kontaktbogen");
+    expect(settings.themeOverrides).toEqual([]);
   });
 });
