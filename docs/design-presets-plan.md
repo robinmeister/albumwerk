@@ -658,7 +658,7 @@ Expected: keine Fehler.
 Run: `make dev-reset` (löscht die Dev-Instanz und legt sie mit Demo-Daten neu an), danach `make dev-logs`.
 Expected: Migration läuft ohne Fehler durch; im PocketBase-Dashboard trägt der Settings-Datensatz `designPreset: kontaktbogen` und `themeOverrides: []`.
 
-Zweiter Durchgang für die Backfill-Regel: im Dashboard `primaryColor` auf `#0066ff` setzen, `designPreset` und `themeOverrides` leeren, dann `make dev-stop && make dev`.
+Zweiter Durchgang für die Backfill-Regel. **Achtung:** PocketBase-Migrationen laufen einmalig — ein blosser Neustart (`dev-stop && dev`) führt sie nicht erneut aus. Der Backfill wird nur über einen echten Rückwärts-/Vorwärtslauf geprüft: `migrate down 1`, dann im Dashboard `primaryColor` auf `#0066ff` setzen, dann `migrate up`.
 Expected: `themeOverrides` enthält `["primaryColor"]`, `primaryColor` ist noch `#0066ff`, `secondaryColor` steht auf `#14130f`.
 
 - [ ] **Step 6: Commit**
