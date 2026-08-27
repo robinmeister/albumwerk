@@ -101,7 +101,7 @@ Auswahl als Handwerk. Positivpapier, Filmträger, Fettstift.
 
 - `defaults`: primary `#cf2f22` (Fettstift), secondary `#14130f` (Filmträger), font `public-sans`, radius `0`
 - Schriften: Familjen Grotesk (Überschrift) · Public Sans (Text) · Martian Mono (Auszeichnung)
-- `components`: heading `fontWeight: 600, letterSpacing: -0.035em` · button `borderRadius: 0, boxShadow: none, backgroundColor: Filmträger` · card `boxShadow: none, borderWidth: 1px`
+- `components`: heading `fontWeight: 600, letterSpacing: -0.035em` · button `boxShadow: none`, Fuellung nur auf `variant:primary` · card `boxShadow: none, borderWidth: 1px`
 
 ### riss
 
@@ -130,12 +130,39 @@ Das fertige Album. Karton, Buchleinen, tiefe Passepartouts.
 
 - `defaults`: primary `#5e3128` (Buchleinen), secondary `#17181a` (Tiefdruck), font `newsreader`, radius `0`
 - Schriften: Instrument Serif (Überschrift) · Newsreader (Text) · Public Sans (Auszeichnung, versal und gesperrt)
-- `components`: heading `fontWeight: 400, letterSpacing: 0` · button `borderRadius: 0, boxShadow: none` · card `boxShadow: none, borderWidth: 1px`
+- `components`: heading `fontWeight: 400, letterSpacing: 0` · button `boxShadow: none`, Fuellung nur auf `variant:primary` · card `boxShadow: none, borderWidth: 1px`
 
 Die dunklen Werte für passepartout sind neu — die Website hat diese Richtung
 nie gebaut, es gibt also keine Vorlage. Als Auszeichnungsschrift nutzt
 passepartout Public Sans statt des ursprünglich vorgesehenen Instrument Sans;
 das spart ein Schriftpaket bei praktisch gleichem Ergebnis.
+
+### Die Knopfregel
+
+**Korrigiert am 2026-08-27 nach der Schlussrevision.** Ursprünglich schrieb
+diese Spec je Register `button { base: { backgroundColor: Tinte,
+borderRadius: 0 } }` vor. Beides war falsch, und zwar folgenreich:
+
+`base` trifft **jede** Button-Variante. Astryx' eigene Variantenregeln liegen
+in `@layer astryx-base`, die Theme-Regeln in `@layer astryx-theme` — die
+spätere Ebene gewinnt unabhängig von der Spezifität. Eine Füllung unter
+`base` überschreibt daher auch `secondary` und `ghost`, lässt deren dunkle
+Textfarbe aber stehen: dunkel auf dunkel, bei rund 1,1:1. Betroffen wären
+86 ausgezeichnete Knöpfe plus alle ohne Variantenangabe, in der
+Adminoberfläche **und in der Kundengalerie**.
+
+Regel daher: Die Füllung gehört auf `variant:primary` (die Schlüsselform, die
+`neutralTheme` selbst nutzt), mit einem `light-dark()`-Paar, damit auch der
+Dunkelmodus lesbar bleibt. Und sie stammt aus dem aufgelösten
+`secondaryColor`, nicht aus einem in den Katalog eingebackenen Literal —
+sonst behält ein Betrieb mit eigener Marken­tinte überall die Registertinte.
+
+`borderRadius` gehört **nicht** in den Knopf-Override. Ein fester Wert würde
+`--_button-radius` festnageln und damit eines der vier überschreibbaren
+Felder wirkungslos machen: Wer `borderRadius: 12` einstellt, bekäme runde
+Karten und eckige Knöpfe. Der Knopf folgt `var(--radius-element)`; dass alle
+drei Register `defaults.borderRadius: 0` mitbringen, genügt für die
+Registerabsicht.
 
 ## Datenmodell
 
@@ -201,8 +228,8 @@ wieder verengte Auswahlliste ungültig und scheitert beim nächsten Speichern.
 
 `DEFAULT_SETTINGS` in `src/config/settings.ts` wird auf die
 kontaktbogen-Werte gezogen: `designPreset: "kontaktbogen"`,
-`themeOverrides: []`, primary `#14130f`, secondary `#b3261a`, font
-`public-sans`, radius `0`.
+`themeOverrides: []`, primary `#cf2f22`, secondary `#14130f`, font
+`public-sans`, radius `0` — also die kontaktbogen-Werte.
 
 ## Theme-Aufbau
 
@@ -268,6 +295,24 @@ Fläche, nicht der Akzent.
 Nicht geändert wurde riss: dass `#f2c400` im Hellmodus zu `#775B00` wird, ist
 kein Defekt, sondern die Absicht — die Website nutzt auf der Weißpause
 denselben abgedunkelten Bernstein (`#7d5806`), weil heller Grund es verlangt.
+
+### Was `pb_hooks` mit `primaryColor` macht
+
+**Ergänzt am 2026-08-27 nach der Schlussrevision.** `primaryColor` hat in
+diesem Vorhaben die Bedeutung gewechselt — von der Tinte zur
+Markierungsfarbe. Zwei Serverstellen lesen die Spalte weiter:
+
+- `manifest.pb.js:21` speist sie als PWA-`theme_color` in Android-Statusleiste
+  und Startbildschirm. Dort gehört Chrome-Farbe hin, keine Signalfarbe — ein
+  vollflächig rotes oder gelbes Startbild ist nicht, wofür `theme_color` da
+  ist. **Beschluss:** liest künftig `secondaryColor`, also die Tinte.
+- `lib/emaillib.js:88` malt einen 4px-Balken über Bestell- und Buchungsmails.
+  Ein schmaler Akzentstrich ist genau die Verwendung, für die eine
+  Markierungsfarbe gedacht ist. **Beschluss:** bleibt bei `primaryColor`.
+
+Damit ist die Aussage „`pb_hooks` bleibt unangetastet" nicht mehr ganz wahr;
+sie galt der Preset-Definition, die weiterhin nur im Frontend existiert. Ein
+Hook liest lediglich eine andere Spalte.
 
 ## Oberfläche
 
