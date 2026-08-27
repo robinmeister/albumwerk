@@ -12,6 +12,13 @@ export type FontKey =
 // Obermenge: enthält zusätzlich reine Register-Schriften, die als
 // Fließtextschrift nie zur Wahl stehen (Auszeichnung, Maßangaben).
 export type FontStackKey = FontKey | "martian-mono";
+
+export type DesignPresetKey = "kontaktbogen" | "riss" | "passepartout";
+
+// Die vier Werte, die ein Admin gegen das Preset setzen darf.
+export type OverridableField =
+  | "primaryColor" | "secondaryColor" | "fontFamily" | "borderRadius";
+
 export type ThemeMode = "light" | "dark" | "auto";
 
 export interface AppSettings {
