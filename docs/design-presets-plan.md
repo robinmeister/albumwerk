@@ -365,7 +365,7 @@ git commit -m "feat(design): Preset-Katalog mit drei Registern"
 - Produces:
   - `isOverridden(s: ThemeFields, field: OverridableField): boolean`
   - `applyPreset<T extends ThemeFields>(s: T, key: DesignPresetKey): T`
-  - `setOverride<T extends ThemeFields>(s: T, field, value): T`
+  - `setOverride<T extends ThemeFields, F extends OverridableField>(s: T, field: F, value: ThemeFields[F]): T`
   - `clearOverride<T extends ThemeFields>(s: T, field): T`
   - `ThemeFields` — der Teil von `AppSettings`, den diese Funktionen brauchen
 
@@ -476,10 +476,10 @@ export function applyPreset<T extends ThemeFields>(s: T, key: DesignPresetKey): 
   return next;
 }
 
-export function setOverride<T extends ThemeFields>(
+export function setOverride<T extends ThemeFields, F extends OverridableField>(
   s: T,
-  field: OverridableField,
-  value: string | number,
+  field: F,
+  value: ThemeFields[F],
 ): T {
   return {
     ...s,
