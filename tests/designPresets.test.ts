@@ -105,4 +105,9 @@ describe("Override-Logik", () => {
     setOverride(basis, "primaryColor", "#0066ff");
     expect(basis).toEqual(vorher);
   });
+
+  it("lässt keinen falsch typisierten Wert durch", () => {
+    // @ts-expect-error borderRadius ist eine Zahl, kein String
+    setOverride(basis, "borderRadius", "null");
+  });
 });

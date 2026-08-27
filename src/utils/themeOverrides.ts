@@ -30,10 +30,10 @@ export function applyPreset<T extends ThemeFields>(s: T, key: DesignPresetKey): 
   return next;
 }
 
-export function setOverride<T extends ThemeFields>(
+export function setOverride<T extends ThemeFields, F extends OverridableField>(
   s: T,
-  field: OverridableField,
-  value: string | number,
+  field: F,
+  value: ThemeFields[F],
 ): T {
   return {
     ...s,
