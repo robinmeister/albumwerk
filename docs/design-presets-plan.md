@@ -19,7 +19,8 @@
 - `themeMode` gehört weder zum Preset noch zu den überschreibbaren Feldern.
 - Importrichtung: `designPresets.ts` importiert aus `settings.ts`, **nie umgekehrt**. `DesignPresetKey` und `OverridableField` wohnen deshalb in `settings.ts`.
 - Kommentarsprache: Deutsch, wie in den neueren Dateien des Repos.
-- Testlauf: `npm test` (vitest run). Typprüfung: `npm run test:check`. Lint: `npm run lint`.
+- Testlauf: `npm test` (vitest run). Typprüfung: `npm run test:check`.
+- **Kein `npm run lint`.** Das Skript und `.eslintrc.cjs` existieren, aber im Repo ist keine eslint-Abhängigkeit installiert und die CI ruft lint nie auf — der Befehl ist seit jeher tot. Nicht reparieren: eine Lint-Toolchain einzuführen ist eine repoweite Entscheidung und gehört nicht in dieses Vorhaben.
 
 ---
 
