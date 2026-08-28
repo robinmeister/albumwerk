@@ -573,6 +573,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { pb } from "../../config/pocketbase";
 
 export interface PreviewSitzung {
+  // fuer welche Galerie diese Sitzung gilt — der Vergleich verhindert, dass
+  // ein Galeriewechsel unbemerkt die alte Sitzung weiterbenutzt
+  fuerShooting: string;
   token: string;
   userId: string;
   expiresAt: string;
@@ -615,7 +618,7 @@ export function usePreviewSession() {
         body: { shootingId },
       })) as PreviewSitzung;
       laufendeId.current = antwort.userId;
-      setSitzung(antwort);
+      setSitzung({ ...antwort, fuerShooting: shootingId });
     } catch (error) {
       console.error("preview session failed", error);
       setFehler("Vorschau konnte nicht gestartet werden.");
@@ -687,14 +690,24 @@ export default function CustomerPreview({
 
   // Das Schattenkonto entsteht erst beim Umschalten: die Link-Ansicht ist
   // anonym erreichbar (shootings.viewRule ist leer) und braucht kein Token.
+  // Auf shootingId mitgehoert: wechselt die Galerie an einer bereits
+  // eingehaengten Komponente, muss die alte Sitzung FREIGEGEBEN und eine neue
+  // ausgestellt werden. Ohne das sieht man weiter die vorige Galerie unter
+  // neuem Namen, und ihr Schattenkonto lebt bis zum Schliessen weiter.
   useEffect(() => {
-    if (ansicht === "angemeldet" && !sitzung) void starten(shootingId);
-  }, [ansicht, sitzung, shootingId, starten]);
+    if (ansicht !== "angemeldet") return;
+    if (sitzung && sitzung.fuerShooting !== shootingId) {
+      void beenden().then(() => starten(shootingId));
+      return;
+    }
+    if (!sitzung) void starten(shootingId);
+  }, [ansicht, sitzung, shootingId, starten, beenden]);
 
   // Das Token geht per postMessage, nicht ueber die URL — dort landete es in
   // Verlauf und Serverlogs. Das iframe meldet sich bereit, wir antworten.
   useEffect(() => {
-    const hoeren = (ev: MessageEvent) => {
+    let timer = 0;
+  const hoeren = (ev: MessageEvent) => {
       if (ev.origin !== window.location.origin) return;
       if (ev.data?.typ !== "vorschau-bereit" || !sitzung) return;
       rahmen.current?.contentWindow?.postMessage(
@@ -745,7 +758,7 @@ export default function CustomerPreview({
       {(ansicht === "link" || sitzung) && (
         <iframe
           ref={rahmen}
-          key={ansicht}
+          key={`${ansicht}-${shootingId}`}
           src={quelle}
           title="Kundenansicht"
           {...stylex.props(s.rahmen)}
@@ -771,9 +784,11 @@ async function mitVorschauToken(rendern: () => void): Promise<void> {
     rendern();
     return;
   }
+  let timer = 0;
   const hoeren = (ev: MessageEvent) => {
     if (ev.origin !== window.location.origin) return;
     if (ev.data?.typ !== "vorschau-token") return;
+    window.clearTimeout(timer);
     window.removeEventListener("message", hoeren);
     // Genau das Muster, das adoptHandoffToken() weiter oben in dieser Datei
     // schon benutzt: save() legt nur das Token ab, erst authRefresh() laedt
@@ -789,8 +804,11 @@ async function mitVorschauToken(rendern: () => void): Promise<void> {
   window.addEventListener("message", hoeren);
   window.parent?.postMessage({ typ: "vorschau-bereit" }, window.location.origin);
   // Die Link-Ansicht braucht kein Token — kommt keins, wird trotzdem
-  // gerendert, dann eben anonym.
-  window.setTimeout(() => {
+  // gerendert, dann eben anonym. Der Timer MUSS abgebrochen werden, sobald
+  // die Nachricht kam: rendern() ruft createRoot().render() auf #root, und
+  // ein zweiter Aufruf haengt einen zweiten React-Baum in denselben Knoten,
+  // statt den ersten zu aktualisieren.
+  timer = window.setTimeout(() => {
     window.removeEventListener("message", hoeren);
     rendern();
   }, 1500);
