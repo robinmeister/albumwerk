@@ -237,7 +237,7 @@ git commit -m "feat(vorschau): Schattenkonto-Felder und Bauplan"
 ### Task 2: Endpunkte und Sweep
 
 **Files:**
-- Create: `pb_hooks/preview.pb.js`
+- Create: `pb_hooks/previewsession.pb.js`
 
 **Interfaces:**
 - Consumes: `previewlib.buildShadowUser`, `previewlib.isExpired`, `previewlib.TTL_MINUTES` (Task 1)
@@ -248,7 +248,7 @@ git commit -m "feat(vorschau): Schattenkonto-Felder und Bauplan"
 
 - [ ] **Step 1: Die Hooks schreiben**
 
-`pb_hooks/preview.pb.js`:
+`pb_hooks/previewsession.pb.js`:
 
 ```js
 /// <reference path="../pb_data/types.d.ts" />
@@ -447,7 +447,7 @@ Expected: der Aufruf schlaegt fehl (401/403) — das ist der Beleg dafuer, dass 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add pb_hooks/preview.pb.js
+git add pb_hooks/previewsession.pb.js
 git commit -m "feat(vorschau): Sitzungsendpunkte und Sweep fuer Schattenkonten"
 ```
 
