@@ -40,9 +40,18 @@ export default function CustomerPreview({
 
   // Das Schattenkonto entsteht erst beim Umschalten: die Link-Ansicht ist
   // anonym erreichbar (shootings.viewRule ist leer) und braucht kein Token.
+  // Wechselt shootingId, waehrend eine Sitzung offen ist (der Elternteil
+  // reicht eine andere Galerie herein, ohne die Komponente neu zu mounten),
+  // darf das alte Schattenkonto nicht einfach unter dem neuen Label
+  // weiterlaufen: erst beenden, dann fuer die neue Galerie neu starten.
   useEffect(() => {
-    if (ansicht === "angemeldet" && !sitzung) void starten(shootingId);
-  }, [ansicht, sitzung, shootingId, starten]);
+    if (ansicht !== "angemeldet") return;
+    if (sitzung && sitzung.fuerShooting !== shootingId) {
+      void beenden().then(() => starten(shootingId));
+      return;
+    }
+    if (!sitzung) void starten(shootingId);
+  }, [ansicht, sitzung, shootingId, starten, beenden]);
 
   // Das Token geht per postMessage, nicht ueber die URL — dort landete es in
   // Verlauf und Serverlogs. Das iframe meldet sich bereit, wir antworten.
@@ -104,7 +113,7 @@ export default function CustomerPreview({
       {(ansicht === "link" || sitzung) && (
         <iframe
           ref={rahmen}
-          key={ansicht}
+          key={`${ansicht}-${shootingId}`}
           src={quelle}
           title="Kundenansicht"
           {...stylex.props(s.rahmen)}

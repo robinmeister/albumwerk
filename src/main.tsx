@@ -69,9 +69,16 @@ async function mitVorschauToken(rendern: () => void): Promise<void> {
     rendern();
     return;
   }
+  // Wird der Timer unten nicht abgebrochen, feuert er auch dann, wenn hoeren()
+  // laengst gerendert hat — ein zweiter render()-Aufruf haengt aber keinen
+  // neuen Baum an den bestehenden, sondern erzeugt einen zweiten unabhaengigen
+  // React-Baum in #root (createRoot). Deshalb wird die Timer-Id hier
+  // festgehalten und im Nachrichtenpfad zuerst geloescht.
+  let timer = 0;
   const hoeren = (ev: MessageEvent) => {
     if (ev.origin !== window.location.origin) return;
     if (ev.data?.typ !== "vorschau-token") return;
+    window.clearTimeout(timer);
     window.removeEventListener("message", hoeren);
     // Genau das Muster, das adoptHandoffToken() weiter oben in dieser Datei
     // schon benutzt: save() legt nur das Token ab, erst authRefresh() laedt
@@ -87,7 +94,7 @@ async function mitVorschauToken(rendern: () => void): Promise<void> {
   window.parent?.postMessage({ typ: "vorschau-bereit" }, window.location.origin);
   // Die Link-Ansicht braucht kein Token — kommt keins, wird trotzdem
   // gerendert, dann eben anonym.
-  window.setTimeout(() => {
+  timer = window.setTimeout(() => {
     window.removeEventListener("message", hoeren);
     rendern();
   }, 1500);

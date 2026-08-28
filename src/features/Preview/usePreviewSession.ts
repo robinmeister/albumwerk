@@ -7,6 +7,8 @@ export interface PreviewSitzung {
   userId: string;
   expiresAt: string;
   spiegelt: { anzahl: number; name: string };
+  /** Welche Galerie diese Sitzung spiegelt — erkennt einen Wechsel, waehrend die Vorschau offen ist. */
+  fuerShooting: string;
 }
 
 /*
@@ -51,9 +53,9 @@ export function usePreviewSession() {
       const antwort = (await pb.send("/api/custom/preview/session", {
         method: "POST",
         body: { shootingId },
-      })) as PreviewSitzung;
+      })) as Omit<PreviewSitzung, "fuerShooting">;
       laufendeId.current = antwort.userId;
-      setSitzung(antwort);
+      setSitzung({ ...antwort, fuerShooting: shootingId });
     } catch (error) {
       console.error("preview session failed", error);
       setFehler("Vorschau konnte nicht gestartet werden.");
