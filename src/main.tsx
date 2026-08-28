@@ -28,7 +28,7 @@ import "./index.css";
 import { registerSW } from "virtual:pwa-register";
 
 import App from "./App";
-import { pb } from "./config/pocketbase";
+import { IST_VORSCHAU, pb } from "./config/pocketbase";
 
 // Der Service Worker wird hier von Hand registriert statt vom PWA-Plugin in
 // jede HTML-Datei injiziert (`injectRegister: null` in vite.config.ts).
@@ -61,12 +61,46 @@ async function adoptHandoffToken(): Promise<void> {
   }
 }
 
+// Im Vorschaumodus kommt das Token per postMessage vom Elternfenster. Vorher
+// zu rendern hiesse, unangemeldete Abfragen loszuschicken und ein falsches
+// Bild zu zeigen — deshalb wird das Rendern bis dahin zurueckgehalten.
+async function mitVorschauToken(rendern: () => void): Promise<void> {
+  if (!IST_VORSCHAU) {
+    rendern();
+    return;
+  }
+  const hoeren = (ev: MessageEvent) => {
+    if (ev.origin !== window.location.origin) return;
+    if (ev.data?.typ !== "vorschau-token") return;
+    window.removeEventListener("message", hoeren);
+    // Genau das Muster, das adoptHandoffToken() weiter oben in dieser Datei
+    // schon benutzt: save() legt nur das Token ab, erst authRefresh() laedt
+    // den Datensatz nach. Ohne den zweiten Schritt bliebe authStore.model
+    // leer und currentUser() (src/config/currentUser.ts) gaebe null zurueck —
+    // AlbumPage zeigte dann eine leere Seite statt der Kundenansicht.
+    pb.authStore.save(ev.data.token, null);
+    pb.collection("users").authRefresh()
+      .catch(() => pb.authStore.clear())
+      .finally(rendern);
+  };
+  window.addEventListener("message", hoeren);
+  window.parent?.postMessage({ typ: "vorschau-bereit" }, window.location.origin);
+  // Die Link-Ansicht braucht kein Token — kommt keins, wird trotzdem
+  // gerendert, dann eben anonym.
+  window.setTimeout(() => {
+    window.removeEventListener("message", hoeren);
+    rendern();
+  }, 1500);
+}
+
 adoptHandoffToken().finally(() => {
-  ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-    <React.StrictMode>
-      <Suspense fallback={null}>
-        <App />
-      </Suspense>
-    </React.StrictMode>
-  );
+  void mitVorschauToken(() => {
+    ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+      <React.StrictMode>
+        <Suspense fallback={null}>
+          <App />
+        </Suspense>
+      </React.StrictMode>
+    );
+  });
 });
