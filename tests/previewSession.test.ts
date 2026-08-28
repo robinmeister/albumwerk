@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createRequire } from "node:module";
+import { istVorschauUrl } from "../src/config/pocketbase";
 
 // Wie tests/time.test.ts: der Hook-Helfer ist CommonJS und wird direkt
 // eingebunden, damit Test und Server denselben Code benutzen.
@@ -105,5 +106,18 @@ describe("Schattenkonto-Bauplan", () => {
     expect(a.id).not.toBe(b.id);
     expect(a.email).not.toBe(b.email);
     expect(a.password).not.toBe(b.password);
+  });
+});
+
+describe("Erkennung des Vorschaumodus", () => {
+  it("erkennt den Parameter", () => {
+    expect(istVorschauUrl("?vorschau=1")).toBe(true);
+    expect(istVorschauUrl("?a=b&vorschau=1")).toBe(true);
+  });
+
+  it("bleibt sonst aus", () => {
+    expect(istVorschauUrl("")).toBe(false);
+    expect(istVorschauUrl("?a=b")).toBe(false);
+    expect(istVorschauUrl("?vorschauen=1")).toBe(false);
   });
 });

@@ -1,11 +1,46 @@
-import PocketBase from 'pocketbase';
+import PocketBase, { BaseAuthStore, type AuthModel } from 'pocketbase';
 
 // In production PocketBase serves the built SPA itself (pb_public), so the API
 // lives on the same origin. For local dev point VITE_PB_URL at your instance.
 const baseUrl: string =
   import.meta.env.VITE_PB_URL || (typeof window !== 'undefined' ? window.location.origin : '');
 
-export const pb = new PocketBase(baseUrl);
+/*
+  Sitzungstrennung fuer die Kundenansicht-Vorschau
+  (docs/kundenansicht-vorschau.md).
+
+  Die Vorschau laeuft in einem iframe auf derselben Herkunft. Mit dem
+  Standard-LocalAuthStore wuerde ihre Anmeldung die Admin-Sitzung im
+  Elternfenster ueberschreiben — derselbe localStorage. Deshalb bekommt der
+  Client im Vorschaumodus einen reinen Speicher-Store: er faellt mit dem
+  iframe weg und fasst localStorage nie an.
+
+  Die Erkennung ist bewusst nur privilegienmindernd. Wer den Parameter
+  faelscht, bekommt eine Sitzung ohne Persistenz und sonst nichts.
+*/
+export function istVorschauUrl(search: string): boolean {
+  return new URLSearchParams(search).has('vorschau');
+}
+
+// Speicher-only Auth Store fuer Vorschaumodus: beruehrt localStorage nie
+class MemoryAuthStore extends BaseAuthStore {
+  save(token: string, model?: AuthModel): void {
+    this.baseToken = token;
+    this.baseModel = model ?? {};
+  }
+
+  clear(): void {
+    this.baseToken = '';
+    this.baseModel = {};
+  }
+}
+
+export const IST_VORSCHAU: boolean =
+  typeof window !== 'undefined' && istVorschauUrl(window.location.search);
+
+export const pb = IST_VORSCHAU
+  ? new PocketBase(baseUrl, new MemoryAuthStore())
+  : new PocketBase(baseUrl);
 
 // `getOne` that yields null instead of throwing when the record is not there.
 // A missing record is an ordinary outcome for most reads here (a customer
