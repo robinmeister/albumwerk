@@ -706,8 +706,7 @@ export default function CustomerPreview({
   // Das Token geht per postMessage, nicht ueber die URL — dort landete es in
   // Verlauf und Serverlogs. Das iframe meldet sich bereit, wir antworten.
   useEffect(() => {
-    let timer = 0;
-  const hoeren = (ev: MessageEvent) => {
+    const hoeren = (ev: MessageEvent) => {
       if (ev.origin !== window.location.origin) return;
       if (ev.data?.typ !== "vorschau-bereit" || !sitzung) return;
       rahmen.current?.contentWindow?.postMessage(
