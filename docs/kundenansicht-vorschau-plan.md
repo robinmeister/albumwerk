@@ -917,13 +917,17 @@ Und am Ende der Seitenkomponente, vor dem schliessenden Element:
 In `src/pages/admin/BrandingPage.tsx` im Abschnitt `title="Branding"` denselben Knopf ergaenzen, der mit der zuletzt angelegten Galerie startet:
 
 ```tsx
-const [letzteGalerie, setLetzteGalerie] = useState<string>("");
+// Es gibt keine "zuletzt angelegte" Galerie: die shootings-Sammlung fuehrt
+// kein Datumsfeld, und ein sort: "-created" scheitert mit HTTP 400. Gewaehlt
+// wird deshalb die alphabetisch erste — deterministisch und erklaerbar. Welche
+// es ist, sagt die Leiste ueber der Vorschau.
+const [beispielGalerie, setBeispielGalerie] = useState<string>("");
 
 useEffect(() => {
   pb.collection("shootings")
-    .getList(1, 1, { sort: "-created", requestKey: null })
-    .then((res) => setLetzteGalerie(res.items[0]?.id ?? ""))
-    .catch(() => setLetzteGalerie(""));
+    .getList(1, 1, { sort: "title", requestKey: null })
+    .then((res) => setBeispielGalerie(res.items[0]?.id ?? ""))
+    .catch(() => setBeispielGalerie(""));
 }, []);
 ```
 
@@ -931,11 +935,11 @@ useEffect(() => {
 <Button
   variant="secondary"
   label="Kundenansicht"
-  disabled={!letzteGalerie}
-  onClick={() => setVorschauFuer(letzteGalerie)}
+  disabled={!beispielGalerie}
+  onClick={() => setVorschauFuer(beispielGalerie)}
   data-testid="kundenansicht-oeffnen"
 />
-{!letzteGalerie && (
+{!beispielGalerie && (
   <Text type="supporting" color="secondary">
     Sobald du eine Galerie angelegt hast, kannst du sie hier aus Kundensicht ansehen.
   </Text>

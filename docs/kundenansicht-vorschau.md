@@ -53,8 +53,20 @@ Zwei Einstiegspunkte, eine Oberfläche:
 
 - **Galerie-Liste im Admin** — Knopf „Kundenansicht" je Galerie, zeigt diese
   Galerie.
-- **`/branding`** — derselbe Knopf, startet mit der zuletzt angelegten Galerie.
-  Gibt es noch keine, ist er deaktiviert und nennt den Grund.
+- **`/branding`** — derselbe Knopf, startet mit einer deiner Galerien. Gibt es
+  noch keine, ist er deaktiviert und nennt den Grund.
+
+  **Korrigiert am 2026-08-28 nach Task 5.** Ursprünglich stand hier „die
+  zuletzt angelegte Galerie". Das ist nicht ermittelbar: die
+  `shootings`-Sammlung führt **kein Datumsfeld** — weder `created` noch
+  `updated` noch ein fachliches Datum (Felder: id, title, description, type,
+  packageId, priceIds, userIds, withUserSelection, shootingPaid, coverImage,
+  firebaseId). Ein `sort: "-created"` scheitert mit HTTP 400, und die IDs sind
+  teils aus der Firebase-Migration übernommen, also nicht zeitlich sortierbar.
+  Gewählt wird deshalb die alphabetisch erste Galerie — deterministisch und
+  erklärbar. Wer eine bestimmte sehen will, öffnet sie aus der Galerieliste;
+  und die Leiste über der Vorschau nennt ohnehin, welche Galerie gezeigt wird,
+  sodass niemand über die falsche im Unklaren bleibt.
 
 Die Vorschau ist ein Rahmen über der Seite mit der echten Kundenseite darin,
 oben ein Umschalter **„Mit Link geöffnet" ↔ „Als angemeldete Kundin"** — genau
