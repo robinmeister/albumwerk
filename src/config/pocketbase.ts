@@ -1,4 +1,4 @@
-import PocketBase, { BaseAuthStore, type AuthModel } from 'pocketbase';
+import PocketBase, { BaseAuthStore } from 'pocketbase';
 
 // In production PocketBase serves the built SPA itself (pb_public), so the API
 // lives on the same origin. For local dev point VITE_PB_URL at your instance.
@@ -22,18 +22,9 @@ export function istVorschauUrl(search: string): boolean {
   return new URLSearchParams(search).has('vorschau');
 }
 
-// Speicher-only Auth Store fuer Vorschaumodus: beruehrt localStorage nie
-class MemoryAuthStore extends BaseAuthStore {
-  save(token: string, model?: AuthModel): void {
-    this.baseToken = token;
-    this.baseModel = model ?? {};
-  }
-
-  clear(): void {
-    this.baseToken = '';
-    this.baseModel = {};
-  }
-}
+// BaseAuthStore is memory-only by design; LocalAuthStore adds localStorage.
+// Concrete subclass to work around abstract base; inherits correct save/clear.
+class MemoryAuthStore extends BaseAuthStore {}
 
 export const IST_VORSCHAU: boolean =
   typeof window !== 'undefined' && istVorschauUrl(window.location.search);
