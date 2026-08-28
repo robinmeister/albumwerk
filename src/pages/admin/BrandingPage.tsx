@@ -30,6 +30,7 @@ import { buildAstryxTheme, themeModeProp } from "../../utils/theme";
 import { applyPreset, clearOverride, isOverridden, setOverride } from "../../utils/themeOverrides";
 import PaymentSettings from "../../features/Settings/components/PaymentSettings";
 import PresetPicker from "../../features/Settings/components/PresetPicker";
+import CustomerPreview from "../../features/Preview/CustomerPreview";
 
 const FONT_OPTIONS: { value: FontKey; label: string }[] = [
   { value: "inter", label: "Inter (modern, serifenlos)" },
@@ -251,11 +252,25 @@ export default function BrandingPage(): ReactElement {
   const [activeStep, setActiveStep] = useState(0);
   const [checkingDomain, setCheckingDomain] = useState(false);
   const [domainStatus, setDomainStatus] = useState<"idle" | "ok" | "fail">("idle");
+  const [letzteGalerie, setLetzteGalerie] = useState<string>("");
+  const [vorschauFuer, setVorschauFuer] = useState<string | null>(null);
 
   useEffect(() => {
     if (loaded) setDraft(settings);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded]);
+
+  useEffect(() => {
+    // Der Knopf startet mit der zuletzt angelegten Galerie — es gibt hier
+    // keine ausgewaehlte Galerie wie auf der Album-Seite. Die Sammlung
+    // "shootings" hat kein "created"-Feld (sort=-created liefert 400);
+    // PocketBase gibt unsortiert die Einfuegereihenfolge zurueck, die letzte
+    // Position ist deshalb die zuletzt angelegte Galerie.
+    pb.collection("shootings")
+      .getFullList({ requestKey: null })
+      .then((items) => setLetzteGalerie(items[items.length - 1]?.id ?? ""))
+      .catch(() => setLetzteGalerie(""));
+  }, []);
 
   const set = (patch: Partial<AppSettings>) => setDraft((d) => ({ ...d, ...patch }));
   const resetToPreset = (feld: OverridableField) => setDraft((d) => clearOverride(d, feld));
@@ -377,6 +392,20 @@ export default function BrandingPage(): ReactElement {
             value={draft.borderRadius} onChange={(v) => setDraft((d) => setOverride(d, "borderRadius", v))} />
           <Herkunft feld="Eckenradius" istGesetzt={isOverridden(draft, "borderRadius")} onReset={() => resetToPreset("borderRadius")} />
         </div>
+      </div>
+      <div {...stylex.props(f.regenRow)}>
+        <Button
+          variant="secondary"
+          label="Kundenansicht"
+          isDisabled={!letzteGalerie}
+          onClick={() => setVorschauFuer(letzteGalerie)}
+          data-testid="kundenansicht-oeffnen"
+        />
+        {!letzteGalerie && (
+          <Text type="supporting" color="secondary">
+            Sobald du eine Galerie angelegt hast, kannst du sie hier aus Kundensicht ansehen.
+          </Text>
+        )}
       </div>
     </SectionCard>
   );
@@ -517,6 +546,10 @@ export default function BrandingPage(): ReactElement {
           <ThemePreview draft={draft} />
         </div>
       </div>
+
+      {vorschauFuer && (
+        <CustomerPreview shootingId={vorschauFuer} onClose={() => setVorschauFuer(null)} />
+      )}
     </Page>
   );
 }

@@ -99,7 +99,12 @@ export async function loadImage(): Promise<string | null> {
 }
 
 export const getUsersSnapshot = async (): Promise<User[]> => {
-  const records = await pb.collection("users").getFullList({ requestKey: null });
+  const records = await pb.collection("users").getFullList({
+    // Schattenkonten der Kundenansicht-Vorschau sind keine Kundschaft und
+    // duerfen weder in der Zuordnung noch in Bestelluebersichten auftauchen.
+    filter: "isPreview != true",
+    requestKey: null,
+  });
   return records.map((r: any) => ({
     uid: r.id,
     email: r.email,

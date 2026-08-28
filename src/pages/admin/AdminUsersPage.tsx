@@ -97,6 +97,9 @@ export default function AdminUsersPage(): ReactElement {
     try {
       const records = await pb.collection("users").getFullList({
         sort: "email",
+        // Schattenkonten der Kundenansicht-Vorschau gehoeren nicht in die
+        // Nutzerverwaltung — sie leben Minuten und sind keine Kundschaft.
+        filter: "isPreview != true",
         requestKey: null,
       });
       setUsers(

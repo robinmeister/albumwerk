@@ -22,6 +22,7 @@ import HelpHint from "../../components/widgets/HelpHint";
 import { getUsersSnapshot } from "../../utils/functions";
 import { getRecord, pb } from "../../config/pocketbase";
 import { getShootingCoverUrl } from "../../config/images";
+import CustomerPreview from "../../features/Preview/CustomerPreview";
 
 type BadgeVariant = "neutral" | "info" | "success";
 const TYPE_LABELS: Record<string, { label: string; color: BadgeVariant }> = {
@@ -131,6 +132,7 @@ const s = stylex.create({
   titleRow: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 8, flexWrap: "wrap" },
   titleMain: { flex: 1, minWidth: 0 },
   chips: { display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 },
+  previewRow: { marginBottom: 12 },
   divider: { marginTop: 12, borderTop: "1px solid var(--color-border)" },
   backBtn: { marginBottom: 16 },
 });
@@ -164,10 +166,10 @@ function ShootingListItem({
 }
 
 function ShootingDetailHeader({
-  shooting, thumbnail, users, prices, packages, onEdit, onUpload, onDelete,
+  shooting, thumbnail, users, prices, packages, onEdit, onUpload, onDelete, onPreview,
 }: {
   shooting: Shooting; thumbnail?: string; users: User[]; prices: Price[]; packages: Package[];
-  onEdit: () => void; onUpload: () => void; onDelete: () => void;
+  onEdit: () => void; onUpload: () => void; onDelete: () => void; onPreview: () => void;
 }) {
   const typeInfo = TYPE_LABELS[shooting.type] ?? { label: shooting.type, color: "neutral" as const };
   const assignedUsers   = users.filter(u => (shooting.userIds  ?? []).includes(u.uid));
@@ -208,6 +210,15 @@ function ShootingDetailHeader({
           )}
         </div>
         <Badge variant={typeInfo.color} label={typeInfo.label} />
+      </div>
+
+      <div {...stylex.props(s.previewRow)}>
+        <Button
+          variant="secondary"
+          label="Kundenansicht"
+          onClick={onPreview}
+          data-testid="kundenansicht-oeffnen"
+        />
       </div>
 
       {assignedUsers.length > 0 && (
@@ -262,6 +273,7 @@ export default function AdminAlbumPage(): ReactElement {
 
   const [search,     setSearch]     = useState("");
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
+  const [vorschauFuer, setVorschauFuer] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -470,6 +482,7 @@ export default function AdminAlbumPage(): ReactElement {
                   onEdit={() => openEditForShooting(selectedShooting)}
                   onUpload={() => setOpenUploadModal(true)}
                   onDelete={() => setOpenDeleteModal(true)}
+                  onPreview={() => setVorschauFuer(selectedShooting.id)}
                 />
 
                 <Album
@@ -499,6 +512,10 @@ export default function AdminAlbumPage(): ReactElement {
           setOpenDeleteModal(false);
         }}
       />
+
+      {vorschauFuer && (
+        <CustomerPreview shootingId={vorschauFuer} onClose={() => setVorschauFuer(null)} />
+      )}
     </AlbumContext.Provider>
   );
 }
