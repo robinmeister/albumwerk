@@ -252,7 +252,7 @@ export default function BrandingPage(): ReactElement {
   const [activeStep, setActiveStep] = useState(0);
   const [checkingDomain, setCheckingDomain] = useState(false);
   const [domainStatus, setDomainStatus] = useState<"idle" | "ok" | "fail">("idle");
-  const [letzteGalerie, setLetzteGalerie] = useState<string>("");
+  const [beispielGalerie, setBeispielGalerie] = useState<string>("");
   const [vorschauFuer, setVorschauFuer] = useState<string | null>(null);
 
   useEffect(() => {
@@ -261,15 +261,14 @@ export default function BrandingPage(): ReactElement {
   }, [loaded]);
 
   useEffect(() => {
-    // Der Knopf startet mit der zuletzt angelegten Galerie — es gibt hier
-    // keine ausgewaehlte Galerie wie auf der Album-Seite. Die Sammlung
-    // "shootings" hat kein "created"-Feld (sort=-created liefert 400);
-    // PocketBase gibt unsortiert die Einfuegereihenfolge zurueck, die letzte
-    // Position ist deshalb die zuletzt angelegte Galerie.
+    // Es gibt keine "zuletzt angelegte" Galerie: die shootings-Sammlung fuehrt
+    // kein Datumsfeld, und ein sort: "-created" scheitert mit HTTP 400. Gewaehlt
+    // wird deshalb die alphabetisch erste — deterministisch und erklaerbar. Welche
+    // es ist, sagt die Leiste ueber der Vorschau.
     pb.collection("shootings")
-      .getFullList({ requestKey: null })
-      .then((items) => setLetzteGalerie(items[items.length - 1]?.id ?? ""))
-      .catch(() => setLetzteGalerie(""));
+      .getList(1, 1, { sort: "title", requestKey: null })
+      .then((res) => setBeispielGalerie(res.items[0]?.id ?? ""))
+      .catch(() => setBeispielGalerie(""));
   }, []);
 
   const set = (patch: Partial<AppSettings>) => setDraft((d) => ({ ...d, ...patch }));
@@ -397,11 +396,11 @@ export default function BrandingPage(): ReactElement {
         <Button
           variant="secondary"
           label="Kundenansicht"
-          isDisabled={!letzteGalerie}
-          onClick={() => setVorschauFuer(letzteGalerie)}
+          isDisabled={!beispielGalerie}
+          onClick={() => setVorschauFuer(beispielGalerie)}
           data-testid="kundenansicht-oeffnen"
         />
-        {!letzteGalerie && (
+        {!beispielGalerie && (
           <Text type="supporting" color="secondary">
             Sobald du eine Galerie angelegt hast, kannst du sie hier aus Kundensicht ansehen.
           </Text>
