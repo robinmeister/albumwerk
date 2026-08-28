@@ -1037,6 +1037,28 @@ test("nach dem Schliessen ist der Admin noch angemeldet", async ({ page, anmelde
   await expect(page.getByTestId("abschnitt:Branding")).toBeVisible();
 });
 
+test("die Vorschau fasst die Admin-Sitzung im localStorage nicht an", async ({ page, anmelden }) => {
+  // Der eigentliche Zweck der Store-Weiche aus Task 3. Wichtig: der Test muss
+  // den Umschalter TATSAECHLICH betaetigen — auf der anonymen Link-Ansicht
+  // ruft nichts authStore.save() auf, ein Test dagegen bliebe auch bei voellig
+  // kaputter Weiche gruen und behauptete Abdeckung, die es nicht gibt.
+  await anmelden(page, DEMO_ADMIN.email, DEMO_ADMIN.password);
+  await page.goto("/album");
+  await page.getByTestId("shooting-detail").waitFor();
+
+  const vorher = await page.evaluate(() => localStorage.getItem("pocketbase_auth"));
+  expect(vorher).not.toBeNull();
+
+  await page.getByTestId("kundenansicht-oeffnen").click();
+  await page.getByTestId("ansicht:angemeldet").click();
+  // warten, bis im iframe wirklich eine Sitzung steht
+  await expect(page.getByTestId("vorschau:schliessen")).toBeVisible();
+  await page.waitForFunction(() => document.querySelector('iframe[title="Kundenansicht"]') !== null);
+
+  const nachher = await page.evaluate(() => localStorage.getItem("pocketbase_auth"));
+  expect(nachher).toBe(vorher);
+});
+
 test("eine Kundin darf keine Vorschau-Sitzung ausstellen", async ({ page }) => {
   // Das Verstecken des Knopfes ist keine Sicherheit — der Endpunkt muss selbst
   // ablehnen. Wichtigster Test der Datei.
