@@ -28,7 +28,7 @@
 
 **Files:**
 - Create: `pb_migrations/1785700001_preview_accounts.js`
-- Create: `pb_hooks/lib/previewlib.js`
+- Create: `pb_hooks/lib/previewsessionlib.js`
 - Test: `tests/previewSession.test.ts`
 
 **Interfaces:**
@@ -46,7 +46,7 @@ import { createRequire } from "node:module";
 // Wie tests/time.test.ts: der Hook-Helfer ist CommonJS und wird direkt
 // eingebunden, damit Test und Server denselben Code benutzen.
 const require = createRequire(import.meta.url);
-const preview = require("../pb_hooks/lib/previewlib.js");
+const preview = require("../pb_hooks/lib/previewsessionlib.js");
 
 describe("Schattenkonto-Bauplan", () => {
   const NOW = Date.parse("2026-08-28T10:00:00.000Z");
@@ -105,11 +105,11 @@ describe("Schattenkonto-Bauplan", () => {
 - [ ] **Step 2: Test laufen lassen, Fehlschlag bestätigen**
 
 Run: `npx vitest run tests/previewSession.test.ts`
-Expected: FAIL — `Cannot find module '../pb_hooks/lib/previewlib.js'`
+Expected: FAIL — `Cannot find module '../pb_hooks/lib/previewsessionlib.js'`
 
 - [ ] **Step 3: Den Helfer schreiben**
 
-`pb_hooks/lib/previewlib.js`:
+`pb_hooks/lib/previewsessionlib.js`:
 
 ```js
 // Reine Helfer für die Kundenansicht-Vorschau (docs/kundenansicht-vorschau.md).
@@ -119,26 +119,30 @@ Expected: FAIL — `Cannot find module '../pb_hooks/lib/previewlib.js'`
 const TTL_MINUTES = 15;
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
 
-function randomString(length) {
-  let out = "";
-  for (let i = 0; i < length; i++) {
-    out += ALPHABET.charAt(Math.floor(Math.random() * ALPHABET.length));
+// Der Zufall wird hereingereicht, nicht erzeugt: der Hook uebergibt
+// $security.randomStringWithAlphabet (CSPRNG), der Test einen abzaehlbaren
+// Ersatz. So bleibt die Datei frei von PocketBase-Globals UND das Passwort,
+// das echten Lesezugriff bewacht, stammt nicht aus Math.random().
+function requireZufall(zufall) {
+  if (typeof zufall !== "function") {
+    throw new Error("buildShadowUser braucht eine Zufallsfunktion (len, alphabet) => string");
   }
-  return out;
+  return zufall;
 }
 
 // Der Bauplan eines Schattenkontos. Es traegt nur die shootingIds — daran
 // haengen die Zugriffsregeln fuer Galerie und Bilder, und mehr braucht die
 // Vorschau nicht. Name und sonstige Daten der echten Kundschaft werden
 // bewusst NICHT kopiert.
-function buildShadowUser(shootingId, nowMs, ttlMinutes) {
+function buildShadowUser(shootingId, nowMs, ttlMinutes, zufall) {
+  const rnd = requireZufall(zufall);
   const ttl = typeof ttlMinutes === "number" ? ttlMinutes : TTL_MINUTES;
-  const handle = randomString(12);
+  const handle = rnd(12, ALPHABET);
   return {
     // die users-ID hat kein Autogenerate-Muster (Firebase-Altlast)
-    id: randomString(15),
+    id: rnd(15, ALPHABET),
     email: "vorschau-" + handle + "@albumwerk.invalid",
-    password: randomString(24),
+    password: rnd(42, ALPHABET),
     shootingIds: [shootingId],
     isAdmin: false,
     isPreview: true,
@@ -224,7 +228,7 @@ Run: `npm test && npm run test:check`
 Expected: alle Tests grün, Typprüfung sauber.
 
 ```bash
-git add pb_migrations/1785700001_preview_accounts.js pb_hooks/lib/previewlib.js tests/previewSession.test.ts
+git add pb_migrations/1785700001_preview_accounts.js pb_hooks/lib/previewsessionlib.js tests/previewSession.test.ts
 git commit -m "feat(vorschau): Schattenkonto-Felder und Bauplan"
 ```
 
@@ -298,8 +302,9 @@ routerAdd("POST", "/api/custom/preview/session", (e) => {
     }
   }
 
-  const preview = require(__hooks + "/lib/previewlib.js");
-  const plan = preview.buildShadowUser(shootingId, Date.now(), preview.TTL_MINUTES);
+  const preview = require(__hooks + "/lib/previewsessionlib.js");
+  const plan = preview.buildShadowUser(shootingId, Date.now(), preview.TTL_MINUTES,
+    (len, alphabet) => $security.randomStringWithAlphabet(len, alphabet));
 
   let token = "";
   try {
@@ -366,7 +371,7 @@ routerAdd("DELETE", "/api/custom/preview/session", (e) => {
 // Tab oder ein geschlossener Laptop tut das nicht.
 cronAdd("previewSessionSweep", "*/5 * * * *", () => {
   try {
-    const preview = require(__hooks + "/lib/previewlib.js");
+    const preview = require(__hooks + "/lib/previewsessionlib.js");
     const now = Date.now();
     const stale = $app.findRecordsByFilter("users", "isPreview = true", "", 0, 0);
     let removed = 0;
