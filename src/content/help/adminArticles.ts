@@ -17,20 +17,22 @@ export const adminArticles: HelpArticle[] = [
     slug: "erste-schritte-admin",
     title: "Erste Schritte als Fotograf",
     summary:
-      "Die vier Dinge, die du nach der Installation erledigen solltest — in der richtigen Reihenfolge.",
+      "Was da sein muss, damit du deine Fotos verkaufen kannst — und was nur empfohlen ist.",
     audience: ["admin"],
     category: "setup",
     keywords: ["einrichtung", "setup", "start", "installation", "onboarding"],
     relatedPath: "/einrichtung",
     bodyHtml: `
-<p>Nach der Installation führt dich der Einrichtungs-Assistent einmal durch die wichtigsten Punkte. Falls du ihn übersprungen hast oder etwas nachholen willst, ist das hier die Reihenfolge, die sich bewährt hat:</p>
+<p>Unter <strong>Einrichtung</strong> findest du jederzeit eine Checkliste, die dir sagt, was bis zum Verkauf deiner Fotos noch fehlt. Alben hochladen und Kunden einladen kannst du sofort — die Liste hält dich nicht auf, sie hält dich nur auf dem Laufenden.</p>
+<p>Vier Punkte sind <strong>Pflicht</strong>. Solange einer davon offen ist, können deine Kunden keine Bilder kaufen:</p>
 <ol>
-  <li><strong>Branding</strong> — Name, Logo, Farben und Schrift. Damit sieht die App für deine Kunden nach dir aus und nicht nach Standard.</li>
-  <li><strong>Rechtstexte</strong> — Impressum und Datenschutzerklärung. Sobald Kunden Zugriff haben, sind die Pflicht.</li>
-  <li><strong>Zahlungen</strong> — nur nötig, wenn du direkt über die App verkaufen willst. Wenn deine Kunden ohnehin vorab bezahlen, kannst du das überspringen.</li>
-  <li><strong>Erstes Album</strong> — ein Shooting anlegen, Bilder hochladen, Link oder QR-Code an den Kunden geben.</li>
+  <li><strong>Zahlungsanbieter</strong> — PayPal oder Stripe muss aktiv und eingerichtet sein.</li>
+  <li><strong>Preise</strong> — mindestens ein Preis oder Paket, sonst gibt es nichts zu kaufen.</li>
+  <li><strong>Impressum und Datenschutz</strong> — sobald Kunden Zugriff haben, sind die Pflicht.</li>
+  <li><strong>Bestell-E-Mail</strong> — ohne sie erfährst du von einer Bestellung nichts.</li>
 </ol>
-<p>Eine eigene Domain kannst du jederzeit später nachrüsten — alle Links funktionieren weiter.</p>
+<p>Fünf weitere Punkte sind <strong>empfohlen</strong>: Name, Logo, Kontakt-E-Mail, eigene Domain und Wasserzeichen. Ohne sie funktioniert alles, es sieht nur weniger nach dir aus. Eine eigene Domain kannst du jederzeit später nachrüsten — alle Links funktionieren weiter.</p>
+<p>Jede Zeile der Checkliste verlinkt direkt auf die Seite, auf der du den Punkt erledigst.</p>
 `,
   },
   {

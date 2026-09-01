@@ -71,16 +71,17 @@ die App unter `http://IHRE-SERVER-ADRESSE:8090` erreichbar.
    `verified`). Alternativ: über die App registrieren und den Haken danach im
    Backend setzen.
 
-2. **Einrichtungsassistent:** Melden Sie sich in der App
-   (`http://IHRE-SERVER-ADRESSE:8090`) mit diesem Benutzer an — der
-   Assistent startet automatisch und führt Sie durch:
-   - Name, Logo, Farben, Schriftart
-   - Kontakt- und Bestell-E-Mail-Adresse
-   - PayPal-Anbindung
-   - Impressum und Datenschutzerklärung
+2. **Einrichtungs-Checkliste:** Melden Sie sich in der App
+   (`http://IHRE-SERVER-ADRESSE:8090`) mit diesem Benutzer an — Sie landen
+   auf **Einrichtung**. Die Checkliste zeigt jederzeit, was bis zum Verkauf
+   der Fotos noch fehlt:
+   - Zahlungsanbieter, Preise, Impressum und Datenschutz, Bestell-E-Mail
+     sind Pflicht — ohne sie ist der Bilderkauf gesperrt
+   - Name, Logo, Kontakt-E-Mail, eigene Domain und Wasserzeichen sind
+     empfohlen, aber keine Voraussetzung
 
-   Alles lässt sich später jederzeit unter **Branding** ändern
-   (Assistent erneut starten: App unter `/branding?setup=1` öffnen).
+   Alben hochladen können Sie sofort. Die Checkliste ist jederzeit unter
+   **Einrichtung** erreichbar, jeder Punkt verlinkt auf die passende Seite.
 
 3. Danach: [E-Mail-Versand](#e-mail-versand-einrichten-smtp) und
    [Zahlungen](#zahlungen-einrichten-paypal-undoder-stripe) einrichten —
@@ -155,7 +156,7 @@ bzw. PayPal-Sandbox verwenden.
 
 ## HTTPS mit eigener Domain (empfohlen)
 
-Die Domain wird im **Einrichtungs-Assistenten** der App eingetragen — die
+Die Domain wird in der App unter **Einstellungen → Domain** eingetragen — die
 `Caddyfile` muss dafür *nicht* mehr editiert werden. Caddy holt das Zertifikat
 automatisch nur für die dort hinterlegte Domain (On-Demand-TLS).
 
@@ -164,8 +165,8 @@ automatisch nur für die dort hinterlegte Domain (On-Demand-TLS).
 2. Ports **80** und **443** in der Firewall öffnen. Der `caddy`-Dienst ist in
    `docker-compose.yml` bereits aktiv.
 3. `make prod` starten und die Instanz einmalig über die IP/Port `:8090`
-   öffnen — im Einrichtungs-Assistenten (Schritt **Domain**) die Domain
-   eintragen und speichern.
+   öffnen — unter **Einstellungen → Domain** die Domain eintragen und
+   speichern.
 4. Das Album ist nun unter `https://fotos.ihre-domain.de` erreichbar; das
    Zertifikat (Let's Encrypt) wird beim ersten Aufruf automatisch besorgt und
    erneuert. Danach kann die Zeile `"8090:8090"` unter `ports` des
@@ -323,10 +324,10 @@ docker compose -p albumwerk-dev -f docker-compose.dev.yml down -v         # Dev-
   `make prod` erneut ausführen.
 - **Keine E-Mails?** SMTP-Einstellungen im PocketBase-Backend testen
   (*Send test email*); Spam-Ordner prüfen.
-- **Keine Vorschaubilder?** Unter **Branding → Wasserzeichen** auf
+- **Keine Vorschaubilder?** Unter **Einstellungen → Bilder & Wasserzeichen** auf
   „Vorschauen neu erzeugen“ klicken; Logs prüfen.
-- **Einrichtungsassistent erneut starten:** App unter `/branding?setup=1`
-  öffnen.
+- **Was fehlt noch bis zum Verkauf?** App unter `/einrichtung` öffnen — die
+  Checkliste nennt jeden offenen Punkt.
 - **Superuser-Passwort vergessen?** Neues Passwort in die `.env` schreiben
   und `make prod` ausführen — es wird beim Start aktualisiert.
 

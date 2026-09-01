@@ -35,8 +35,9 @@ wird hier erklärt.
 
 4. `http://SERVER-IP:8090` im Browser öffnen, mit den Zugangsdaten aus der
    `.env` im Admin-Backend (`/_/`) anmelden bzw. sich in der App registrieren
-   und dem **Einrichtungs-Assistenten** folgen (Branding, Domain, Zahlung,
-   Rechtliches — unter 10 Minuten).
+   und der **Einrichtungs-Checkliste** unter `/einrichtung` folgen (Zahlung,
+   Preise, Rechtliches und Bestell-E-Mail sind Pflicht; Branding und Domain
+   sind empfohlen — unter 10 Minuten).
 
 ### Weg B — aus dem Quellcode (Repo geklont)
 
@@ -50,7 +51,7 @@ make prod               # baut das Image lokal und startet alles
 1. Beim Domain-Anbieter einen **A-Record** (optional AAAA) der Subdomain auf
    die Server-IP zeigen lassen.
 2. Ports **80** und **443** in der Firewall öffnen.
-3. Die Domain im Einrichtungs-Assistenten (Schritt „Domain") eintragen —
+3. Die Domain unter **Einstellungen → Domain** eintragen —
    fertig. Das HTTPS-Zertifikat besorgt und erneuert Caddy automatisch
    (Let's Encrypt); es muss keine Datei editiert werden.
 
@@ -129,8 +130,8 @@ Der Reihe nach prüfen:
    brauchen bis zu einige Stunden).
 2. Firewall: Ports 80 und 443 müssen offen sein (Cloud-Anbieter haben oft
    eine zusätzliche Firewall im Web-Panel).
-3. Die Domain muss im Einrichtungs-Assistenten bzw. unter „Branding →
-   Domain" eingetragen und gespeichert sein — Caddy stellt Zertifikate nur
+3. Die Domain muss unter **Einstellungen → Domain** eingetragen und
+   gespeichert sein — Caddy stellt Zertifikate nur
    für die dort hinterlegte Domain aus.
 4. Caddy-Logs ansehen: `docker compose logs caddy | tail -50`.
 
