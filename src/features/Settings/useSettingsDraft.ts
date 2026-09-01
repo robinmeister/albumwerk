@@ -40,7 +40,8 @@ export function useSettingsDraft() {
   const setFile = (feld: FileField, file: File | null) =>
     setFiles((s) => ({ ...s, [feld]: file }));
 
-  const save = async (): Promise<void> => {
+  // Gibt zurueck, ob gespeichert werden konnte — der Wizard navigiert nur dann weiter.
+  const save = async (markCompleted = false): Promise<boolean> => {
     setSaving(true);
     try {
       const fd = new FormData();
@@ -49,7 +50,9 @@ export function useSettingsDraft() {
       fd.append("themeOverrides", JSON.stringify(draft.themeOverrides ?? []));
       fd.append("watermarkOpacity", String(draft.watermarkOpacity ?? 40));
       fd.append("previewMaxSize", String(draft.previewMaxSize ?? 1200));
-      if (draft.setupCompleted) fd.append("setupCompleted", "true");
+      // markCompleted schliesst die Ersteinrichtung ab. Faellt mit dem Wizard
+      // weg, sobald die Checkliste ihn abloest.
+      if (markCompleted || draft.setupCompleted) fd.append("setupCompleted", "true");
       (Object.keys(files) as FileField[]).forEach((feld) => {
         const file = files[feld];
         if (file) fd.append(feld, file);
@@ -59,9 +62,11 @@ export function useSettingsDraft() {
       await refresh();
       setFiles(LEERE_DATEIEN);
       toast.success("Einstellungen gespeichert");
+      return true;
     } catch (error) {
       console.error("settings save failed", error);
       toast.error("Speichern fehlgeschlagen");
+      return false;
     } finally {
       setSaving(false);
     }

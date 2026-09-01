@@ -145,12 +145,10 @@ export default function BrandingPage(): ReactElement {
 
   const resetToPreset = (feld: OverridableField) => setDraft((d) => clearOverride(d, feld));
 
-  // Bisheriges save(true): einmal speichern, dann in den Album-Bereich
-  // wechseln. Das Markieren als "eingerichtet" übernimmt in Task 8 die
-  // Checkliste — hier bleibt nur noch die Navigation.
+  // Einrichtung abschliessen: speichern, als eingerichtet markieren, dann in
+  // den Album-Bereich wechseln.
   const finishSetup = async () => {
-    await save();
-    navigate("/album");
+    if (await save(true)) navigate("/album");
   };
 
   const regeneratePreviews = async () => {
