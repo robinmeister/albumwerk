@@ -73,6 +73,16 @@ routerAdd("POST", "/api/custom/stripe/create-checkout-session", (e) => {
   const shootingId = String(data.shootingId || "");
 
   const settings = e.app.findRecordById("settings", "appsettings0001");
+
+  // Verkauf gesperrt? Dann gar nicht erst eine Zahlung eröffnen. Dies und der
+  // Zwilling in paypal.pb.js sind die einzigen zwei Eintritte in eine Zahlung
+  // — ein Guard in der Oberfläche allein wäre keine Sperre.
+  const vk = require(__hooks + "/lib/verkaufslib.js");
+  const offen = vk.offeneHarte(vk.pruefeVerkaufsbereitschaft(vk.leseWerte(e.app)));
+  if (offen.length) {
+    return e.json(409, { status: "error", message: "sale locked", offen: offen });
+  }
+
   const secretKey = settings.getString("stripeSecretKey");
   if (!secretKey || !settings.getBool("stripeEnabled")) {
     return e.json(400, { status: "error", message: "stripe not configured" });

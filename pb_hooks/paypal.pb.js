@@ -79,6 +79,16 @@ routerAdd("POST", "/api/custom/paypal/create-order", (e) => {
   const shootingId = String(data.shootingId || "");
 
   const settings = e.app.findRecordById("settings", "appsettings0001");
+
+  // Verkauf gesperrt? Dann gar nicht erst eine Zahlung eröffnen. Dies und der
+  // Zwilling in stripe.pb.js sind die einzigen zwei Eintritte in eine Zahlung
+  // — ein Guard in der Oberfläche allein wäre keine Sperre.
+  const vk = require(__hooks + "/lib/verkaufslib.js");
+  const offen = vk.offeneHarte(vk.pruefeVerkaufsbereitschaft(vk.leseWerte(e.app)));
+  if (offen.length) {
+    return e.json(409, { status: "error", message: "sale locked", offen: offen });
+  }
+
   const clientId = settings.getString("paypalClientId");
   const secret = settings.getString("paypalSecret");
   if (!clientId || !secret || !settings.getBool("paypalEnabled")) {
