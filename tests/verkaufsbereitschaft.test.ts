@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createRequire } from "node:module";
+import { ableiten, type Punkt } from "../src/utils/verkauf";
 
 // Wie tests/previewSession.test.ts: der Hook-Helfer ist CommonJS und wird
 // direkt eingebunden, damit Test und Server denselben Code benutzen.
@@ -96,5 +97,36 @@ describe("Verkaufsbereitschaft — weiche Punkte", () => {
   it("akzeptiert ein Wasserzeichen-Logo statt eines Textes", () => {
     const werte = { ...VOLLSTAENDIG, watermarkText: "", watermarkLogo: "wm.png" };
     expect(punktMit(werte, "wasserzeichen").erfuellt).toBe(true);
+  });
+});
+
+describe("Verkaufsbereitschaft — Ableitung fuer die Oberflaeche", () => {
+  const punkte = (overrides: Partial<Record<string, boolean>> = {}): Punkt[] =>
+    verkauf.pruefeVerkaufsbereitschaft({ ...VOLLSTAENDIG, ...overrides });
+
+  it("zaehlt nur harte Punkte in offeneHarte", () => {
+    const abgeleitet = ableiten(punkte({ logo: "", customDomain: "" }));
+    expect(abgeleitet.offeneHarte).toEqual([]);
+    expect(abgeleitet.gesperrt).toBe(false);
+  });
+
+  it("ist gesperrt, sobald ein harter Punkt offen ist", () => {
+    const abgeleitet = ableiten(punkte({ paypalEnabled: false, stripeEnabled: false }));
+    expect(abgeleitet.gesperrt).toBe(true);
+    expect(abgeleitet.offeneHarte).toEqual(["zahlung"]);
+  });
+
+  it("zaehlt fuer den Balken alle Punkte, auch die weichen", () => {
+    const abgeleitet = ableiten(punkte({ logo: "", customDomain: "" }));
+    expect(abgeleitet.gesamt).toBe(9);
+    expect(abgeleitet.erledigt).toBe(7);
+  });
+
+  it("meldet eine leere Antwort als nicht gesperrt", () => {
+    // Der Endpunkt war nicht erreichbar. Eine Sperre zu behaupten, die
+    // niemand geprueft hat, waere schlimmer als sie zu verpassen.
+    const abgeleitet = ableiten([]);
+    expect(abgeleitet.gesperrt).toBe(false);
+    expect(abgeleitet.gesamt).toBe(0);
   });
 });

@@ -15,9 +15,19 @@ import {
   readSettingsCache,
   writeSettingsCache,
 } from "../config/settings";
+import {
+  fetchVerkauf,
+  VERKAUF_UNBEKANNT,
+  type Verkaufsbereitschaft,
+} from "../utils/verkauf";
 
 interface SettingsContextValue {
   settings: AppSettings;
+  // Abgeleitet aus settings + Katalog, siehe pb_hooks/lib/verkaufslib.js.
+  // Hängt hier und nicht an einem eigenen Provider, weil refresh() nach jedem
+  // Speichern ohnehin schon überall aufgerufen wird — die Checkliste
+  // aktualisiert sich damit ohne zusätzliche Verdrahtung.
+  verkauf: Verkaufsbereitschaft;
   // true once the server copy has been loaded (cache/defaults before that)
   loaded: boolean;
   refresh: () => Promise<void>;
@@ -25,6 +35,7 @@ interface SettingsContextValue {
 
 const SettingsContext = createContext<SettingsContextValue>({
   settings: DEFAULT_SETTINGS,
+  verkauf: VERKAUF_UNBEKANNT,
   loaded: false,
   refresh: async () => undefined,
 });
@@ -36,6 +47,7 @@ export function SettingsProvider({ children }: { children: ReactNode }): ReactEl
     () => readSettingsCache() ?? DEFAULT_SETTINGS,
   );
   const [loaded, setLoaded] = useState(false);
+  const [verkauf, setVerkauf] = useState<Verkaufsbereitschaft>(VERKAUF_UNBEKANNT);
 
   const refresh = useCallback(async () => {
     try {
@@ -47,6 +59,13 @@ export function SettingsProvider({ children }: { children: ReactNode }): ReactEl
       // offline or server down — keep cache/defaults
       console.warn("settings refresh failed", error);
     }
+    // Getrennter Versuch: ein Fehlschlag hier darf die Einstellungen nicht
+    // mitreißen, sie sind für jede Seite wichtiger als die Checkliste.
+    try {
+      setVerkauf(await fetchVerkauf());
+    } catch (error) {
+      console.warn("verkaufsbereitschaft refresh failed", error);
+    }
   }, []);
 
   useEffect(() => {
@@ -54,7 +73,7 @@ export function SettingsProvider({ children }: { children: ReactNode }): ReactEl
   }, [refresh]);
 
   return (
-    <SettingsContext.Provider value={{ settings, loaded, refresh }}>
+    <SettingsContext.Provider value={{ settings, verkauf, loaded, refresh }}>
       {children}
     </SettingsContext.Provider>
   );
