@@ -5,6 +5,7 @@ import { AuthUser } from "../../config/authUser";
 
 import {
   adminMenuItems,
+  adminNavGroups,
   adminNavItems,
   userMenuItems,
   userNavItems,
@@ -25,6 +26,7 @@ export const Layout = (props: LayoutProps): ReactElement => {
     return (
       <AppShell
         navItems={isAdmin ? adminNavItems : userNavItems}
+        navGroups={isAdmin ? adminNavGroups : undefined}
         menuItems={isAdmin ? adminMenuItems : userMenuItems}
         maxWidth={isAdmin ? "xl" : "lg"}
       />

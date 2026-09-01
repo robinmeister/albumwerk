@@ -7,7 +7,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { pb } from "../../config/pocketbase";
 import { settingsFileUrl } from "../../config/settings";
 import { useSettings } from "../../context/SettingsContext";
-import { NavItem } from "../../utils/routes";
+import { NavGroup, NavItem } from "../../utils/routes";
 import StorageMeter from "./StorageMeter";
 
 export const SIDEBAR_WIDTH = 240;
@@ -18,12 +18,27 @@ const CONTENT_MAX_WIDTH = { lg: 1200, xl: 1536 } as const;
 
 type Props = {
   navItems: NavItem[];
+  navGroups?: NavGroup[];
   menuItems: NavItem[];
   maxWidth: "lg" | "xl";
 };
 
 function isActive(item: NavItem, pathname: string): boolean {
   return item.exact ? item.path === pathname : pathname.startsWith(item.path);
+}
+
+const GRUPPEN_KEY = "sidebar_groups_v1";
+
+// Zugeklappte Gruppen, nicht offene: eine unbekannte Gruppe ist damit offen.
+function leseZugeklappt(): string[] {
+  try {
+    const raw = window.localStorage.getItem(GRUPPEN_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? (parsed as string[]) : [];
+  } catch {
+    // private mode / kaputter Wert — eine offene Gruppe ist harmlos
+    return [];
+  }
 }
 
 const DESKTOP = "@media (min-width: 900px)";
@@ -62,6 +77,11 @@ const s = stylex.create({
   },
   logo: { height: 32, width: 32, objectFit: "contain" },
   navList: { display: "flex", flexDirection: "column", gap: 4, padding: "0 12px" },
+  gruppe: { display: "flex", flexDirection: "column" },
+  gruppeKopf: {
+    cursor: "pointer",
+    padding: "10px 12px",
+  },
   navListBottom: {
     display: "flex",
     flexDirection: "column",
@@ -95,6 +115,17 @@ const s = stylex.create({
     minWidth: 28,
     alignItems: "center",
     justifyContent: "center",
+  },
+  badge: {
+    marginInlineStart: "auto",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 20,
+    height: 20,
+    padding: "0 6px",
+    borderRadius: "var(--radius-full)",
+    backgroundColor: "var(--color-background-muted)",
   },
   spacer: { flexGrow: 1 },
   footer: {
@@ -169,14 +200,16 @@ const s = stylex.create({
 // App shell for all signed-in users: permanent sidebar on desktop, overlay
 // drawer + slim top bar with hamburger on mobile.
 export default function AppShell(props: Props): ReactElement {
-  const { navItems, menuItems, maxWidth } = props;
+  const { navItems, navGroups, menuItems, maxWidth } = props;
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [zugeklappt, setZugeklappt] = useState<string[]>(leseZugeklappt);
   const location = useLocation();
   const navigate = useNavigate();
-  const { settings } = useSettings();
+  const { settings, verkauf } = useSettings();
 
   const logoUrl = settingsFileUrl(settings, "logo");
-  const allItems = [...navItems, ...menuItems];
+  const groupedItems = navGroups?.flatMap((gruppe) => gruppe.items) ?? [];
+  const allItems = [...navItems, ...groupedItems, ...menuItems];
   const sectionLabel =
     allItems.find((item) => isActive(item, location.pathname))?.label ??
     settings.businessName;
@@ -189,6 +222,18 @@ export default function AppShell(props: Props): ReactElement {
   const handleSignOut = () => {
     pb.authStore.clear();
     navigate("/login");
+  };
+
+  const merkeGruppe = (key: string, zu: boolean) => {
+    setZugeklappt((bisher) => {
+      const naechste = zu ? [...bisher, key] : bisher.filter((k) => k !== key);
+      try {
+        window.localStorage.setItem(GRUPPEN_KEY, JSON.stringify(naechste));
+      } catch {
+        // private mode / voller Speicher — der Zustand bleibt trotzdem im State
+      }
+      return naechste;
+    });
   };
 
   const navButton = (item: NavItem) => (
@@ -206,6 +251,13 @@ export default function AppShell(props: Props): ReactElement {
       <Text type="body" weight="medium">
         {item.label}
       </Text>
+      {/* Einziger Eintrag mit Zähler — ein `badge`-Feld an NavItem wäre eine
+          Schnittstelle für genau einen Fall. */}
+      {item.key === "einrichtung" && verkauf.offeneHarte.length > 0 && (
+        <span {...stylex.props(s.badge)} data-testid="einrichtung-badge">
+          <Text type="supporting" weight="semibold">{verkauf.offeneHarte.length}</Text>
+        </span>
+      )}
     </button>
   );
 
@@ -221,6 +273,25 @@ export default function AppShell(props: Props): ReactElement {
       </button>
 
       <nav {...stylex.props(s.navList)}>{navItems.map(navButton)}</nav>
+
+      {navGroups?.map((gruppe) => {
+        // Eine zugeklappte Gruppe, in der man gerade steht, wäre
+        // Orientierungsverlust — die aktive Gruppe ist deshalb immer offen.
+        const enthaeltAktive = gruppe.items.some((item) => isActive(item, location.pathname));
+        return (
+          <details
+            key={gruppe.key}
+            open={enthaeltAktive || !zugeklappt.includes(gruppe.key)}
+            onToggle={(e) => merkeGruppe(gruppe.key, !(e.currentTarget as HTMLDetailsElement).open)}
+            {...stylex.props(s.gruppe)}
+          >
+            <summary {...stylex.props(s.gruppeKopf)}>
+              <Text type="supporting" weight="semibold" color="secondary">{gruppe.label}</Text>
+            </summary>
+            <nav {...stylex.props(s.navList)}>{gruppe.items.map(navButton)}</nav>
+          </details>
+        );
+      })}
 
       <div {...stylex.props(s.spacer)} />
 
