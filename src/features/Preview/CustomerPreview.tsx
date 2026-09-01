@@ -79,10 +79,17 @@ export default function CustomerPreview({
     onClose();
   };
 
+  // Jede Oeffnung bekommt eine eigene URL, damit der Browser die Vorschau
+  // nicht aus seinem Cache beantwortet. Eine alte Kopie zeigt nicht nur
+  // veraltete Daten — sie bringt die Kopfzeilen von damals mit, und eine
+  // frueher ausgelieferte CSP (`frame-ancestors 'none'`) blockiert das iframe
+  // noch Stunden, nachdem der Server laengst 'self' schickt. Stabil pro
+  // Mount, sonst laedt der Rahmen bei jedem Render neu.
+  const frisch = useRef(Date.now()).current;
   const quelle =
     ansicht === "link"
-      ? `/publicAlbum/${shootingId}?vorschau=1`
-      : `/album?vorschau=1`;
+      ? `/publicAlbum/${shootingId}?vorschau=1&f=${frisch}`
+      : `/album?vorschau=1&f=${frisch}`;
 
   return (
     <div {...stylex.props(s.huelle)} data-testid="kundenansicht">

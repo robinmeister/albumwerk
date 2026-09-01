@@ -435,7 +435,9 @@ Instanz-Domain (Link in der Instagram-Bio, für Fotograf:innen ohne Website).
 
 ### 9.2 Header
 
-- **Alles außer `/embed*`: `frame-ancestors 'none'`.**
+- **Alles außer `/embed*`: `frame-ancestors 'self'`** — fremde Seiten bleiben
+  draußen, die eigene Instanz darf sich selbst einbetten (die
+  Kundenansicht-Vorschau im Admin tut genau das).
 - **Nur `/embed*`: `frame-ancestors` mit der Allowlist der Fotograf:in.**
 
 > **Bestehender Befund, unabhängig von diesem Feature:** Aktuell setzt weder der
