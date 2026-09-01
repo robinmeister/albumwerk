@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 import Page from "../../components/layout/Page";
 import { SectionCard, sf } from "../../features/Settings/components/SettingsSection";
 import { useSettingsDraft } from "../../features/Settings/useSettingsDraft";
-import { BETRIEB_UNBEKANNT, fetchBetrieb, type Betrieb } from "../../utils/betrieb";
+import { BETRIEB_UNBEKANNT, fetchBetrieb, meldeDomainWunsch, type Betrieb } from "../../utils/betrieb";
 import { createTicket, forwardTicket } from "../../utils/support";
 
 export default function DomainPage(): ReactElement {
@@ -97,6 +97,16 @@ export default function DomainPage(): ReactElement {
     // wissen, dass er sie im Support-Bereich erneut abschicken kann.
     try {
       await forwardTicket(ticketId, "Domain-Anfrage aus den Einstellungen");
+      // Zusaetzlich strukturiert an die Control-Plane: das Ticket ist der
+      // Faden fuer Rueckfragen, dieser Aufruf traegt die Domain dort ein, wo
+      // die Freigabe stattfindet. Schlaegt er fehl, bleibt das Ticket — der
+      // Weg ist doppelt, weil der Verlust einer bezahlten Anfrage teurer ist
+      // als ein doppelter Eintrag.
+      try {
+        await meldeDomainWunsch(domain);
+      } catch (error) {
+        console.warn("Domain-Wunsch nicht an die Control-Plane gemeldet", error);
+      }
       toast.success("Anfrage gesendet — wir melden uns mit den Details.");
     } catch (error) {
       console.error("domain request forward failed", error);

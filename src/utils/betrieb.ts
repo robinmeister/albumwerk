@@ -27,3 +27,17 @@ export async function fetchBetrieb(): Promise<Betrieb> {
     return BETRIEB_UNBEKANNT;
   }
 }
+
+// Meldet den Domain-Wunsch an die Control-Plane des Anbieters. Auf einer selbst
+// gehosteten Instanz antwortet der Endpunkt mit 204 und es passiert nichts —
+// dort gibt es niemanden zu fragen.
+//
+// Wirft bei Fehlern, damit der Aufrufer zwischen "gemeldet" und "nur als Ticket
+// hinterlegt" unterscheiden kann.
+export async function meldeDomainWunsch(domain: string): Promise<void> {
+  await pb.send("/api/custom/domain/request", {
+    method: "POST",
+    body: { domain },
+    requestKey: null,
+  });
+}
