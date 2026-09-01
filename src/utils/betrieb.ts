@@ -1,5 +1,10 @@
 import { pb } from "../config/pocketbase";
 
+// Einmaliger Aufpreis fuer die Einrichtung einer eigenen Domain bei verwalteten
+// Instanzen. Steht hier und nicht doppelt im Text: Seite und Hilfe-Artikel
+// muessen dieselbe Zahl nennen.
+export const DOMAIN_AUFPREIS = "39 €";
+
 // Betriebsart der Instanz — siehe pb_hooks/betrieb.pb.js.
 export interface Betrieb {
   /** Vom Anbieter verwaltet (SaaS). Falsch heisst: selbst gehostet. */

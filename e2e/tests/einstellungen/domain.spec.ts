@@ -74,7 +74,9 @@ test("verwaltet wird angefragt statt selbst eingetragen", async ({ page, anmelde
   // Der Kostenhinweis und die Anleitung muessen sichtbar sein, nicht hinter
   // dem Aufklapp-Pfeil des Banners liegen.
   const abschnitt = page.getByTestId("abschnitt:Eigene Domain");
-  await expect(abschnitt.getByText("kostenpflichtig", { exact: false })).toBeVisible();
+  // Der Preis muss dastehen, nicht nur "kostenpflichtig" — sonst kommt genau
+  // die Rueckfrage, die er ersparen soll.
+  await expect(abschnitt.getByText("einmalig 39 €", { exact: false })).toBeVisible();
   await expect(abschnitt.getByText("kunde.albumwerk.de", { exact: false })).toBeVisible();
   await expect(abschnitt.getByText("A-Record", { exact: true })).toHaveCount(0);
 });

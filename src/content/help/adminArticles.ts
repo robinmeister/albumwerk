@@ -106,7 +106,7 @@ export const adminArticles: HelpArticle[] = [
   <li>Mit <strong>Domain prüfen</strong> siehst du, ob die Adresse schon erreichbar und gesichert ist.</li>
 </ol>
 <h2>Wenn deine Instanz bei uns läuft</h2>
-<p>Dann gehört der Server nicht dir, und es gibt keine IP, auf die du zeigen könntest. Die Domain schalten wir für dich frei — sie ist kostenpflichtig.</p>
+<p>Dann gehört der Server nicht dir, und es gibt keine IP, auf die du zeigen könntest. Die Domain schalten wir für dich frei. Die Einrichtung kostet einmalig <strong>39 €</strong> — Hilfe beim DNS-Eintrag inklusive. Danach fallen keine weiteren Kosten an: das Zertifikat ist kostenlos und erneuert sich selbst.</p>
 <ol>
   <li>Lege bei deinem Domain-Anbieter einen <strong>CNAME</strong> an, der auf die Adresse deiner Instanz zeigt. Welche das ist, steht auf der Seite <strong>Einstellungen → Domain</strong>.</li>
   <li>Trage die gewünschte Domain dort ein und klick auf <strong>Domain anfragen</strong>.</li>

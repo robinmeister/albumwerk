@@ -9,7 +9,13 @@ import { toast } from "react-toastify";
 import Page from "../../components/layout/Page";
 import { SectionCard, sf } from "../../features/Settings/components/SettingsSection";
 import { useSettingsDraft } from "../../features/Settings/useSettingsDraft";
-import { BETRIEB_UNBEKANNT, fetchBetrieb, meldeDomainWunsch, type Betrieb } from "../../utils/betrieb";
+import {
+  BETRIEB_UNBEKANNT,
+  DOMAIN_AUFPREIS,
+  fetchBetrieb,
+  meldeDomainWunsch,
+  type Betrieb,
+} from "../../utils/betrieb";
 import { createTicket, forwardTicket } from "../../utils/support";
 
 export default function DomainPage(): ReactElement {
@@ -145,8 +151,9 @@ export default function DomainPage(): ReactElement {
       <Banner status="info" title="Eine eigene Domain richten wir für dich ein." defaultIsExpanded>
         <div {...stylex.props(sf.grid1)}>
           <Text type="body">
-            Deine Instanz läuft bei uns — die Domain schalten wir auf Anfrage frei. Sie ist
-            kostenpflichtig; wir melden uns mit den Details, sobald deine Anfrage hier ist.
+            Deine Instanz läuft bei uns — die Domain schalten wir für dich frei. Die
+            Einrichtung kostet einmalig {DOMAIN_AUFPREIS}, Hilfe beim DNS-Eintrag
+            inklusive. Danach fallen keine weiteren Kosten an.
           </Text>
           <ol {...stylex.props(sf.ol)}>
             <li><Text type="body">Trage oben ein, unter welcher Adresse dein Album erreichbar sein soll.</Text></li>
