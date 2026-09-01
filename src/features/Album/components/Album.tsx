@@ -20,6 +20,7 @@ import useMobileService from "../../../hooks/useMobileService";
 import { Package, Shooting } from "../../../utils/types";
 import { calculateTotalPackagePrice } from "../../Pricing/utils/functions";
 import { getRecord, pb } from "../../../config/pocketbase";
+import { useSettings } from "../../../context/SettingsContext";
 
 import DeleteModal from "../../../components/widgets/DeleteModal";
 import ImagePreview from "./ImagePreview";
@@ -94,6 +95,7 @@ export default function Album(props: Props): ReactElement {
   } = props;
   const isMobile = useMobileService();
   const navigate = useNavigate();
+  const { verkauf } = useSettings();
   const [open, setOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(true);
@@ -281,6 +283,13 @@ export default function Album(props: Props): ReactElement {
     );
   };
 
+  // paid and public shootings have no checkout — the customer downloads directly
+  const isFreeDownload = shooting?.type === "paid" || shooting?.type === "public";
+
+  // Nur der Kauf-Weg ist betroffen: Shootings vom Typ "paid" oder "public"
+  // gehen ohne Zahlung direkt auf die Download-Seite und laufen weiter.
+  const kaufGesperrt = !isAdminAlbum && !isFreeDownload && verkauf.gesperrt;
+
   const primaryAction = async () => {
     if (isAdminAlbum) {
       setOpenDeleteModal(true);
@@ -294,16 +303,16 @@ export default function Album(props: Props): ReactElement {
     }
   };
 
-  // paid and public shootings have no checkout — the customer downloads directly
-  const isFreeDownload = shooting?.type === "paid" || shooting?.type === "public";
   const primaryLabel = isAdminAlbum
     ? "Löschen"
     : isFreeDownload
       ? "Download"
       : "Kaufen";
-  const primaryDisabled = shootingPackage && !isAdminAlbum && !isFreeDownload
-    ? !(selected.length >= shootingPackage.numberOfImages)
-    : selected.length === 0;
+  const primaryDisabled = kaufGesperrt
+    ? true
+    : shootingPackage && !isAdminAlbum && !isFreeDownload
+      ? !(selected.length >= shootingPackage.numberOfImages)
+      : selected.length === 0;
   const packageRemaining = shootingPackage
     ? Math.max(shootingPackage.numberOfImages - selected.length, 0)
     : 0;
@@ -356,17 +365,24 @@ export default function Album(props: Props): ReactElement {
             }}
           />
         )}
+        {kaufGesperrt && (
+          <Text type="supporting" color="secondary">
+            Der Bilderkauf ist gerade nicht möglich. Bitte später erneut versuchen.
+          </Text>
+        )}
         <Button
           size="sm"
           variant={isAdminAlbum ? "destructive" : "primary"}
           isDisabled={primaryDisabled}
           label={primaryLabel}
           tooltip={
-            primaryDisabled && shootingPackage && !isAdminAlbum
-              ? `Bitte mindestens ${shootingPackage.numberOfImages} Bilder auswählen`
-              : primaryDisabled
-                ? "Bitte zuerst Bilder auswählen"
-                : undefined
+            kaufGesperrt
+              ? undefined
+              : primaryDisabled && shootingPackage && !isAdminAlbum
+                ? `Bitte mindestens ${shootingPackage.numberOfImages} Bilder auswählen`
+                : primaryDisabled
+                  ? "Bitte zuerst Bilder auswählen"
+                  : undefined
           }
           onClick={() => void primaryAction()}
         />

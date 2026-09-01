@@ -1,3 +1,4 @@
+import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Text } from "@astryxdesign/core/Text";
@@ -7,6 +8,7 @@ import { ReactElement, useEffect, useState } from "react";
 import { Location, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getRecord, pb } from "../../config/pocketbase";
+import { useSettings } from "../../context/SettingsContext";
 
 import Page from "../../components/layout/Page";
 import PageLoader from "../../components/feedback/PageLoader";
@@ -81,6 +83,7 @@ export default function PricingPage(): ReactElement {
   const location: Location = useLocation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { verkauf } = useSettings();
 
   // location.state wins (fresh from the album); the draft fills the gaps
   // after a reload or when returning to the tab
@@ -263,6 +266,25 @@ export default function PricingPage(): ReactElement {
 
   if (loading) {
     return <PageLoader />;
+  }
+
+  if (verkauf.gesperrt) {
+    // Nennt bewusst keinen Grund: eine Kundin kann mit "es fehlt ein
+    // Impressum" nichts anfangen, und die Instanz muss ihre
+    // Konfigurationslücken nicht öffentlich aufzählen.
+    //
+    // Vor der shootingId-Prüfung: greift auch beim Direktaufruf ohne
+    // Albumauswahl oder Entwurf, nicht nur nach einer laufenden Bestellung.
+    return (
+      <Page title="Bilder kaufen">
+        <div data-testid="kauf-gesperrt">
+          <Banner
+            status="info"
+            title="Der Bilderkauf ist gerade nicht möglich. Bitte später erneut versuchen."
+          />
+        </div>
+      </Page>
+    );
   }
 
   /* ── Nothing to order (direct visit without album selection or draft) ── */
