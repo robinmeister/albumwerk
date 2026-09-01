@@ -45,6 +45,7 @@ import HelpPage from "./pages/help/HelpPage";
 import HelpArticlePage from "./pages/help/HelpArticlePage";
 import HelpAdminPage from "./pages/admin/HelpAdminPage";
 import BrandingPage from "./pages/admin/BrandingPage";
+import EinrichtungPage from "./pages/admin/EinrichtungPage";
 import DomainPage from "./pages/admin/DomainPage";
 import KontaktPage from "./pages/admin/KontaktPage";
 import BilderPage from "./pages/admin/BilderPage";
@@ -172,7 +173,12 @@ function ThemedApp(): ReactElement {
                   <Route path="orderDetails/:orderId" element={<OrderDetailsPage />} />
                   <Route path="users" element={<AdminUsersPage />} />
                   <Route path="payments" element={<AdminPaymentsPage />} />
+                  <Route path="einrichtung" element={<EinrichtungPage />} />
                   <Route path="branding" element={<BrandingPage />} />
+                  {/* /branding?setup=1 war der alte Wizard-Link — Checklisten-Route
+                      übernimmt, damit gespeicherte Links und Hilfeartikel nicht ins
+                      Leere zeigen. */}
+                  <Route path="branding/setup" element={<Navigate to="/einrichtung" replace />} />
                   <Route path="domain" element={<DomainPage />} />
                   <Route path="kontakt" element={<KontaktPage />} />
                   <Route path="bilder" element={<BilderPage />} />

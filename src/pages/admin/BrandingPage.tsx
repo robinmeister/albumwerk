@@ -7,6 +7,7 @@ import { Heading } from "@astryxdesign/core/Heading";
 import { Text } from "@astryxdesign/core/Text";
 import * as stylex from "@stylexjs/stylex";
 import { ReactElement, useEffect, useMemo, useState } from "react";
+import { Navigate, useSearchParams } from "react-router-dom";
 
 import Page from "../../components/layout/Page";
 import { pb } from "../../config/pocketbase";
@@ -110,6 +111,11 @@ function ThemePreview({ draft }: { draft: AppSettings }): ReactElement {
 }
 
 export default function BrandingPage(): ReactElement {
+  // Der Wizard lief unter /branding?setup=1; die Checkliste hat ihn abgelöst.
+  // Hooks laufen erst vollständig, der Redirect steht darum unten vor dem
+  // JSX — ein früher return vor useSettingsDraft() würde React Hooks
+  // konditionell aufrufen (react-hooks/rules-of-hooks).
+  const [searchParams] = useSearchParams();
   const { draft, setDraft, set, files, setFile, save, saving, settings } = useSettingsDraft();
 
   const [beispielGalerie, setBeispielGalerie] = useState<string>("");
@@ -127,6 +133,8 @@ export default function BrandingPage(): ReactElement {
   }, []);
 
   const resetToPreset = (feld: OverridableField) => setDraft((d) => clearOverride(d, feld));
+
+  if (searchParams.get("setup") === "1") return <Navigate to="/einrichtung" replace />;
 
   const brandingSection = (
     <SectionCard title="Branding" subtitle="Name, Logo, Farben und Schrift" helpSlug="branding-einrichten">
