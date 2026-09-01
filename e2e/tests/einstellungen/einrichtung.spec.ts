@@ -23,8 +23,8 @@ test.afterAll(async () => {
 });
 
 test("offene Pflichtpunkte stehen auf der Checkliste und im Badge", async ({ page, pb, anmelden }) => {
-  // Die Demo-Instanz hat zwei offene harte Punkte (zahlung, recht). Für eine
-  // eindeutige Zahl im Badge wird zahlung geschlossen, recht bleibt offen.
+  // Der Demo-Seed erfüllt alle vier harten Punkte. Für eine eindeutige Zahl
+  // im Badge wird hier genau einer wieder geöffnet: recht.
   await pb.update("settings", "appsettings0001", {
     paypalEnabled: true,
     imprintHtml: "",

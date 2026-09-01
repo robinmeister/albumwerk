@@ -5,6 +5,7 @@
 // eine gesperrte Kasse sehen.
 
 import { test, expect } from "../../support/fixtures";
+import { bilderGeladen } from "../../support/shot";
 import { einstellungenSichern, einstellungenWiederherstellen } from "../../support/settings";
 import { PbAdmin } from "../../support/pb";
 
@@ -31,6 +32,17 @@ test("Kundin sieht den Hinweis statt der Kasse, kann die Galerie aber ansehen", 
 
   // Die Galerie selbst bleibt offen — nur der Kauf ist gesperrt.
   await expect(page.getByRole("button", { name: "Bilder auswählen" })).toBeVisible();
+
+  // Der Kaufen-Knopf in der Aktionsleiste: erreichbar erst im Auswahlmodus.
+  await bilderGeladen(page);
+  await page.getByRole("button", { name: "Bilder auswählen" }).click();
+  await page.getByTestId("bildraster").locator("img").first().click();
+
+  const kaufen = page.getByRole("button", { name: "Kaufen" });
+  await expect(kaufen).toBeDisabled();
+  await expect(
+    page.getByText("Der Bilderkauf ist gerade nicht möglich. Bitte später erneut versuchen."),
+  ).toBeVisible();
 
   // Direktaufruf der Kasse: der maßgebliche Ort der Sperre.
   await page.goto("/pricing");
