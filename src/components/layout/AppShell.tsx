@@ -254,7 +254,15 @@ export default function AppShell(props: Props): ReactElement {
       {/* Einziger Eintrag mit Zähler — ein `badge`-Feld an NavItem wäre eine
           Schnittstelle für genau einen Fall. */}
       {item.key === "einrichtung" && verkauf.offeneHarte.length > 0 && (
-        <span {...stylex.props(s.badge)} data-testid="einrichtung-badge">
+        <span
+          {...stylex.props(s.badge)}
+          data-testid="einrichtung-badge"
+          aria-label={
+            verkauf.offeneHarte.length === 1
+              ? "1 offener Punkt bis zum Verkauf"
+              : `${verkauf.offeneHarte.length} offene Punkte bis zum Verkauf`
+          }
+        >
           <Text type="supporting" weight="semibold">{verkauf.offeneHarte.length}</Text>
         </span>
       )}
