@@ -45,6 +45,9 @@ import HelpPage from "./pages/help/HelpPage";
 import HelpArticlePage from "./pages/help/HelpArticlePage";
 import HelpAdminPage from "./pages/admin/HelpAdminPage";
 import BrandingPage from "./pages/admin/BrandingPage";
+import DomainPage from "./pages/admin/DomainPage";
+import KontaktPage from "./pages/admin/KontaktPage";
+import BilderPage from "./pages/admin/BilderPage";
 import AdminLegalPage from "./pages/admin/AdminLegalPage";
 import AdminSupportPage from "./pages/admin/AdminSupportPage";
 import SetupRedirect from "./components/SetupRedirect";
@@ -170,6 +173,9 @@ function ThemedApp(): ReactElement {
                   <Route path="users" element={<AdminUsersPage />} />
                   <Route path="payments" element={<AdminPaymentsPage />} />
                   <Route path="branding" element={<BrandingPage />} />
+                  <Route path="domain" element={<DomainPage />} />
+                  <Route path="kontakt" element={<KontaktPage />} />
+                  <Route path="bilder" element={<BilderPage />} />
                   <Route path="legal" element={<AdminLegalPage />} />
                   <Route path="support" element={<AdminSupportPage />} />
                   <Route path="downloads" element={<DownloadsPage />} />

@@ -1,6 +1,4 @@
-import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
-import { Divider } from "@astryxdesign/core/Divider";
 import { Selector } from "@astryxdesign/core/Selector";
 import { Slider } from "@astryxdesign/core/Slider";
 import { TextInput } from "@astryxdesign/core/TextInput";
@@ -8,9 +6,7 @@ import { Theme } from "@astryxdesign/core";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Text } from "@astryxdesign/core/Text";
 import * as stylex from "@stylexjs/stylex";
-import { ReactElement, ReactNode, useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { toast } from "react-toastify";
+import { ReactElement, useEffect, useMemo, useState } from "react";
 
 import Page from "../../components/layout/Page";
 import { pb } from "../../config/pocketbase";
@@ -24,7 +20,6 @@ import {
 } from "../../config/settings";
 import { buildAstryxTheme, themeModeProp } from "../../utils/theme";
 import { applyPreset, clearOverride, isOverridden, setOverride } from "../../utils/themeOverrides";
-import PaymentSettings from "../../features/Settings/components/PaymentSettings";
 import PresetPicker from "../../features/Settings/components/PresetPicker";
 import { ColorField, Herkunft, ImageDrop, SectionCard, sf } from "../../features/Settings/components/SettingsSection";
 import CustomerPreview from "../../features/Preview/CustomerPreview";
@@ -50,11 +45,6 @@ const MODE_OPTIONS: { value: ThemeMode; label: string }[] = [
 const f = stylex.create({
   presetWrap: { marginBottom: 16 },
   layout: { display: "grid", gridTemplateColumns: { default: "1fr", "@media (min-width: 900px)": "8fr 4fr" }, gap: 16, alignItems: "start" },
-  wizardNav: { display: "flex", justifyContent: "space-between", marginTop: 16 },
-  stepper: { display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" },
-  step: { display: "flex", alignItems: "center", gap: 6 },
-  dot: { display: "inline-flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: "var(--radius-full)", fontSize: 12, fontWeight: 600, backgroundColor: "var(--color-background-muted)", color: "var(--color-text-secondary)" },
-  dotActive: { backgroundColor: "var(--color-accent)", color: "var(--color-on-accent)" },
   preview: { position: { "@media (min-width: 900px)": "sticky" }, top: 16, display: "flex", flexDirection: "column", gap: 8 },
 });
 
@@ -121,14 +111,7 @@ function ThemePreview({ draft }: { draft: AppSettings }): ReactElement {
 
 export default function BrandingPage(): ReactElement {
   const { draft, setDraft, set, files, setFile, save, saving, settings } = useSettingsDraft();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const setupMode = searchParams.get("setup") === "1";
 
-  const [regenerating, setRegenerating] = useState(false);
-  const [activeStep, setActiveStep] = useState(0);
-  const [checkingDomain, setCheckingDomain] = useState(false);
-  const [domainStatus, setDomainStatus] = useState<"idle" | "ok" | "fail">("idle");
   const [beispielGalerie, setBeispielGalerie] = useState<string>("");
   const [vorschauFuer, setVorschauFuer] = useState<string | null>(null);
 
@@ -144,51 +127,6 @@ export default function BrandingPage(): ReactElement {
   }, []);
 
   const resetToPreset = (feld: OverridableField) => setDraft((d) => clearOverride(d, feld));
-
-  // Einrichtung abschliessen: speichern, als eingerichtet markieren, dann in
-  // den Album-Bereich wechseln.
-  const finishSetup = async () => {
-    if (await save(true)) navigate("/album");
-  };
-
-  const regeneratePreviews = async () => {
-    setRegenerating(true);
-    try {
-      const result = await pb.send("/api/custom/regenerate-previews", { method: "POST", body: {} });
-      // the previews are rendered in the background (pb_hooks/previews.pb.js)
-      toast.success(
-        result.queued === 1
-          ? "1 Vorschau wird im Hintergrund neu erzeugt"
-          : `${result.queued ?? 0} Vorschauen werden im Hintergrund neu erzeugt`,
-      );
-    } catch (error) {
-      console.error("preview regeneration failed", error);
-      toast.error("Neu-Erzeugen fehlgeschlagen");
-    } finally {
-      setRegenerating(false);
-    }
-  };
-
-  const goNext = async () => {
-    await save();
-    setActiveStep((s) => s + 1);
-  };
-
-  const checkDomain = async () => {
-    const domain = draft.customDomain.trim().toLowerCase();
-    if (!domain) return;
-    setCheckingDomain(true);
-    setDomainStatus("idle");
-    try {
-      await save();
-      await fetch(`https://${domain}/api/health`, { mode: "no-cors", cache: "no-store" });
-      setDomainStatus("ok");
-    } catch (_) {
-      setDomainStatus("fail");
-    } finally {
-      setCheckingDomain(false);
-    }
-  };
 
   const brandingSection = (
     <SectionCard title="Branding" subtitle="Name, Logo, Farben und Schrift" helpSlug="branding-einrichten">
@@ -254,136 +192,15 @@ export default function BrandingPage(): ReactElement {
     </SectionCard>
   );
 
-  const contactSection = (
-    <SectionCard title="Kontakt & Geschäft" subtitle="E-Mail-Adressen und Website" helpSlug="kontakt-benachrichtigungen">
-      <div {...stylex.props(sf.grid2)}>
-        <TextInput width="100%" type="email" label="Kontakt-E-Mail (Support)"
-          value={draft.contactEmail} onChange={(v) => set({ contactEmail: v })} />
-        <TextInput width="100%" type="email" label="Bestell-Benachrichtigungen an"
-          description="Hier gehen neue Bestellungen ein"
-          value={draft.orderNotificationEmail} onChange={(v) => set({ orderNotificationEmail: v })} />
-        <TextInput width="100%" label="Website (optional)"
-          value={draft.websiteUrl} onChange={(v) => set({ websiteUrl: v })} />
-        <TextInput width="100%" label="Währung" description="ISO-Code, z. B. EUR"
-          value={draft.currency} onChange={(v) => set({ currency: v.toUpperCase().slice(0, 3) })} />
-      </div>
-    </SectionCard>
-  );
-
-  const domainSection = (
-    <SectionCard title="Eigene Domain" subtitle="Unter welcher Adresse soll dein Album erreichbar sein?" helpSlug="custom-domain">
-      <div {...stylex.props(sf.grid1)}>
-        <TextInput width="100%" label="Domain" placeholder="fotos.deine-domain.de"
-          description="Ohne https:// — z. B. fotos.deine-domain.de. Leer lassen, wenn (noch) keine eigene Domain."
-          value={draft.customDomain}
-          onChange={(v) => { setDomainStatus("idle"); set({ customDomain: v.trim().toLowerCase() }); }} />
-        <Banner status="info" title="So richtest du deine Domain ein:">
-          <ol {...stylex.props(sf.ol)}>
-            <li><Text type="body">Lege bei deinem Domain-Anbieter einen <strong>A-Record</strong> (und optional AAAA für IPv6) an, der auf die <strong>IP-Adresse deines Servers</strong> zeigt.</Text></li>
-            <li><Text type="body">Trage die Domain oben ein und speichere.</Text></li>
-            <li><Text type="body">Das HTTPS-Zertifikat wird beim ersten Aufruf <strong>automatisch</strong> von Let's Encrypt geholt — du musst nichts weiter konfigurieren.</Text></li>
-          </ol>
-        </Banner>
-        <div {...stylex.props(sf.regenRow)}>
-          <Button variant="secondary" label="Domain prüfen" isLoading={checkingDomain}
-            isDisabled={checkingDomain || !draft.customDomain.trim()} onClick={() => void checkDomain()} />
-          {domainStatus === "ok" && (
-            <Banner status="success" title="Deine Domain ist erreichbar und per HTTPS gesichert." />
-          )}
-          {domainStatus === "fail" && (
-            <Banner status="warning" title="Noch nicht erreichbar. Das ist direkt nach dem Anlegen des DNS-Eintrags normal — es kann einige Minuten bis Stunden dauern, bis die Änderung überall aktiv ist. Später erneut prüfen." />
-          )}
-        </div>
-      </div>
-    </SectionCard>
-  );
-
-  const paymentSection = (
-    <SectionCard title="Zahlung" subtitle="PayPal und Kartenzahlung (Stripe) — optional, jederzeit änderbar" helpSlug="zahlungen-paypal">
-      <PaymentSettings compact />
-    </SectionCard>
-  );
-
-  const watermarkSection = (
-    <SectionCard title="Wasserzeichen & Vorschau" subtitle="Für die automatisch erzeugten Vorschaubilder in Alben" helpSlug="wasserzeichen-vorschau">
-      <div {...stylex.props(sf.grid2)}>
-        <TextInput width="100%" label="Wasserzeichen-Text"
-          description="Leer lassen, um den Geschäftsnamen zu verwenden"
-          value={draft.watermarkText} onChange={(v) => set({ watermarkText: v })} />
-        <ImageDrop label="Wasserzeichen-Logo (optional, statt Text)" file={files.watermarkLogo}
-          currentUrl={settingsFileUrl(settings, "watermarkLogo")}
-          onFile={(file) => setFile("watermarkLogo", file)} />
-        <div {...stylex.props(sf.sliderWrap)}>
-          <Text type="supporting" color="secondary">Deckkraft: {draft.watermarkOpacity}%</Text>
-          <Slider label="Deckkraft" isLabelHidden min={5} max={100}
-            value={draft.watermarkOpacity} onChange={(v) => set({ watermarkOpacity: v })} />
-        </div>
-        <TextInput width="100%" label="Max. Vorschaugröße (px)"
-          value={String(draft.previewMaxSize)} onChange={(v) => set({ previewMaxSize: Number(v) })} />
-        <div {...stylex.props(sf.regenRow, sf.full)}>
-          <Button variant="secondary" label="Vorschauen neu erzeugen" isLoading={regenerating}
-            isDisabled={regenerating} onClick={() => void regeneratePreviews()} />
-          <Text type="supporting" color="secondary">
-            Nach Änderungen am Wasserzeichen für alle Alben neu generieren (kann einige Minuten dauern).
-          </Text>
-        </div>
-      </div>
-    </SectionCard>
-  );
-
-  const steps: { label: string; content: ReactNode }[] = [
-    { label: "Branding", content: brandingSection },
-    { label: "Domain", content: domainSection },
-    { label: "Kontakt", content: contactSection },
-    { label: "Zahlung", content: paymentSection },
-  ];
-
   return (
-    <Page title={setupMode ? "Einrichtung" : "Branding & Einstellungen"}>
-      {setupMode && (
-        <div style={{ marginBottom: 16 }}>
-          <Banner status="info" title="Willkommen! Richte dein Album in wenigen Schritten ein. Alles lässt sich später unter „Branding“ ändern." />
-        </div>
-      )}
+    <Page title="Branding">
       <div {...stylex.props(f.layout)}>
-        <div>
-          {setupMode ? (
-            <div>
-              <div {...stylex.props(f.stepper)}>
-                {steps.map((st, idx) => (
-                  <div key={st.label} {...stylex.props(f.step)}>
-                    <span {...stylex.props(f.dot, idx <= activeStep && f.dotActive)}>{idx + 1}</span>
-                    <Text type="supporting" color={idx <= activeStep ? "primary" : "secondary"}>{st.label}</Text>
-                  </div>
-                ))}
-              </div>
-              {steps[activeStep].content}
-              <div {...stylex.props(f.wizardNav)}>
-                <Button variant="secondary" label="Zurück" isDisabled={activeStep === 0}
-                  onClick={() => setActiveStep((s) => s - 1)} />
-                {activeStep < steps.length - 1 ? (
-                  <Button variant="primary" label="Weiter" isDisabled={saving} isLoading={saving}
-                    onClick={() => void goNext()} />
-                ) : (
-                  <Button variant="primary" label="Einrichtung abschließen" isDisabled={saving} isLoading={saving}
-                    onClick={() => void finishSetup()} />
-                )}
-              </div>
-            </div>
-          ) : (
-            <div {...stylex.props(sf.sections)}>
-              {brandingSection}
-              {domainSection}
-              {contactSection}
-              {paymentSection}
-              {watermarkSection}
-              <Divider />
-              <div {...stylex.props(sf.saveRow)}>
-                <Button variant="primary" size="lg" label="Speichern" isDisabled={saving} isLoading={saving}
-                  onClick={() => void save()} />
-              </div>
-            </div>
-          )}
+        <div {...stylex.props(sf.sections)}>
+          {brandingSection}
+          <div {...stylex.props(sf.saveRow)}>
+            <Button variant="primary" size="lg" label="Speichern" isDisabled={saving} isLoading={saving}
+              onClick={() => void save()} />
+          </div>
         </div>
         <div {...stylex.props(f.preview)}>
           <Text type="label" weight="semibold" color="secondary">Live-Vorschau</Text>

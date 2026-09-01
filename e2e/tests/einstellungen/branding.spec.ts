@@ -37,8 +37,6 @@ test("Fotograf ändert den Namen des Geschäfts", async ({ page, pb, anmelden })
   await nameFeld.fill(NEUER_NAME);
   await shot(abschnitt, "branding-einrichten/01-name");
 
-  // exact: die Zahlungs-Abschnitte haben Knöpfe namens "Speichern & prüfen",
-  // ein /Speichern/-Regex greift den falschen (und deaktivierten) davon.
   await page.getByRole("button", { name: "Speichern", exact: true }).click();
 
   // Sichtbares Ergebnis: der Name schlägt in die Seitenleiste durch.
@@ -63,8 +61,6 @@ test("Fotograf wechselt das Design-Register und es überlebt den Neuladen", asyn
   const vorher = await seitenleiste();
 
   await page.getByTestId("preset:riss").click();
-  // exact: die Zahlungs-Abschnitte haben Knöpfe namens "Speichern & prüfen",
-  // ein /Speichern/-Regex greift den falschen (und deaktivierten) davon.
   await page.getByRole("button", { name: "Speichern", exact: true }).click();
   await expect(page.getByText("Einstellungen gespeichert")).toBeVisible();
 

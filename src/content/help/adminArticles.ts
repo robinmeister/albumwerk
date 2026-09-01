@@ -21,7 +21,7 @@ export const adminArticles: HelpArticle[] = [
     audience: ["admin"],
     category: "setup",
     keywords: ["einrichtung", "setup", "start", "installation", "onboarding"],
-    relatedPath: "/branding",
+    relatedPath: "/einrichtung",
     bodyHtml: `
 <p>Nach der Installation führt dich der Einrichtungs-Assistent einmal durch die wichtigsten Punkte. Falls du ihn übersprungen hast oder etwas nachholen willst, ist das hier die Reihenfolge, die sich bewährt hat:</p>
 <ol>
@@ -72,7 +72,7 @@ export const adminArticles: HelpArticle[] = [
     audience: ["admin"],
     category: "setup",
     keywords: ["email", "e-mail", "benachrichtigung", "währung", "eur", "kontakt", "website"],
-    relatedPath: "/branding",
+    relatedPath: "/kontakt",
     bodyHtml: `
 <p>Der Abschnitt <strong>Kontakt &amp; Geschäft</strong> auf der Branding-Seite steuert, wo dich Nachrichten erreichen:</p>
 <ul>
@@ -92,7 +92,7 @@ export const adminArticles: HelpArticle[] = [
     audience: ["admin"],
     category: "setup",
     keywords: ["domain", "dns", "https", "ssl", "zertifikat", "a-record", "let's encrypt", "url"],
-    relatedPath: "/branding",
+    relatedPath: "/domain",
     bodyHtml: `
 <p>Standardmäßig ist deine Instanz unter der Adresse erreichbar, unter der du sie installiert hast. Mit einer eigenen Domain — etwa <code>fotos.deine-domain.de</code> — wirkt das Ganze deutlich professioneller.</p>
 <h2>So gehst du vor</h2>
@@ -252,7 +252,7 @@ export const adminArticles: HelpArticle[] = [
     audience: ["admin"],
     category: "albums",
     keywords: ["wasserzeichen", "watermark", "vorschau", "preview", "deckkraft", "schutz", "kopierschutz"],
-    relatedPath: "/branding",
+    relatedPath: "/bilder",
     bodyHtml: `
 <p>Vorschaubilder sind die Version, die Kunden vor dem Kauf sehen. Sie sind verkleinert und tragen dein Wasserzeichen. Eingestellt wird das unter <strong>Branding → Wasserzeichen &amp; Vorschau</strong>.</p>
 <h2>Die Einstellungen</h2>
