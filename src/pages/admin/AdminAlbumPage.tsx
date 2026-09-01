@@ -1,5 +1,6 @@
 import { ReactElement, useEffect, useMemo, useState } from "react";
 import { Badge } from "@astryxdesign/core/Badge";
+import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { Spinner } from "@astryxdesign/core/Spinner";
 import { TextInput } from "@astryxdesign/core/TextInput";
@@ -8,6 +9,7 @@ import { Text } from "@astryxdesign/core/Text";
 import * as stylex from "@stylexjs/stylex";
 import { Plus as Add, ArrowLeft as ArrowBack, Trash2 as Delete, Pencil as Edit, Camera as PhotoCamera, Search, Upload } from "lucide-react";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 import { Package, Price, Shooting, User } from "../../utils/types";
 import { AlbumContext } from "../../features/Album/utils/context";
@@ -19,6 +21,7 @@ import EditShootingModal from "../../features/Album/components/ShootingModal";
 import DeleteModal from "../../components/widgets/DeleteModal";
 import HelpBanner from "../../components/feedback/HelpBanner";
 import HelpHint from "../../components/widgets/HelpHint";
+import { useSettings } from "../../context/SettingsContext";
 import { getUsersSnapshot } from "../../utils/functions";
 import { getRecord, pb } from "../../config/pocketbase";
 import { getShootingCoverUrl } from "../../config/images";
@@ -135,6 +138,7 @@ const s = stylex.create({
   previewRow: { marginBottom: 12 },
   divider: { marginTop: 12, borderTop: "1px solid var(--color-border)" },
   backBtn: { marginBottom: 16 },
+  verkaufBanner: { marginBottom: 16 },
 });
 
 function ShootingListItem({
@@ -251,6 +255,8 @@ function ShootingDetailHeader({
 
 export default function AdminAlbumPage(): ReactElement {
   const isMobile = useMobileService();
+  const { verkauf } = useSettings();
+  const navigate = useNavigate();
 
   const [openDeleteModal, setOpenDeleteModal]   = useState(false);
   const [openEditModal,   setOpenEditModal]     = useState(false);
@@ -389,6 +395,31 @@ export default function AdminAlbumPage(): ReactElement {
       openUploadModal, setOpenUploadModal, addPackage, setAddPackage,
     }}>
       <div {...stylex.props(s.root)}>
+        {verkauf.gesperrt && (
+          // Nicht wegklickbar, anders als HelpBanner: der merkt sich
+          // Ablehnungen pro Browser, und ein weggeklickter Hinweis auf
+          // einen gesperrten Verkauf wäre ein stiller Ausfall.
+          //
+          // verkauf.gesperrt ist vor dem ersten Laden und nach einem
+          // Fehlschlag false (siehe VERKAUF_UNBEKANNT in utils/verkauf.ts) —
+          // der Banner blitzt beim Seitenaufruf also nicht kurz auf, er
+          // erscheint erst, wenn der Server tatsächlich offene harte Punkte
+          // meldet.
+          <div data-testid="verkauf-gesperrt-banner" {...stylex.props(s.verkaufBanner)}>
+            <Banner
+              status="warning"
+              title={
+                verkauf.offeneHarte.length === 1
+                  ? "Noch 1 Ding bis zum Verkauf der Fotos — solange kann niemand kaufen."
+                  : `Noch ${verkauf.offeneHarte.length} Dinge bis zum Verkauf der Fotos — solange kann niemand kaufen.`
+              }
+              endContent={
+                <Button variant="secondary" label="Jetzt erledigen" onClick={() => navigate("/einrichtung")} />
+              }
+            />
+          </div>
+        )}
+
         <div {...stylex.props(s.pageTitle)}>
           <Heading level={5}>Album</Heading>
           <HelpHint slug="album-anlegen" />
