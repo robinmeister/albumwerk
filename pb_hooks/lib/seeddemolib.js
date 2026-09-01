@@ -34,7 +34,13 @@ module.exports = function seedDemo(app) {
     settings.set("contactEmail", "hallo@demo.test");
     settings.set("orderNotificationEmail", "bestellungen@demo.test");
     settings.set("watermarkText", "DEMO FOTOSTUDIO");
-    settings.set("setupCompleted", true); // wizard is reachable via /branding?setup=1
+    // Die Demo soll einen verkaufsbereiten Betrieb zeigen. Ohne diese drei
+    // Werte fehlen zwei harte Punkte (zahlung, recht) und die Kasse waere
+    // gesperrt — siehe lib/verkaufslib.js.
+    settings.set("paypalEnabled", true);
+    settings.set("imprintHtml", "<p>Demo Fotostudio<br>Musterstrasse 1<br>12345 Musterstadt</p>");
+    settings.set("privacyHtml", "<p>Dies ist eine Demo-Instanz. Es werden keine echten Daten verarbeitet.</p>");
+    settings.set("setupCompleted", true); // die Checkliste liegt unter /einrichtung
     app.save(settings);
   } catch (err) {
     app.logger().warn("demo seed: settings update failed", "error", String(err));

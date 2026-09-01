@@ -28,11 +28,18 @@ export default defineConfig({
   // und damit die Vorschau-Worker — das erzeugt Wartezeiten, die als halb
   // geladene Bilder im Screenshot landen.
   fullyParallel: !SHOTS,
-  // Zwei Worker, nicht "so viele wie Kerne": jeder Test legt vier Bilder an,
-  // deren Vorschauen ImageMagick im selben Container erzeugt. Mehr bringt
-  // nichts — gemessen: mit 4 Workern läuft die Suite genauso lange (~60 s),
-  // die Wartezeit liegt in den einzelnen Tests, nicht in der Parallelität.
-  workers: SHOTS ? 1 : 2,
+  // Ein Worker. Zwei waren es lange, aber `fullyParallel: false` am Projekt
+  // "einstellungen" macht nur die Tests INNERHALB einer Datei seriell — die
+  // Dateien selbst verteilt Playwright weiter auf die Worker. Damit liefen
+  // zwei Dateien gleichzeitig auf demselben globalen Settings-Record und
+  // schrieben sich gegenseitig die Sicherung (e2e/support/settings.ts) kaputt:
+  // branding.spec und rechtstexte.spec schlugen sporadisch fehl, und der
+  // 409-Test sah eine Instanz, die eine andere Datei gerade repariert hatte.
+  // Gemessener Preis für die Serialisierung: ~25 s auf den ganzen Lauf.
+  // Mehr Worker brächten ohnehin wenig — die Wartezeit liegt in den einzelnen
+  // Tests (ImageMagick erzeugt die Vorschauen im selben Container), nicht in
+  // der Parallelität: mit 4 Workern lief die Suite genauso lange wie mit 2.
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   // 90 s: die Tests mit Bild-Upload warten auf die Vorschau-Erzeugung durch
