@@ -10,10 +10,8 @@ import { Text } from "@astryxdesign/core/Text";
 import * as stylex from "@stylexjs/stylex";
 import { ReactElement, ReactNode, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useDropzone } from "react-dropzone";
 import { toast } from "react-toastify";
 
-import HelpHint from "../../components/widgets/HelpHint";
 import Page from "../../components/layout/Page";
 import { pb } from "../../config/pocketbase";
 import {
@@ -21,16 +19,16 @@ import {
   DesignPresetKey,
   FontKey,
   OverridableField,
-  SETTINGS_RECORD_ID,
   ThemeMode,
   settingsFileUrl,
 } from "../../config/settings";
-import { useSettings } from "../../context/SettingsContext";
 import { buildAstryxTheme, themeModeProp } from "../../utils/theme";
 import { applyPreset, clearOverride, isOverridden, setOverride } from "../../utils/themeOverrides";
 import PaymentSettings from "../../features/Settings/components/PaymentSettings";
 import PresetPicker from "../../features/Settings/components/PresetPicker";
+import { ColorField, Herkunft, ImageDrop, SectionCard, sf } from "../../features/Settings/components/SettingsSection";
 import CustomerPreview from "../../features/Preview/CustomerPreview";
+import { useSettingsDraft } from "../../features/Settings/useSettingsDraft";
 
 const FONT_OPTIONS: { value: FontKey; label: string }[] = [
   { value: "inter", label: "Inter (modern, serifenlos)" },
@@ -49,134 +47,16 @@ const MODE_OPTIONS: { value: ThemeMode; label: string }[] = [
   { value: "auto", label: "Automatisch (Systemeinstellung)" },
 ];
 
-type FileFields = {
-  logo: File | null;
-  favicon: File | null;
-  watermarkLogo: File | null;
-};
-
 const f = stylex.create({
-  card: {
-    borderRadius: "var(--radius-container)",
-    border: "1px solid var(--color-border)",
-    backgroundColor: "var(--color-background-card)",
-    overflow: "hidden",
-  },
-  cardHead: { padding: "16px", borderBottom: "1px solid var(--color-border)", display: "flex", flexDirection: "column", gap: 2 },
-  cardTitleRow: { display: "flex", alignItems: "center", gap: 4 },
-  cardBody: { padding: 16 },
-  grid2: { display: "grid", gridTemplateColumns: { default: "1fr", "@media (min-width: 600px)": "1fr 1fr" }, gap: 16 },
-  grid1: { display: "grid", gridTemplateColumns: "1fr", gap: 16 },
-  full: { gridColumn: "1 / -1" },
-  drop: {
-    borderWidth: 2,
-    borderStyle: "dashed",
-    borderRadius: "var(--radius-element)",
-    padding: 16,
-    textAlign: "center",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: 16,
-    minHeight: 72,
-  },
-  dropImg: { height: 48, width: 48, objectFit: "contain" },
-  dropPlaceholder: { height: 48, width: 48, backgroundColor: "var(--color-background-muted)", borderRadius: "var(--radius-element)" },
-  colorField: { display: "flex", flexDirection: "column", gap: 4 },
-  colorInput: { width: "100%", height: 40, borderRadius: "var(--radius-element)", border: "1px solid var(--color-border)", background: "none", cursor: "pointer", padding: 2 },
-  sliderWrap: { display: "flex", flexDirection: "column", gap: 6 },
   presetWrap: { marginBottom: 16 },
-  ol: { paddingLeft: 20, margin: "8px 0 0", display: "flex", flexDirection: "column", gap: 6 },
   layout: { display: "grid", gridTemplateColumns: { default: "1fr", "@media (min-width: 900px)": "8fr 4fr" }, gap: 16, alignItems: "start" },
-  sections: { display: "flex", flexDirection: "column", gap: 16 },
   wizardNav: { display: "flex", justifyContent: "space-between", marginTop: 16 },
-  saveRow: { display: "flex", justifyContent: "flex-end" },
   stepper: { display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" },
   step: { display: "flex", alignItems: "center", gap: 6 },
   dot: { display: "inline-flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: "var(--radius-full)", fontSize: 12, fontWeight: 600, backgroundColor: "var(--color-background-muted)", color: "var(--color-text-secondary)" },
   dotActive: { backgroundColor: "var(--color-accent)", color: "var(--color-on-accent)" },
   preview: { position: { "@media (min-width: 900px)": "sticky" }, top: 16, display: "flex", flexDirection: "column", gap: 8 },
-  regenRow: { display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" },
 });
-
-function SectionCard({ title, subtitle, helpSlug, children }: { title: string; subtitle: string; helpSlug?: string; children: ReactNode }) {
-  return (
-    // data-testid: Ankerpunkt für die E2E-Suite, die aus den Abschnitten die
-    // Screenshots der Hilfe-Artikel zuschneidet. Der Titel ist bereits die
-    // fachliche Kennung des Abschnitts — ein zweiter Bezeichner würde nur
-    // auseinanderlaufen.
-    <div data-testid={`abschnitt:${title}`} {...stylex.props(f.card)}>
-      <div {...stylex.props(f.cardHead)}>
-        <div {...stylex.props(f.cardTitleRow)}>
-          <Heading level={6}>{title}</Heading>
-          {helpSlug && <HelpHint slug={helpSlug} />}
-        </div>
-        <Text type="supporting" color="secondary">{subtitle}</Text>
-      </div>
-      <div {...stylex.props(f.cardBody)}>{children}</div>
-    </div>
-  );
-}
-
-function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <label {...stylex.props(f.colorField)}>
-      <Text type="supporting" color="secondary">{label}</Text>
-      <input type="color" value={value} onChange={(e) => onChange(e.target.value)} {...stylex.props(f.colorInput)} />
-    </label>
-  );
-}
-
-// Zeigt neben einem der vier Register-Felder, ob der Wert vom Preset stammt
-// oder bewusst gesetzt wurde — und im zweiten Fall einen Weg zurück. Auf
-// Modulebene definiert (statt innerhalb von BrandingPage), damit die
-// Komponente bei jedem Tastendruck im Formular ihre Identität behält — sonst
-// hängt React sie bei jedem Re-Render neu ein und der Fokus (z. B. auf dem
-// "… auf Preset zurücksetzen"-Knopf) springt zurück zum document.body.
-//
-// `feld` geht in den Button-Namen ein, sonst hätten alle vier Zurücksetzen-
-// Knöpfe denselben Accessible Name "Auf Preset zurücksetzen" — für
-// Screenreader-Nutzer:innen vier ununterscheidbare Knöpfe.
-function Herkunft({ feld, istGesetzt, onReset }: { feld: string; istGesetzt: boolean; onReset: () => void }): ReactElement {
-  return istGesetzt ? (
-    <Button variant="ghost" label={`${feld} auf Preset zurücksetzen`} onClick={onReset} />
-  ) : (
-    <Text type="supporting" color="secondary">vom Preset</Text>
-  );
-}
-
-function ImageDrop(props: {
-  label: string;
-  currentUrl: string;
-  file: File | null;
-  onFile: (file: File | null) => void;
-}): ReactElement {
-  const { label, currentUrl, file, onFile } = props;
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    multiple: false,
-    accept: { "image/*": [] },
-    onDrop: (accepted) => accepted[0] && onFile(accepted[0]),
-  });
-  const previewUrl = file ? URL.createObjectURL(file) : currentUrl;
-
-  return (
-    <div
-      {...getRootProps()}
-      {...stylex.props(f.drop)}
-      style={{ borderColor: isDragActive ? "var(--color-accent)" : "var(--color-border)" }}
-    >
-      <input {...getInputProps()} />
-      {previewUrl ? (
-        <img src={previewUrl} alt={label} {...stylex.props(f.dropImg)} />
-      ) : (
-        <div {...stylex.props(f.dropPlaceholder)} />
-      )}
-      <Text type="body" color="secondary">
-        {label} — Bild hierher ziehen oder klicken
-      </Text>
-    </div>
-  );
-}
 
 const preview = stylex.create({
   card: {
@@ -240,25 +120,17 @@ function ThemePreview({ draft }: { draft: AppSettings }): ReactElement {
 }
 
 export default function BrandingPage(): ReactElement {
-  const { settings, loaded, refresh } = useSettings();
+  const { draft, setDraft, set, files, setFile, save, saving, settings } = useSettingsDraft();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const setupMode = searchParams.get("setup") === "1";
 
-  const [draft, setDraft] = useState<AppSettings>(settings);
-  const [files, setFiles] = useState<FileFields>({ logo: null, favicon: null, watermarkLogo: null });
-  const [saving, setSaving] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [checkingDomain, setCheckingDomain] = useState(false);
   const [domainStatus, setDomainStatus] = useState<"idle" | "ok" | "fail">("idle");
   const [beispielGalerie, setBeispielGalerie] = useState<string>("");
   const [vorschauFuer, setVorschauFuer] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (loaded) setDraft(settings);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded]);
 
   useEffect(() => {
     // Es gibt keine "zuletzt angelegte" Galerie: die shootings-Sammlung fuehrt
@@ -271,39 +143,14 @@ export default function BrandingPage(): ReactElement {
       .catch(() => setBeispielGalerie(""));
   }, []);
 
-  const set = (patch: Partial<AppSettings>) => setDraft((d) => ({ ...d, ...patch }));
   const resetToPreset = (feld: OverridableField) => setDraft((d) => clearOverride(d, feld));
 
-  const save = async (markCompleted = false) => {
-    setSaving(true);
-    try {
-      const fd = new FormData();
-      const textFields: (keyof AppSettings)[] = [
-        "businessName", "shortName", "tagline", "primaryColor", "secondaryColor",
-        "fontFamily", "themeMode", "contactEmail", "orderNotificationEmail",
-        "websiteUrl", "customDomain", "currency", "watermarkText", "designPreset",
-      ];
-      textFields.forEach((k) => fd.append(k, String(draft[k] ?? "")));
-      fd.append("borderRadius", String(draft.borderRadius ?? 0));
-      fd.append("themeOverrides", JSON.stringify(draft.themeOverrides ?? []));
-      fd.append("watermarkOpacity", String(draft.watermarkOpacity ?? 40));
-      fd.append("previewMaxSize", String(draft.previewMaxSize ?? 1200));
-      if (markCompleted || draft.setupCompleted) fd.append("setupCompleted", "true");
-      if (files.logo) fd.append("logo", files.logo);
-      if (files.favicon) fd.append("favicon", files.favicon);
-      if (files.watermarkLogo) fd.append("watermarkLogo", files.watermarkLogo);
-
-      await pb.collection("settings").update(SETTINGS_RECORD_ID, fd);
-      await refresh();
-      setFiles({ logo: null, favicon: null, watermarkLogo: null });
-      toast.success("Einstellungen gespeichert");
-      if (markCompleted) navigate("/album");
-    } catch (error) {
-      console.error("settings save failed", error);
-      toast.error("Speichern fehlgeschlagen");
-    } finally {
-      setSaving(false);
-    }
+  // Bisheriges save(true): einmal speichern, dann in den Album-Bereich
+  // wechseln. Das Markieren als "eingerichtet" übernimmt in Task 8 die
+  // Checkliste — hier bleibt nur noch die Navigation.
+  const finishSetup = async () => {
+    await save();
+    navigate("/album");
   };
 
   const regeneratePreviews = async () => {
@@ -325,7 +172,7 @@ export default function BrandingPage(): ReactElement {
   };
 
   const goNext = async () => {
-    await save(false);
+    await save();
     setActiveStep((s) => s + 1);
   };
 
@@ -335,7 +182,7 @@ export default function BrandingPage(): ReactElement {
     setCheckingDomain(true);
     setDomainStatus("idle");
     try {
-      await save(false);
+      await save();
       await fetch(`https://${domain}/api/health`, { mode: "no-cors", cache: "no-store" });
       setDomainStatus("ok");
     } catch (_) {
@@ -350,14 +197,14 @@ export default function BrandingPage(): ReactElement {
       <div {...stylex.props(f.presetWrap)}>
         <PresetPicker settings={draft} onChange={(key: DesignPresetKey) => setDraft((d) => applyPreset(d, key))} />
       </div>
-      <div {...stylex.props(f.grid2)}>
-        <div {...stylex.props(f.full)}>
+      <div {...stylex.props(sf.grid2)}>
+        <div {...stylex.props(sf.full)}>
           <TextInput width="100%" label="Name des Geschäfts" value={draft.businessName}
             onChange={(v) => set({ businessName: v })} />
         </div>
         <TextInput width="100%" label="Kurzname (App)" value={draft.shortName}
           onChange={(v) => set({ shortName: v.slice(0, 12) })} />
-        <div {...stylex.props(f.sliderWrap)}>
+        <div {...stylex.props(sf.sliderWrap)}>
           <Selector width="100%" label="Schriftart" value={draft.fontFamily}
             options={FONT_OPTIONS}
             onChange={(v) => v && setDraft((d) => setOverride(d, "fontFamily", v as FontKey))} />
@@ -365,34 +212,34 @@ export default function BrandingPage(): ReactElement {
         </div>
         <Selector width="100%" label="Erscheinungsbild" value={draft.themeMode}
           options={MODE_OPTIONS} onChange={(v) => v && set({ themeMode: v as ThemeMode })} />
-        <div {...stylex.props(f.full)}>
+        <div {...stylex.props(sf.full)}>
           <TextInput width="100%" label="Slogan / Untertitel" value={draft.tagline}
             onChange={(v) => set({ tagline: v })} />
         </div>
         <ImageDrop label="Logo" file={files.logo}
           currentUrl={settingsFileUrl(settings, "logo")}
-          onFile={(file) => setFiles((s) => ({ ...s, logo: file }))} />
+          onFile={(file) => setFile("logo", file)} />
         <ImageDrop label="Favicon (optional)" file={files.favicon}
           currentUrl={settingsFileUrl(settings, "favicon")}
-          onFile={(file) => setFiles((s) => ({ ...s, favicon: file }))} />
-        <div {...stylex.props(f.sliderWrap)}>
+          onFile={(file) => setFile("favicon", file)} />
+        <div {...stylex.props(sf.sliderWrap)}>
           <ColorField label="Primärfarbe" value={draft.primaryColor}
             onChange={(v) => setDraft((d) => setOverride(d, "primaryColor", v))} />
           <Herkunft feld="Primärfarbe" istGesetzt={isOverridden(draft, "primaryColor")} onReset={() => resetToPreset("primaryColor")} />
         </div>
-        <div {...stylex.props(f.sliderWrap)}>
+        <div {...stylex.props(sf.sliderWrap)}>
           <ColorField label="Sekundärfarbe" value={draft.secondaryColor}
             onChange={(v) => setDraft((d) => setOverride(d, "secondaryColor", v))} />
           <Herkunft feld="Sekundärfarbe" istGesetzt={isOverridden(draft, "secondaryColor")} onReset={() => resetToPreset("secondaryColor")} />
         </div>
-        <div {...stylex.props(f.sliderWrap, f.full)}>
+        <div {...stylex.props(sf.sliderWrap, sf.full)}>
           <Text type="supporting" color="secondary">Eckenradius: {draft.borderRadius}px</Text>
           <Slider label="Eckenradius" isLabelHidden min={0} max={24}
             value={draft.borderRadius} onChange={(v) => setDraft((d) => setOverride(d, "borderRadius", v))} />
           <Herkunft feld="Eckenradius" istGesetzt={isOverridden(draft, "borderRadius")} onReset={() => resetToPreset("borderRadius")} />
         </div>
       </div>
-      <div {...stylex.props(f.regenRow)}>
+      <div {...stylex.props(sf.regenRow)}>
         <Button
           variant="secondary"
           label="Kundenansicht"
@@ -411,7 +258,7 @@ export default function BrandingPage(): ReactElement {
 
   const contactSection = (
     <SectionCard title="Kontakt & Geschäft" subtitle="E-Mail-Adressen und Website" helpSlug="kontakt-benachrichtigungen">
-      <div {...stylex.props(f.grid2)}>
+      <div {...stylex.props(sf.grid2)}>
         <TextInput width="100%" type="email" label="Kontakt-E-Mail (Support)"
           value={draft.contactEmail} onChange={(v) => set({ contactEmail: v })} />
         <TextInput width="100%" type="email" label="Bestell-Benachrichtigungen an"
@@ -427,19 +274,19 @@ export default function BrandingPage(): ReactElement {
 
   const domainSection = (
     <SectionCard title="Eigene Domain" subtitle="Unter welcher Adresse soll dein Album erreichbar sein?" helpSlug="custom-domain">
-      <div {...stylex.props(f.grid1)}>
+      <div {...stylex.props(sf.grid1)}>
         <TextInput width="100%" label="Domain" placeholder="fotos.deine-domain.de"
           description="Ohne https:// — z. B. fotos.deine-domain.de. Leer lassen, wenn (noch) keine eigene Domain."
           value={draft.customDomain}
           onChange={(v) => { setDomainStatus("idle"); set({ customDomain: v.trim().toLowerCase() }); }} />
         <Banner status="info" title="So richtest du deine Domain ein:">
-          <ol {...stylex.props(f.ol)}>
+          <ol {...stylex.props(sf.ol)}>
             <li><Text type="body">Lege bei deinem Domain-Anbieter einen <strong>A-Record</strong> (und optional AAAA für IPv6) an, der auf die <strong>IP-Adresse deines Servers</strong> zeigt.</Text></li>
             <li><Text type="body">Trage die Domain oben ein und speichere.</Text></li>
             <li><Text type="body">Das HTTPS-Zertifikat wird beim ersten Aufruf <strong>automatisch</strong> von Let's Encrypt geholt — du musst nichts weiter konfigurieren.</Text></li>
           </ol>
         </Banner>
-        <div {...stylex.props(f.regenRow)}>
+        <div {...stylex.props(sf.regenRow)}>
           <Button variant="secondary" label="Domain prüfen" isLoading={checkingDomain}
             isDisabled={checkingDomain || !draft.customDomain.trim()} onClick={() => void checkDomain()} />
           {domainStatus === "ok" && (
@@ -461,21 +308,21 @@ export default function BrandingPage(): ReactElement {
 
   const watermarkSection = (
     <SectionCard title="Wasserzeichen & Vorschau" subtitle="Für die automatisch erzeugten Vorschaubilder in Alben" helpSlug="wasserzeichen-vorschau">
-      <div {...stylex.props(f.grid2)}>
+      <div {...stylex.props(sf.grid2)}>
         <TextInput width="100%" label="Wasserzeichen-Text"
           description="Leer lassen, um den Geschäftsnamen zu verwenden"
           value={draft.watermarkText} onChange={(v) => set({ watermarkText: v })} />
         <ImageDrop label="Wasserzeichen-Logo (optional, statt Text)" file={files.watermarkLogo}
           currentUrl={settingsFileUrl(settings, "watermarkLogo")}
-          onFile={(file) => setFiles((s) => ({ ...s, watermarkLogo: file }))} />
-        <div {...stylex.props(f.sliderWrap)}>
+          onFile={(file) => setFile("watermarkLogo", file)} />
+        <div {...stylex.props(sf.sliderWrap)}>
           <Text type="supporting" color="secondary">Deckkraft: {draft.watermarkOpacity}%</Text>
           <Slider label="Deckkraft" isLabelHidden min={5} max={100}
             value={draft.watermarkOpacity} onChange={(v) => set({ watermarkOpacity: v })} />
         </div>
         <TextInput width="100%" label="Max. Vorschaugröße (px)"
           value={String(draft.previewMaxSize)} onChange={(v) => set({ previewMaxSize: Number(v) })} />
-        <div {...stylex.props(f.regenRow, f.full)}>
+        <div {...stylex.props(sf.regenRow, sf.full)}>
           <Button variant="secondary" label="Vorschauen neu erzeugen" isLoading={regenerating}
             isDisabled={regenerating} onClick={() => void regeneratePreviews()} />
           <Text type="supporting" color="secondary">
@@ -521,21 +368,21 @@ export default function BrandingPage(): ReactElement {
                     onClick={() => void goNext()} />
                 ) : (
                   <Button variant="primary" label="Einrichtung abschließen" isDisabled={saving} isLoading={saving}
-                    onClick={() => void save(true)} />
+                    onClick={() => void finishSetup()} />
                 )}
               </div>
             </div>
           ) : (
-            <div {...stylex.props(f.sections)}>
+            <div {...stylex.props(sf.sections)}>
               {brandingSection}
               {domainSection}
               {contactSection}
               {paymentSection}
               {watermarkSection}
               <Divider />
-              <div {...stylex.props(f.saveRow)}>
+              <div {...stylex.props(sf.saveRow)}>
                 <Button variant="primary" size="lg" label="Speichern" isDisabled={saving} isLoading={saving}
-                  onClick={() => void save(false)} />
+                  onClick={() => void save()} />
               </div>
             </div>
           )}
