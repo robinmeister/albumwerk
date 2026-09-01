@@ -90,19 +90,27 @@ export const adminArticles: HelpArticle[] = [
     slug: "custom-domain",
     title: "Eigene Domain einrichten",
     summary:
-      "A-Record auf deinen Server zeigen lassen, Domain eintragen — das HTTPS-Zertifikat kommt automatisch.",
+      "Selbst gehostet trägst du sie selbst ein, bei uns gehostet fragst du sie an — das HTTPS-Zertifikat kommt in beiden Fällen automatisch.",
     audience: ["admin"],
     category: "setup",
     keywords: ["domain", "dns", "https", "ssl", "zertifikat", "a-record", "let's encrypt", "url"],
     relatedPath: "/domain",
     bodyHtml: `
 <p>Standardmäßig ist deine Instanz unter der Adresse erreichbar, unter der du sie installiert hast. Mit einer eigenen Domain — etwa <code>fotos.deine-domain.de</code> — wirkt das Ganze deutlich professioneller.</p>
-<h2>So gehst du vor</h2>
+<p>Welcher der beiden Wege für dich gilt, siehst du unter <strong>Einstellungen → Domain</strong>: dort steht entweder eine Anleitung zum Selbst-Eintragen oder ein Knopf „Domain anfragen“.</p>
+<h2>Wenn du selbst hostest</h2>
 <ol>
   <li>Lege bei deinem Domain-Anbieter einen <strong>A-Record</strong> an, der auf die <strong>IP-Adresse deines Servers</strong> zeigt. Wenn dein Server auch über IPv6 erreichbar ist, zusätzlich einen <strong>AAAA-Record</strong>.</li>
-  <li>Trage die Domain unter <strong>Branding → Eigene Domain</strong> ein und speichere.</li>
+  <li>Trage die Domain unter <strong>Einstellungen → Domain</strong> ein und speichere.</li>
   <li>Das HTTPS-Zertifikat wird beim ersten Aufruf <strong>automatisch</strong> von Let's Encrypt geholt. Du musst nichts weiter konfigurieren.</li>
   <li>Mit <strong>Domain prüfen</strong> siehst du, ob die Adresse schon erreichbar und gesichert ist.</li>
+</ol>
+<h2>Wenn deine Instanz bei uns läuft</h2>
+<p>Dann gehört der Server nicht dir, und es gibt keine IP, auf die du zeigen könntest. Die Domain schalten wir für dich frei — sie ist kostenpflichtig.</p>
+<ol>
+  <li>Lege bei deinem Domain-Anbieter einen <strong>CNAME</strong> an, der auf die Adresse deiner Instanz zeigt. Welche das ist, steht auf der Seite <strong>Einstellungen → Domain</strong>.</li>
+  <li>Trage die gewünschte Domain dort ein und klick auf <strong>Domain anfragen</strong>.</li>
+  <li>Wir melden uns mit den Details und schalten sie frei. Sobald das erledigt ist und dein CNAME aktiv ist, zeigt die Seite deine Domain als aktiv an — auch hier ohne dass du dich um das Zertifikat kümmern musst.</li>
 </ol>
 <h2>„Noch nicht erreichbar“ — was nun?</h2>
 <p>Das ist direkt nach dem Anlegen des DNS-Eintrags normal. DNS-Änderungen brauchen je nach Anbieter einige Minuten bis mehrere Stunden, bis sie überall aktiv sind. Prüfe später einfach noch einmal.</p>
