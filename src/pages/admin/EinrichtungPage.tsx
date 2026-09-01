@@ -76,6 +76,10 @@ export default function EinrichtungPage(): ReactElement {
       .catch((error) => console.warn("setupCompleted konnte nicht gesetzt werden", error));
   }, [loaded, settings.setupCompleted, refresh]);
 
+  // Es gibt immer neun Punkte — gesamt === 0 heisst also "noch nicht geladen".
+  // Ohne diese Unterscheidung meldet die Seite kurz Entwarnung, bevor sie die
+  // Lage kennt.
+  const laedtVerkauf = verkauf.gesamt === 0;
   const offen = verkauf.offeneHarte.length;
   const anteil = verkauf.gesamt ? Math.round((verkauf.erledigt / verkauf.gesamt) * 100) : 0;
   const harte = verkauf.punkte.filter((p) => p.hart);
@@ -85,17 +89,19 @@ export default function EinrichtungPage(): ReactElement {
     <Page title="Einrichtung" showTitleOnMobile>
       <div {...stylex.props(s.kopf)}>
         <Heading level={5}>
-          {offen === 0
-            ? "Du kannst deine Fotos verkaufen."
-            : offen === 1
-              ? "Noch 1 Ding bis zum Verkauf der Fotos"
-              : `Noch ${offen} Dinge bis zum Verkauf der Fotos`}
+          {laedtVerkauf
+            ? "Wird geprüft …"
+            : offen === 0
+              ? "Du kannst deine Fotos verkaufen."
+              : offen === 1
+                ? "Noch 1 Ding bis zum Verkauf der Fotos"
+                : `Noch ${offen} Dinge bis zum Verkauf der Fotos`}
         </Heading>
         <div {...stylex.props(s.balken)}>
           <div {...stylex.props(s.fuellung)} style={{ width: `${anteil}%` }} />
         </div>
         <Text type="supporting" color="secondary">
-          {verkauf.erledigt} von {verkauf.gesamt} erledigt
+          {laedtVerkauf ? "\u00a0" : `${verkauf.erledigt} von ${verkauf.gesamt} erledigt`}
         </Text>
       </div>
 
