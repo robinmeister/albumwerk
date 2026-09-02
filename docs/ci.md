@@ -32,10 +32,24 @@ Drei Workflows in `.gitea/workflows/`:
 2. **Actions im Repo aktivieren**: Repo → Settings → Actions → Enable.
 
 3. **Secrets anlegen** (Repo → Settings → Actions → Secrets):
-   - `REGISTRY_USER` — Gitea-Benutzername
+   - `REGISTRY_USER` — Gitea-Benutzername (`robinmeister`)
    - `REGISTRY_TOKEN` — Personal Access Token mit `package:write`
      (Gitea → Settings → Applications → Generate Token)
    - `COOLIFY_URL`, `COOLIFY_TOKEN` — nur für `rollout.yml` (wie der `.env` im Repo `albumwerk-saas`)
+
+   `ci.yml` und `e2e.yml` brauchen keine Secrets.
+
+   Fehlen `REGISTRY_*`, scheitert `release.yml` mit `username is empty` —
+   und zwar **still**, was den Betrieb angeht: es wird schlicht kein neues
+   Image gebaut, während alle Instanzen weiter auf dem letzten laufen.
+
+   `COOLIFY_URL` muss **vom Runner aus** erreichbar sein, nicht vom
+   Coolify-Server aus. Der Runner steht woanders, `http://coolify:8080` aus
+   dem internen Docker-Netz hilft ihm nicht — dort gehört die Adresse hin,
+   unter der die Coolify-Oberfläche von außen antwortet. Solange Coolify
+   keine eigene Domain hat, ist das `http://<server-ip>:8000`; dann geht der
+   Token allerdings unverschlüsselt über die Leitung. Besser vorher unter
+   Coolify → Settings → Instance Domain eine Domain setzen und https nehmen.
 
 ## Release-Ablauf
 
