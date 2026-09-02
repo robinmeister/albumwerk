@@ -101,7 +101,7 @@ describe("Verkaufsbereitschaft — weiche Punkte", () => {
 });
 
 describe("Verkaufsbereitschaft — Ableitung fuer die Oberflaeche", () => {
-  const punkte = (overrides: Partial<Record<string, boolean>> = {}): Punkt[] =>
+  const punkte = (overrides: Record<string, unknown> = {}): Punkt[] =>
     verkauf.pruefeVerkaufsbereitschaft({ ...VOLLSTAENDIG, ...overrides });
 
   it("zaehlt nur harte Punkte in offeneHarte", () => {
