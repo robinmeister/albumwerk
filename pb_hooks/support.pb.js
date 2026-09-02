@@ -17,9 +17,17 @@ onRecordCreateRequest((e) => {
   const support = require(__hooks + "/lib/supportlib.js");
   const category = e.record.getString("category") || "other";
 
-  // A technical report can only go to the vendor if there is a way to reach
-  // them; on an unconfigured (self-hosted) instance it stays with the admin.
-  const toVendor = category === "technical" && support.vendorConfig().enabled;
+  // Who the ticket belongs to depends on the category AND on who wrote it.
+  // "billing" from a customer is a question about their photographer's orders;
+  // the same category from the instance admin is a question about their own
+  // subscription, and only the vendor can answer that. Without this the admin
+  // could only ever write a ticket to themselves.
+  const fromAdmin = e.hasSuperuserAuth() || !!e.auth.getBool("isAdmin");
+  const vendorCategories = fromAdmin ? ["technical", "billing"] : ["technical"];
+
+  // Reaching the vendor at all requires a configured route; on an
+  // unconfigured (self-hosted) instance everything stays with the admin.
+  const toVendor = vendorCategories.indexOf(category) !== -1 && support.vendorConfig().enabled;
 
   e.record.set("userId", e.auth.id);
   e.record.set("target", toVendor ? "vendor" : "admin");
@@ -59,15 +67,6 @@ onRecordAfterCreateSuccess((e) => {
     other: "Sonstiges",
   };
   const categoryLabel = CATEGORY_LABELS[ticket.getString("category")] || "Anfrage";
-
-  if (ticket.getString("target") === "vendor") {
-    try {
-      support.forwardTicket(e.app, ticket, "");
-    } catch (err) {
-      // forwardTicket handles its own errors; this is the belt-and-braces case
-      e.app.logger().error("support: forward threw", "ticketId", ticket.id, "error", String(err));
-    }
-  }
 
   // The admin is told about every ticket on their instance — including the ones
   // routed to the vendor, since it is their customer who is stuck.
@@ -140,6 +139,22 @@ onRecordAfterCreateSuccess((e) => {
     e.app.save(ticket);
   } catch (err) {
     e.app.logger().warn("support: ticket bump failed", "ticketId", ticket.id, "error", String(err));
+  }
+
+  // Weiterleitung an den Hersteller passiert HIER und nicht beim Anlegen des
+  // Tickets. Der Client legt erst das Ticket und dann die erste Nachricht an
+  // (utils/support.ts createTicket) — beim Ticket-Hook waere supportMessages
+  // noch leer, und beim Hersteller kaeme ein Report mit Betreff, aber ohne
+  // einen einzigen Satz Text an. forwardState begrenzt es auf das erste Mal;
+  // ein erneutes Senden ist eine bewusste Handlung ueber
+  // POST /api/custom/support/forward.
+  if (ticket.getString("target") === "vendor" && ticket.getString("forwardState") === "none") {
+    try {
+      support.forwardTicket(e.app, ticket, "");
+    } catch (err) {
+      // forwardTicket handles its own errors; this is the belt-and-braces case
+      e.app.logger().error("support: forward threw", "ticketId", ticket.id, "error", String(err));
+    }
   }
 
   const info = support.instanceInfo(e.app);

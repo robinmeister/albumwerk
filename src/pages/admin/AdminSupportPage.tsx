@@ -9,7 +9,7 @@ import { Text } from "@astryxdesign/core/Text";
 import { TextArea } from "@astryxdesign/core/TextArea";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import * as stylex from "@stylexjs/stylex";
-import { ArrowLeft, Headset, Search, Send } from "lucide-react";
+import { ArrowLeft, Headset, Plus, Search, Send } from "lucide-react";
 import { ReactElement, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -20,7 +20,10 @@ import Page from "../../components/layout/Page";
 import {
   CATEGORY_LABELS,
   STATUS_LABELS,
+  buildEnvironmentContext,
+  createTicket,
   fetchMessages,
+  fetchTicket,
   fetchTickets,
   fetchVendorForwarding,
   forwardTicket,
@@ -29,8 +32,12 @@ import {
   replyToTicket,
   setTicketStatus,
 } from "../../utils/support";
-import { SupportMessage, SupportStatus, SupportTicket } from "../../utils/types";
+import { SupportCategory, SupportMessage, SupportStatus, SupportTicket } from "../../utils/types";
 import { statusVariant, supportStyles as s } from "../user/supportStyles";
+
+// Nur diese beiden erreichen den Hersteller: alles andere beantwortet der
+// Fotograf seinen eigenen Kunden (Routing-Regel in pb_hooks/support.pb.js).
+const HERSTELLER_KATEGORIEN: SupportCategory[] = ["technical", "billing"];
 
 const STATUS_FILTERS = [
   { value: "active", label: "Offen & wartend" },
@@ -59,6 +66,12 @@ export default function AdminSupportPage(): ReactElement {
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
+
+  const [neuOpen, setNeuOpen] = useState(false);
+  const [neuBetreff, setNeuBetreff] = useState("");
+  const [neuKategorie, setNeuKategorie] = useState<SupportCategory>("technical");
+  const [neuText, setNeuText] = useState("");
+  const [neuSendet, setNeuSendet] = useState(false);
 
   const [forwardOpen, setForwardOpen] = useState(false);
   const [forwardNote, setForwardNote] = useState("");
@@ -101,6 +114,41 @@ export default function AdminSupportPage(): ReactElement {
     } catch (error) {
       console.error("support: loading messages failed", error);
       toast.error("Verlauf konnte nicht geladen werden");
+    }
+  };
+
+  // Eigene Anfrage an den Hersteller. Weitergeleitet wird sie serverseitig,
+  // sobald die erste Nachricht steht — deshalb hier nur anlegen und danach
+  // nachsehen, ob sie angekommen ist.
+  const anfrageSenden = async () => {
+    const betreff = neuBetreff.trim();
+    const text = neuText.trim();
+    if (!betreff || !text) return;
+    setNeuSendet(true);
+    try {
+      const ticket = await createTicket({
+        subject: betreff,
+        category: neuKategorie,
+        body: text,
+        context: buildEnvironmentContext(),
+        consentForward: true,
+      });
+      const zugestellt = (await fetchTicket(ticket.id)).forwardState === "sent";
+      if (zugestellt) {
+        toast.success("Anfrage an den Hersteller gesendet.");
+      } else {
+        toast.warning("Anfrage gespeichert, aber noch nicht beim Hersteller. Über „Weiterleiten“ erneut senden.");
+      }
+      setNeuOpen(false);
+      setNeuBetreff("");
+      setNeuText("");
+      setNeuKategorie("technical");
+      await load();
+    } catch (error) {
+      console.error("vendor request failed", error);
+      toast.error("Anfrage konnte nicht angelegt werden");
+    } finally {
+      setNeuSendet(false);
     }
   };
 
@@ -341,7 +389,20 @@ export default function AdminSupportPage(): ReactElement {
   return (
     <Page
       title="Support"
-      actions={<HelpHint slug="support-postfach" />}
+      actions={
+        <div {...stylex.props(s.rowStart)}>
+          {vendorForwarding && (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Plus />}
+              label="Anfrage an den Hersteller"
+              onClick={() => setNeuOpen(true)}
+            />
+          )}
+          <HelpHint slug="support-postfach" />
+        </div>
+      }
     >
       <div {...stylex.props(s.column)}>
         <div {...stylex.props(s.rowBetween)}>
@@ -399,6 +460,56 @@ export default function AdminSupportPage(): ReactElement {
           ))
         )}
       </div>
+
+      {/* Eigene Anfrage an den Hersteller. Der Posteingang darueber ist fuer
+          die Tickets der eigenen Kunden — hier schreibt der Fotograf selbst,
+          und zwar an den einzigen, der ihm bei App und Abo helfen kann. */}
+      <Dialog isOpen={neuOpen} onOpenChange={setNeuOpen} width={560}>
+        <div {...stylex.props(s.cardPad)}>
+          <Heading level={5}>Anfrage an den Hersteller</Heading>
+          <Text type="body" color="secondary">
+            Geht direkt an den Anbieter von Albumwerk, nicht an deine Kunden. Deine
+            E-Mail-Adresse wird mitgeschickt, damit du eine Antwort bekommst.
+          </Text>
+          <Selector
+            placeholder="Bitte wählen"
+            width="100%"
+            label="Worum geht es?"
+            options={HERSTELLER_KATEGORIEN.map((value) => ({
+              value,
+              label: CATEGORY_LABELS[value],
+            }))}
+            value={neuKategorie}
+            onChange={(value) => setNeuKategorie((value || "technical") as SupportCategory)}
+          />
+          <TextInput
+            width="100%"
+            label="Betreff"
+            value={neuBetreff}
+            onChange={setNeuBetreff}
+            placeholder="Kurz und konkret"
+          />
+          <TextArea
+            width="100%"
+            label="Was ist los?"
+            rows={6}
+            value={neuText}
+            onChange={setNeuText}
+            placeholder="Was hast du gemacht, was ist passiert, was hattest du erwartet?"
+          />
+          <div {...stylex.props(s.rowBetween)}>
+            <Button variant="ghost" label="Abbrechen" onClick={() => setNeuOpen(false)} />
+            <Button
+              variant="primary"
+              icon={<Send />}
+              label="Senden"
+              isLoading={neuSendet}
+              isDisabled={neuSendet || !neuBetreff.trim() || !neuText.trim()}
+              onClick={() => void anfrageSenden()}
+            />
+          </div>
+        </div>
+      </Dialog>
     </Page>
   );
 }

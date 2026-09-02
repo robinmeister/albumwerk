@@ -84,6 +84,14 @@ export async function fetchTickets(
   return records as unknown as SupportTicket[];
 }
 
+// Ein einzelnes Ticket nachladen. Gebraucht direkt nach dem Anlegen: ob die
+// Weiterleitung an den Hersteller geklappt hat, steht erst danach im Datensatz
+// (pb_hooks/support.pb.js leitet beim Anlegen der ersten Nachricht weiter).
+export async function fetchTicket(ticketId: string): Promise<SupportTicket> {
+  const record = await pb.collection("supportTickets").getOne(ticketId, { requestKey: null });
+  return record as unknown as SupportTicket;
+}
+
 export async function fetchMessages(ticketId: string): Promise<SupportMessage[]> {
   const records = await pb.collection("supportMessages").getFullList({
     filter: pb.filter("ticketId = {:ticketId}", { ticketId }),

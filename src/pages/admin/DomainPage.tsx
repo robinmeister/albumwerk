@@ -16,7 +16,7 @@ import {
   meldeDomainWunsch,
   type Betrieb,
 } from "../../utils/betrieb";
-import { createTicket, forwardTicket } from "../../utils/support";
+import { createTicket, fetchTicket } from "../../utils/support";
 
 export default function DomainPage(): ReactElement {
   const { draft, set, save, saving, settings } = useSettingsDraft();
@@ -97,29 +97,37 @@ export default function DomainPage(): ReactElement {
       return;
     }
 
-    // Getrennt vom Anlegen: schlaegt nur die Zustellung fehl (support.pb.js
-    // antwortet dann mit 502), ist die Anfrage trotzdem als Ticket da. Ein
-    // "konnte nicht gesendet werden" waere hier gelogen — der Fotograf soll
-    // wissen, dass er sie im Support-Bereich erneut abschicken kann.
+    // Weitergeleitet wird beim Anlegen der ersten Nachricht (support.pb.js);
+    // hier wird nur nachgesehen, ob es geklappt hat. Frueher stiess diese
+    // Stelle die Weiterleitung selbst an — seit der Hersteller auch
+    // Abrechnungsfragen des Fotografen bekommt, waere das die zweite und die
+    // Anfrage kaeme doppelt an.
+    let zugestellt = false;
     try {
-      await forwardTicket(ticketId, "Domain-Anfrage aus den Einstellungen");
-      // Zusaetzlich strukturiert an die Control-Plane: das Ticket ist der
-      // Faden fuer Rueckfragen, dieser Aufruf traegt die Domain dort ein, wo
-      // die Freigabe stattfindet. Schlaegt er fehl, bleibt das Ticket — der
-      // Weg ist doppelt, weil der Verlust einer bezahlten Anfrage teurer ist
-      // als ein doppelter Eintrag.
-      try {
-        await meldeDomainWunsch(domain);
-      } catch (error) {
-        console.warn("Domain-Wunsch nicht an die Control-Plane gemeldet", error);
-      }
-      toast.success("Anfrage gesendet — wir melden uns mit den Details.");
+      zugestellt = (await fetchTicket(ticketId)).forwardState === "sent";
     } catch (error) {
-      console.error("domain request forward failed", error);
-      toast.warning("Anfrage gespeichert, aber noch nicht bei uns angekommen. Bitte im Support-Bereich erneut senden.");
-    } finally {
-      setAnfragen(false);
+      console.warn("Ticketstatus nicht lesbar", error);
     }
+
+    // Zusaetzlich strukturiert an die Control-Plane: das Ticket ist der Faden
+    // fuer Rueckfragen, dieser Aufruf traegt die Domain dort ein, wo die
+    // Freigabe stattfindet. Er laeuft unabhaengig davon, ob die Weiterleitung
+    // geklappt hat — der Weg ist doppelt, weil der Verlust einer bezahlten
+    // Anfrage teurer ist als ein doppelter Eintrag.
+    try {
+      await meldeDomainWunsch(domain);
+    } catch (error) {
+      console.warn("Domain-Wunsch nicht an die Control-Plane gemeldet", error);
+    }
+
+    // Ein "konnte nicht gesendet werden" waere gelogen, solange das Ticket
+    // steht — der Fotograf soll wissen, dass er es erneut abschicken kann.
+    if (zugestellt) {
+      toast.success("Anfrage gesendet — wir melden uns mit den Details.");
+    } else {
+      toast.warning("Anfrage gespeichert, aber noch nicht bei uns angekommen. Bitte im Support-Bereich erneut senden.");
+    }
+    setAnfragen(false);
   };
 
   const selbstGehostet = (
