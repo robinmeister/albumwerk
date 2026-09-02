@@ -66,6 +66,11 @@ export default defineConfig({
         // die HTML-Datei, den Chunk unter assets/ und das Loader-Script aus
         // public/. Nur `embed/**` erwischt ausschließlich die HTML-Datei.
         globIgnores: ['**/help/**', 'embed/**', 'embed.js', 'assets/embed-*.js'],
+        // Ohne diese Liste beantwortet der Service Worker JEDE Navigation mit
+        // der App — auch /_/ (PocketBase-Admin), /api/… und das eingebettete
+        // Buchungs-Bundle. Der Server sieht die Anfrage dann nie, und die App
+        // zeigt ihre eigene 404-Seite für eine Adresse, die es sehr wohl gibt.
+        navigateFallbackDenylist: [/^\/_/, /^\/api\//, /^\/embed/],
       },
       // The manifest is generated at runtime from the instance settings by
       // pb_hooks/manifest.pb.js (linked in index.html) so branding changes
