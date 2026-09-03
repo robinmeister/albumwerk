@@ -6,6 +6,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { pb } from "../../config/pocketbase";
 import { settingsFileUrl } from "../../config/settings";
+import { APP_VERSION } from "../../utils/errorReport";
 import { useSettings } from "../../context/SettingsContext";
 import useSupportUnread from "../../hooks/useSupportUnread";
 import { NavGroup, NavItem } from "../../utils/routes";
@@ -360,6 +361,11 @@ export default function AppShell(props: Props): ReactElement {
             </Link>
           ))}
         </nav>
+        {/* Bei einer Supportanfrage ist die erste Frage immer, welcher Stand
+            läuft. Bisher stand die Nummer nur im Hilfebereich. */}
+        <Text type="supporting" color="disabled">
+          Albumwerk {APP_VERSION}
+        </Text>
       </div>
     </>
   );
