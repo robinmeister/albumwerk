@@ -7,6 +7,7 @@ import { ReactElement, useState } from "react";
 
 import { loginWithPocketBase } from "../../config/pocketbase";
 import AuthHero from "../../components/layout/AuthHero";
+import { sicheresZiel } from "../../utils/routes";
 
 const s = stylex.create({
   form: { display: "flex", flexDirection: "column", gap: 16 },
@@ -25,6 +26,8 @@ export default function LoginPage(): ReactElement {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const shootingId = searchParams.get("shootingId");
+  // Gesetzt, wenn jemand ausgeloggt auf einem Deep-Link gelandet ist.
+  const ziel = sicheresZiel(searchParams.get("next"));
 
   const handleSignIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -32,7 +35,7 @@ export default function LoginPage(): ReactElement {
     setLoading(true);
     try {
       await loginWithPocketBase(email, password);
-      navigate(shootingId ? `/album?shootingId=${shootingId}` : "/album");
+      navigate(ziel ?? (shootingId ? `/album?shootingId=${shootingId}` : "/album"));
     } catch (err: any) {
       // status 0 = network/unreachable; anything else from authWithPassword is
       // effectively "wrong credentials"

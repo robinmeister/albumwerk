@@ -76,3 +76,14 @@ export const adminMenuItems: NavItem[] = [
   { key: "profile", label: "Profil", path: "/profile", Icon: Person },
   { key: "help", label: "Hilfe", path: "/help", Icon: HelpIcon },
 ];
+
+// Ziel eines abgefangenen Deep-Links (?next=) nach dem Login. Nur eigene
+// Pfade: "//fremde.example" ist protokoll-relativ und fuehrt aus der App
+// heraus, "https://..." erst recht — beides waere eine offene Weiterleitung,
+// und der Link steht in einer Mail, die jeder verschicken kann.
+export function sicheresZiel(wert: string | null | undefined): string | null {
+  if (!wert || !wert.startsWith("/") || wert.startsWith("//")) return null;
+  // Ein "\\" wird von manchen Browsern wie "/" gelesen.
+  if (wert.startsWith("/\\")) return null;
+  return wert;
+}

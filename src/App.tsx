@@ -5,6 +5,7 @@ import {
   Navigate,
   Route,
   Routes,
+  useLocation,
 } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import { AuthUser } from "./config/authUser";
@@ -64,6 +65,16 @@ import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 
 // Import AuthContext from the new file
 import { AuthContext } from "./context/AuthContext";
+
+// Ausgeloggt gibt es nur die oeffentlichen Routen, alles andere lief in den
+// Catch-all und endete als 404 — auch die Deep-Links aus unseren eigenen
+// Mails (/support?ticket=...). Statt der Sackgasse zum Login, mit dem Ziel
+// im Gepaeck.
+function LoginMitZiel(): ReactElement {
+  const location = useLocation();
+  const ziel = location.pathname + location.search;
+  return <Navigate to={`/login?next=${encodeURIComponent(ziel)}`} replace />;
+}
 
 export default function App(): ReactElement {
   return (
@@ -213,7 +224,7 @@ function ThemedApp(): ReactElement {
                 <Route path="help" element={<HelpPage standalone />} />
                 <Route path="help/:slug" element={<HelpArticlePage standalone />} />
                 <Route path="__/auth/action" element={<ActionPage />} />
-                <Route path="*" element={<NoMatchPage />} />
+                <Route path="*" element={<LoginMitZiel />} />
               </Route>
             </Routes>
           </ErrorBoundary>
