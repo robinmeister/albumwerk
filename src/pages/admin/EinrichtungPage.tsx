@@ -31,7 +31,7 @@ const s = stylex.create({
     border: "1px solid var(--color-border)",
     backgroundColor: "var(--color-background-card)",
   },
-  label: { flex: 1, minWidth: 0 },
+  label: { display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 0 },
   offen: { color: "var(--color-text-danger, var(--color-text-primary))" },
   erledigt: { color: "var(--color-text-accent)" },
   neutral: { color: "var(--color-text-secondary)" },
@@ -54,9 +54,11 @@ function Zeile({ punkt, onGehe }: { punkt: Punkt; onGehe: (ziel: string) => void
         <Text type="body" weight="medium">{label}</Text>
         <Text type="supporting" color="secondary">{zustand}</Text>
       </span>
-      {!punkt.erfuellt && (
-        <Button variant="secondary" label="Einrichten" onClick={() => onGehe(ziel)} />
-      )}
+      <Button
+        variant="secondary"
+        label={punkt.erfuellt ? "Bearbeiten" : "Einrichten"}
+        onClick={() => onGehe(ziel)}
+      />
     </div>
   );
 }

@@ -16,6 +16,7 @@ import { articlesFor, getArticle, relatedArticles } from "../../content/help";
 import { useHelpArticles } from "../../hooks/useHelpArticles";
 import {
   adminMenuItems,
+  adminNavGroups,
   adminNavItems,
   userMenuItems,
   userNavItems,
@@ -26,9 +27,13 @@ import { helpStyles as s } from "./helpStyles";
 // "Zu Branding" beats "Zur passenden Seite" — the nav arrays already name every
 // destination an article can point at.
 const PATH_LABELS = new Map(
-  [...adminNavItems, ...userNavItems, ...adminMenuItems, ...userMenuItems].map(
-    (item) => [item.path, item.label],
-  ),
+  [
+    ...adminNavItems,
+    ...adminNavGroups.flatMap((gruppe) => gruppe.items),
+    ...userNavItems,
+    ...adminMenuItems,
+    ...userMenuItems,
+  ].map((item) => [item.path, item.label]),
 );
 
 type Props = {

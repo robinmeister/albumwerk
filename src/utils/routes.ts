@@ -23,9 +23,8 @@ export const userNavItems: NavItem[] = [
   { key: "downloads", label: "Downloads", path: "/downloads", Icon: Download },
 ];
 
-// Ungruppiert und immer sichtbar: der Einstieg und der Alltag.
+// Ungruppiert und immer sichtbar: der Alltag.
 export const adminNavItems: NavItem[] = [
-  { key: "einrichtung", label: "Einrichtung", path: "/einrichtung", Icon: ListChecks },
   { key: "album", label: "Album", path: "/album", exact: true, Icon: Image },
 ];
 
@@ -55,6 +54,7 @@ export const adminNavGroups: NavGroup[] = [
     key: "einstellungen",
     label: "Einstellungen",
     items: [
+      { key: "einrichtung", label: "Einrichtung", path: "/einrichtung", Icon: ListChecks },
       { key: "branding", label: "Branding", path: "/branding", Icon: Palette },
       { key: "domain", label: "Domain", path: "/domain", Icon: Globe },
       { key: "kontakt", label: "Kontakt & E-Mails", path: "/kontakt", Icon: Mail },
