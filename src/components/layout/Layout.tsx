@@ -29,6 +29,7 @@ export const Layout = (props: LayoutProps): ReactElement => {
         navGroups={isAdmin ? adminNavGroups : undefined}
         menuItems={isAdmin ? adminMenuItems : userMenuItems}
         maxWidth={isAdmin ? "xl" : "lg"}
+        isAdmin={isAdmin}
       />
     );
   };

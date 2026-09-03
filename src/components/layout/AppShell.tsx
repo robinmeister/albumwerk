@@ -7,6 +7,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { pb } from "../../config/pocketbase";
 import { settingsFileUrl } from "../../config/settings";
 import { useSettings } from "../../context/SettingsContext";
+import useSupportUnread from "../../hooks/useSupportUnread";
 import { NavGroup, NavItem } from "../../utils/routes";
 import StorageMeter from "./StorageMeter";
 
@@ -21,6 +22,9 @@ type Props = {
   navGroups?: NavGroup[];
   menuItems: NavItem[];
   maxWidth: "lg" | "xl";
+  // Entscheidet, welcher Ungelesen-Marker gezaehlt wird: Admins sehen alle
+  // Tickets, Kundschaft nur die eigenen.
+  isAdmin: boolean;
 };
 
 function isActive(item: NavItem, pathname: string): boolean {
@@ -200,12 +204,13 @@ const s = stylex.create({
 // App shell for all signed-in users: permanent sidebar on desktop, overlay
 // drawer + slim top bar with hamburger on mobile.
 export default function AppShell(props: Props): ReactElement {
-  const { navItems, navGroups, menuItems, maxWidth } = props;
+  const { navItems, navGroups, menuItems, maxWidth, isAdmin } = props;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [zugeklappt, setZugeklappt] = useState<string[]>(leseZugeklappt);
   const location = useLocation();
   const navigate = useNavigate();
   const { settings, verkauf } = useSettings();
+  const ungelesen = useSupportUnread(isAdmin);
 
   const logoUrl = settingsFileUrl(settings, "logo");
   const groupedItems = navGroups?.flatMap((gruppe) => gruppe.items) ?? [];
@@ -236,38 +241,59 @@ export default function AppShell(props: Props): ReactElement {
     });
   };
 
-  const navButton = (item: NavItem) => (
-    <button
-      key={item.key}
-      onClick={() => go(item.path)}
-      {...stylex.props(
-        s.navItem,
-        isActive(item, location.pathname) && s.navItemActive,
-      )}
-    >
-      <span {...stylex.props(s.navIcon)}>
-        <item.Icon />
-      </span>
-      <Text type="body" weight="medium">
-        {item.label}
-      </Text>
-      {/* Einziger Eintrag mit Zähler — ein `badge`-Feld an NavItem wäre eine
-          Schnittstelle für genau einen Fall. */}
-      {item.key === "einrichtung" && verkauf.offeneHarte.length > 0 && (
-        <span
-          {...stylex.props(s.badge)}
-          data-testid="einrichtung-badge"
-          aria-label={
-            verkauf.offeneHarte.length === 1
-              ? "1 offener Punkt bis zum Verkauf"
-              : `${verkauf.offeneHarte.length} offene Punkte bis zum Verkauf`
-          }
-        >
-          <Text type="supporting" weight="semibold">{verkauf.offeneHarte.length}</Text>
+  // Zwei Einträge tragen einen Zähler. Ein `badge`-Feld an NavItem wäre
+  // trotzdem falsch: die Zahlen stehen nicht in der Navigationsliste, sie
+  // kommen aus zwei verschiedenen Quellen.
+  const zaehlerFuer = (key: string): { wert: number; text: string } | null => {
+    if (key === "einrichtung" && verkauf.offeneHarte.length > 0) {
+      const n = verkauf.offeneHarte.length;
+      return {
+        wert: n,
+        text: n === 1
+          ? "1 offener Punkt bis zum Verkauf"
+          : `${n} offene Punkte bis zum Verkauf`,
+      };
+    }
+    if (key === "support" && ungelesen > 0) {
+      return {
+        wert: ungelesen,
+        text: ungelesen === 1
+          ? "1 Anfrage mit neuer Nachricht"
+          : `${ungelesen} Anfragen mit neuen Nachrichten`,
+      };
+    }
+    return null;
+  };
+
+  const navButton = (item: NavItem) => {
+    const zaehler = zaehlerFuer(item.key);
+    return (
+      <button
+        key={item.key}
+        onClick={() => go(item.path)}
+        {...stylex.props(
+          s.navItem,
+          isActive(item, location.pathname) && s.navItemActive,
+        )}
+      >
+        <span {...stylex.props(s.navIcon)}>
+          <item.Icon />
         </span>
-      )}
-    </button>
-  );
+        <Text type="body" weight="medium">
+          {item.label}
+        </Text>
+        {zaehler && (
+          <span
+            {...stylex.props(s.badge)}
+            data-testid={`${item.key}-badge`}
+            aria-label={zaehler.text}
+          >
+            <Text type="supporting" weight="semibold">{zaehler.wert}</Text>
+          </span>
+        )}
+      </button>
+    );
+  };
 
   const sidebarContent = (
     <>

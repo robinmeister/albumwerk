@@ -35,6 +35,8 @@ import {
   markTicketSeen,
   replyToTicket,
   setTicketStatus,
+  watchMessages,
+  watchTickets,
 } from "../../utils/support";
 import { SupportCategory, SupportMessage, SupportTicket } from "../../utils/types";
 
@@ -77,7 +79,13 @@ export default function SupportPage(): ReactElement {
 
   const load = async () => {
     try {
-      setTickets(await fetchTickets());
+      const frisch = await fetchTickets();
+      setTickets(frisch);
+      // Der offene Verlauf zeigt Status und Marker aus seinem eigenen Objekt —
+      // ohne das hier bliebe er auf dem Stand vom Oeffnen stehen.
+      setActiveTicket((aktiv) =>
+        aktiv ? frisch.find((t) => t.id === aktiv.id) ?? aktiv : aktiv,
+      );
     } catch (error) {
       console.error("support: loading tickets failed", error);
       toast.error("Anfragen konnten nicht geladen werden");
@@ -115,6 +123,26 @@ export default function SupportPage(): ReactElement {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, tickets]);
+
+  // Ohne das hier saehe man eine Antwort erst nach dem Neuladen. Ein Ereignis
+  // loest ein neues Laden aus statt den Stand fortzuschreiben: eine Abfrage
+  // mehr, dafuer keine zwei Wahrheiten ueber dieselbe Liste.
+  useEffect(() => watchTickets(() => void load()), []);
+
+  // Nur die Id in den Abhaengigkeiten: das Ticket-Objekt wird bei jedem
+  // Ereignis neu erzeugt, das Abo wuerde sich sonst dauernd ab- und anmelden.
+  const offenerVerlauf = view === "thread" ? activeTicket?.id ?? null : null;
+  useEffect(() => {
+    if (!offenerVerlauf) return;
+    const ticketId = offenerVerlauf;
+    return watchMessages(ticketId, (nachricht) => {
+      setMessages((bisher) =>
+        bisher.some((m) => m.id === nachricht.id) ? bisher : [...bisher, nachricht],
+      );
+      // Der Verlauf liegt offen — dann ist die Nachricht auch gelesen.
+      void markTicketSeen(ticketId);
+    });
+  }, [offenerVerlauf]);
 
   const openThread = async (ticket: SupportTicket) => {
     setActiveTicket(ticket);

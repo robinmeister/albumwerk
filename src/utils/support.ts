@@ -156,6 +156,70 @@ export async function markTicketSeen(ticketId: string): Promise<void> {
   }
 }
 
+// Wie viele Tickets eine ungelesene Nachricht fuer den Anrufer haben. Die
+// Marker setzt pb_hooks/support.pb.js beim Eingang und loescht sie, sobald der
+// Verlauf geoeffnet wurde. Die API-Regeln begrenzen die Zaehlung ohnehin auf
+// das, was der Anrufer sehen darf: Kundschaft nur die eigenen Tickets.
+export async function countUnread(isAdmin: boolean): Promise<number> {
+  const list = await pb.collection("supportTickets").getList(1, 1, {
+    filter: isAdmin ? "unreadForAdmin = true" : "unreadForUser = true",
+    fields: "id",
+    requestKey: null,
+  });
+  return list.totalItems;
+}
+
+// Realtime. PocketBase liefert nur Ereignisse zu Datensaetzen, die der Anrufer
+// lesen darf, die Rechte liegen also weiter beim Server.
+//
+// Pro Collection gibt es genau EIN Abo fuer die Lebensdauer der Seite, und die
+// Komponenten haengen sich in eine Zuhoererliste. Das ist nicht Sparsamkeit:
+// pb.subscribe() liefert seine Abmeldefunktion erst spaeter, und wer in
+// schneller Folge an- und abmeldet, verliert Abos im SDK. Genau das tut React
+// beim Mounten (StrictMode) und beim Rollenwechsel der Seitenleiste — der
+// Zaehler stand danach still, obwohl die Verbindung aufgebaut war. Ein festes
+// Abo kennt dieses Wettrennen nicht.
+type SupportEvent = { action: string; record: unknown };
+
+function beobachter(collection: string) {
+  const zuhoerer = new Set<(event: SupportEvent) => void>();
+  let gestartet = false;
+
+  return (handler: (event: SupportEvent) => void): (() => void) => {
+    zuhoerer.add(handler);
+    if (!gestartet) {
+      gestartet = true;
+      pb.collection(collection)
+        .subscribe("*", (event: SupportEvent) => {
+          zuhoerer.forEach((f) => f(event));
+        })
+        // Ohne Realtime bleibt alles benutzbar, es aktualisiert sich dann eben
+        // erst beim naechsten Laden. Beim naechsten Zuhoerer neu versuchen.
+        .catch(() => { gestartet = false; });
+    }
+    return () => { zuhoerer.delete(handler); };
+  };
+}
+
+const ticketBeobachter = beobachter("supportTickets");
+const nachrichtenBeobachter = beobachter("supportMessages");
+
+export function watchTickets(onChange: () => void): () => void {
+  return ticketBeobachter(() => onChange());
+}
+
+// Nachrichten eines offenen Verlaufs. Gefiltert wird beim Empfaenger statt
+// serverseitig: es geht um ein paar Nachrichten pro Ticket.
+export function watchMessages(
+  ticketId: string,
+  onMessage: (message: SupportMessage) => void,
+): () => void {
+  return nachrichtenBeobachter((event) => {
+    const message = event.record as SupportMessage;
+    if (event.action === "create" && message?.ticketId === ticketId) onMessage(message);
+  });
+}
+
 // Admin-only: hand a ticket to the vendor (pb_hooks/support.pb.js).
 export async function forwardTicket(ticketId: string, note: string): Promise<void> {
   await pb.send("/api/custom/support/forward", {

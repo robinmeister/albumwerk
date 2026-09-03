@@ -31,6 +31,8 @@ import {
   markTicketSeen,
   replyToTicket,
   setTicketStatus,
+  watchMessages,
+  watchTickets,
 } from "../../utils/support";
 import { SupportCategory, SupportMessage, SupportStatus, SupportTicket } from "../../utils/types";
 import { statusVariant, supportStyles as s } from "../user/supportStyles";
@@ -79,7 +81,13 @@ export default function AdminSupportPage(): ReactElement {
 
   const load = async () => {
     try {
-      setTickets(await fetchTickets({ expandUser: true }));
+      const frisch = await fetchTickets({ expandUser: true });
+      setTickets(frisch);
+      // Der offene Verlauf zeigt Status und Marker aus seinem eigenen Objekt —
+      // ohne das hier bliebe er auf dem Stand vom Oeffnen stehen.
+      setActiveTicket((aktiv) =>
+        aktiv ? frisch.find((t) => t.id === aktiv.id) ?? aktiv : aktiv,
+      );
     } catch (error) {
       console.error("support: loading tickets failed", error);
       toast.error("Anfragen konnten nicht geladen werden");
@@ -104,6 +112,26 @@ export default function AdminSupportPage(): ReactElement {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, tickets]);
+
+  // Ohne das hier saehe man eine neue Anfrage erst nach dem Neuladen. Ein
+  // Ereignis loest ein neues Laden aus statt den Stand fortzuschreiben: eine
+  // Abfrage mehr, dafuer keine zwei Wahrheiten ueber dieselbe Liste.
+  useEffect(() => watchTickets(() => void load()), []);
+
+  // Nur die Id in den Abhaengigkeiten: das Ticket-Objekt wird bei jedem
+  // Ereignis neu erzeugt, das Abo wuerde sich sonst dauernd ab- und anmelden.
+  const offenerVerlauf = activeTicket?.id ?? null;
+  useEffect(() => {
+    if (!offenerVerlauf) return;
+    const ticketId = offenerVerlauf;
+    return watchMessages(ticketId, (nachricht) => {
+      setMessages((bisher) =>
+        bisher.some((m) => m.id === nachricht.id) ? bisher : [...bisher, nachricht],
+      );
+      // Der Verlauf liegt offen — dann ist die Nachricht auch gelesen.
+      void markTicketSeen(ticketId);
+    });
+  }, [offenerVerlauf]);
 
   const openThread = async (ticket: SupportTicket) => {
     setActiveTicket(ticket);
