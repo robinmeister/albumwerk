@@ -335,6 +335,16 @@ Mehr Fälle: [docs/selfhosting.md → Fehlerbehebung](docs/selfhosting.md#fehler
 
 ---
 
+## Mitwirken
+
+Fehlerberichte und Patches sind willkommen: [CONTRIBUTING.md](CONTRIBUTING.md)
+erklärt Entwicklungsumgebung, Tests und die Lizenzzusage für Beiträge. Im
+Umgang miteinander gilt der [Verhaltenskodex](CODE_OF_CONDUCT.md).
+Sicherheitslücken bitte nicht als Issue, sondern per Mail an
+hamm.robin162@gmail.com.
+
+---
+
 ## Lizenz
 
 Source-available, dual lizenziert: **kostenlos für nicht-kommerzielle
