@@ -11,12 +11,14 @@ export interface Betrieb {
   verwaltet: boolean;
   /** Host dieser Instanz, Ziel fuer den CNAME einer eigenen Domain. */
   instanz: string;
+  /** Sammelpunkt fuer Real User Monitoring; leer heisst: kein RUM. */
+  rumUrl: string;
 }
 
 // Im Zweifel selbst gehostet: das ist der Fall, in dem die Oberflaeche das
 // vollstaendige Domain-Formular zeigt. Eine unerreichbare Auskunft darf einem
 // Selbsthoster nicht seine Einstellung wegnehmen.
-export const BETRIEB_UNBEKANNT: Betrieb = { verwaltet: false, instanz: "" };
+export const BETRIEB_UNBEKANNT: Betrieb = { verwaltet: false, instanz: "", rumUrl: "" };
 
 export async function fetchBetrieb(): Promise<Betrieb> {
   try {
@@ -27,6 +29,7 @@ export async function fetchBetrieb(): Promise<Betrieb> {
     return {
       verwaltet: Boolean(daten.verwaltet),
       instanz: String(daten.instanz ?? ""),
+      rumUrl: String(daten.rumUrl ?? ""),
     };
   } catch {
     return BETRIEB_UNBEKANNT;

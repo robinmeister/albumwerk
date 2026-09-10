@@ -29,6 +29,8 @@ import { registerSW } from "virtual:pwa-register";
 
 import App from "./App";
 import { IST_VORSCHAU, pb } from "./config/pocketbase";
+import { fetchBetrieb } from "./utils/betrieb";
+import { starteRum } from "./utils/rum";
 
 // Der Service Worker wird hier von Hand registriert statt vom PWA-Plugin in
 // jede HTML-Datei injiziert (`injectRegister: null` in vite.config.ts).
@@ -38,6 +40,15 @@ import { IST_VORSCHAU, pb } from "./config/pocketbase";
 // Besucher einen Service Worker samt Precache installieren. Die Registrierung
 // gehört ausschließlich in die App.
 registerSW({ immediate: true });
+
+// Real User Monitoring. Absichtlich ohne await: das Rendern darf nicht auf eine
+// Auskunft warten, die nur der Fehlersuche dient. Was vor dem Start schiefgeht,
+// faengt weiterhin die ErrorBoundary samt Ringpuffer ab (src/utils/errorReport.ts).
+//
+// Die Adresse kommt von der Instanz, nicht aus dem Build: dasselbe Image laeuft
+// bei verwalteten Kunden und bei Selbsthostern, und nur die erste Gruppe hat
+// einen Sammelpunkt. Fehlt er, passiert hier nichts.
+void fetchBetrieb().then((betrieb) => starteRum(betrieb.rumUrl, betrieb.instanz));
 
 // Direkteinstieg aus dem Self-Service-Signup: die Control-Plane übergibt ein
 // kurzlebiges PocketBase-Token in der Adresszeile, damit der erste Login ohne

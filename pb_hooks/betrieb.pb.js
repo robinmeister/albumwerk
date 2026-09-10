@@ -27,7 +27,12 @@ routerAdd("GET", "/api/custom/betrieb", (e) => {
     // bleibt leer — die Oberflaeche zeigt dann keinen CNAME-Hinweis
   }
 
-  return e.json(200, { verwaltet: verwaltet, instanz: instanz });
+  // Sammelpunkt fuer Real User Monitoring. Nur verwaltete Instanzen bekommen
+  // einen: eine selbst gehostete Instanz darf ihre Fehler nicht an den
+  // Anbieter schicken, und ohne die Variable ist RUM schlicht aus.
+  const rumUrl = verwaltet ? String($os.getenv("SAAS_RUM_URL") || "").trim() : "";
+
+  return e.json(200, { verwaltet: verwaltet, instanz: instanz, rumUrl: rumUrl });
 });
 
 // Domain-Wunsch an die Control-Plane melden.
