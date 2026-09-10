@@ -11,7 +11,7 @@ import { saveSelection, watchSelection } from "../utils/userSelection";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import JSZip from "jszip";
-import { Check, Images as PhotoLibrary } from "lucide-react";
+import { Check, Images as PhotoLibrary, Upload } from "lucide-react";
 import EmptyState from "../../../components/feedback/EmptyState";
 
 import { downloadFile, fetchShootingPackage, getOriginalImages, saveBlob } from "../../../utils/functions";
@@ -31,6 +31,8 @@ type Props = {
   isPublicAlbum?: boolean;
   isAdminAlbum: boolean;
   shootingId: string;
+  /** admin: opens the upload dialog straight from the empty state */
+  onUpload?: () => void;
   /** bump to force a refetch of the images, e.g. after an upload */
   reloadKey?: number;
   selected: string[];
@@ -87,6 +89,7 @@ export default function Album(props: Props): ReactElement {
     isPublicAlbum = false,
     isAdminAlbum,
     shootingId,
+    onUpload,
     reloadKey,
     selected,
     setSelected,
@@ -390,7 +393,9 @@ export default function Album(props: Props): ReactElement {
     </div>
   );
 
-  if(loadingPreview) { return (
+  // `shootingId` mitprüfen: ohne ID läuft der Effekt oben nie, `loadingPreview`
+  // bliebe auf seinem Startwert true stehen und das Skelett liefe endlos.
+  if(loadingPreview && shootingId) { return (
     <div {...stylex.props(s.skeletonGrid)}>
       {Array.from(new Array(8)).map((_, index) => (
         // eslint-disable-next-line react/no-array-index-key
@@ -451,11 +456,16 @@ export default function Album(props: Props): ReactElement {
       {images.length === 0 ? (
         <EmptyState
           icon={<PhotoLibrary />}
-          title={isAdminAlbum ? "Noch keine Bilder in diesem Shooting" : "Dieses Album ist noch leer"}
+          title={isAdminAlbum ? "Noch keine Bilder in diesem Album" : "Dieses Album ist noch leer"}
           description={
             isAdminAlbum
-              ? "Sobald du Bilder hochlädst, erscheinen sie hier."
+              ? "Weiter geht es mit den Bildern — danach kannst du das Album über die Kundenansicht prüfen und teilen."
               : "Sobald Bilder hinzugefügt wurden, erscheinen sie hier. Schau später noch einmal vorbei."
+          }
+          action={
+            isAdminAlbum && onUpload
+              ? { label: "Bilder hochladen", onClick: onUpload, icon: <Upload /> }
+              : undefined
           }
           helpSlug={isAdminAlbum ? "bilder-hochladen" : undefined}
         />

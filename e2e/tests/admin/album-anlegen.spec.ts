@@ -1,20 +1,20 @@
-// Workflow: Fotograf legt ein neues Shooting an.
+// Workflow: Fotograf legt ein neues Album an.
 // Hilfe-Artikel: album-anlegen
 
 import { test, expect, DEMO_ADMIN } from "../../support/fixtures";
 import { NEUES_ALBUM } from "../../support/data";
 import { shot } from "../../support/shot";
 
-test("Fotograf legt ein Shooting an", async ({ page, pb, anmelden }) => {
+test("Fotograf legt ein Album an", async ({ page, pb, anmelden }) => {
   try {
     await anmelden(page, DEMO_ADMIN.email, DEMO_ADMIN.password);
     await page.goto("/album");
 
-    const neuesShooting = page.getByRole("button", { name: "Neues Shooting" });
-    await expect(neuesShooting).toBeVisible();
-    await shot(neuesShooting, "album-anlegen/01-neues-shooting");
+    const neuesAlbum = page.getByRole("button", { name: "Neues Album" });
+    await expect(neuesAlbum).toBeVisible();
+    await shot(neuesAlbum, "album-anlegen/01-neues-shooting");
 
-    await neuesShooting.click();
+    await neuesAlbum.click();
 
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
@@ -29,7 +29,7 @@ test("Fotograf legt ein Shooting an", async ({ page, pb, anmelden }) => {
     expect(treffer).toHaveLength(1);
     expect(treffer[0].description).toBe(NEUES_ALBUM.description);
 
-    // Sichtbares Ergebnis: das neue Shooting ist ausgewählt und zeigt seinen
+    // Sichtbares Ergebnis: das neue Album ist ausgewählt und zeigt seinen
     // Detailkopf. Der Titel steht mehrfach im DOM (Liste, Kopf, Kacheltext) —
     // die Überschrift ist die eindeutige Stelle.
     const detail = page.getByTestId("shooting-detail");

@@ -12,6 +12,7 @@ import * as stylex from "@stylexjs/stylex";
 import { ArrowLeft as ArrowBack, ArrowDown as ArrowDownward, ArrowUp as ArrowUpward, ClipboardList as Assignment, CircleCheck as CheckCircle, X as Close, CloudDownload, Printer as Print, Search, Send } from "lucide-react";
 import { toast } from "react-toastify";
 import { pb } from "../../config/pocketbase";
+import { useSettings } from "../../context/SettingsContext";
 
 import {
   FinishedOrder,
@@ -75,7 +76,7 @@ const s = stylex.create({
     gap: 4,
   },
   statLabel: { textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "0.68rem" },
-  linkRow: { display: "flex", justifyContent: "flex-end", marginBottom: 12 },
+  linkRow: { display: "flex", justifyContent: "flex-end", gap: 6, marginBottom: 12 },
   panels: {
     display: "flex",
     flexDirection: { default: "column", [MD]: "row" },
@@ -293,6 +294,7 @@ function OrderDetailPanel({
 
 export default function OrdersPage(): ReactElement {
   const isMobile = useMobileService();
+  const { settings } = useSettings();
 
   const [tableOrders,    setTableOrders]    = useState<TableOrderExtended[]>([]);
   const [downloadOrders, setDownloadOrders] = useState<TableOrderExtended[]>([]);
@@ -515,6 +517,31 @@ export default function OrdersPage(): ReactElement {
         </div>
 
         <div {...stylex.props(s.linkRow)}>
+          {/* Der Gesamtumsatz oben ist unser eigener Rechenwert — was nach
+              Gebühren wirklich ankommt, steht nur beim Zahlungsanbieter. */}
+          {settings.stripeEnabled && (
+            <Button
+              variant="ghost"
+              size="sm"
+              label="Stripe-Zahlungen ↗"
+              href="https://dashboard.stripe.com/payments"
+              target="_blank"
+              rel="noopener noreferrer"
+            />
+          )}
+          {/* Nur im Live-Modus: die Sandbox verbucht kein echtes Geld, und
+              ihre Aktivitäten liegen ohnehin hinter den Testkonto-Zugängen
+              auf developer.paypal.com, nicht hinter dem normalen Login. */}
+          {settings.paypalEnabled && settings.paypalLiveMode && (
+            <Button
+              variant="ghost"
+              size="sm"
+              label="PayPal-Umsätze ↗"
+              href="https://www.paypal.com/myaccount/activities/"
+              target="_blank"
+              rel="noopener noreferrer"
+            />
+          )}
           <Button variant="ghost" size="sm" label="Kundenumsätze anzeigen →" onClick={() => setSummaryOpen(true)} />
         </div>
 
@@ -540,7 +567,7 @@ export default function OrdersPage(): ReactElement {
                 width="100%"
                 size="sm"
                 startIcon={<Search />}
-                placeholder="Kunde oder Shooting…"
+                placeholder="Kunde oder Album…"
                 value={search}
                 onChange={(v) => setSearch(v)}
               />

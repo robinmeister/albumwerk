@@ -11,13 +11,15 @@ import { ImagePriceObject, User } from "../../../../utils/types";
 type Props = {
   description: string;
   disabled: boolean;
+  // formatierter Gesamtbetrag, steht auf dem Knopf ("15.00 € mit Karte zahlen")
+  amountLabel: string;
   imagePriceObjectList: ImagePriceObject[];
   shootingId?: string;
   userData: User;
 };
 
 const s = stylex.create({
-  root: { display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" },
+  root: { display: "flex", flexDirection: "column", gap: 8 },
 });
 
 // Card payment via Stripe Checkout: the server hook prices the selection,
@@ -25,7 +27,7 @@ const s = stylex.create({
 // page; after payment Stripe sends the customer back to /pricing?stripeSession=…,
 // where PricingPage verifies the session and the server finalizes the order.
 export default function StripeForm(props: Props): ReactElement {
-  const { description, disabled, imagePriceObjectList, shootingId, userData } = props;
+  const { description, disabled, amountLabel, imagePriceObjectList, shootingId, userData } = props;
   const [redirecting, setRedirecting] = useState(false);
 
   const startCheckout = async () => {
@@ -57,12 +59,13 @@ export default function StripeForm(props: Props): ReactElement {
         icon={<CreditCard />}
         isLoading={redirecting}
         isDisabled={disabled || redirecting}
-        label={redirecting ? "Weiterleitung zu Stripe …" : "Mit Karte zahlen"}
+        width="100%"
+        label={redirecting ? "Weiterleitung zu Stripe …" : `${amountLabel} mit Karte zahlen`}
         onClick={() => void startCheckout()}
       />
       <Text type="supporting" color="secondary">
-        Du wirst zur sicheren Bezahlseite von Stripe weitergeleitet
-        (Kreditkarte, Apple Pay, Google Pay u. a.).
+        Kreditkarte, Apple Pay oder Google Pay über Stripe. Nach der Zahlung
+        kommst du hierher zurück.
       </Text>
     </div>
   );

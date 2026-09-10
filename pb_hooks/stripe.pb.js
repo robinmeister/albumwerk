@@ -94,7 +94,7 @@ routerAdd("POST", "/api/custom/stripe/create-checkout-session", (e) => {
   // authoritative price — the client value is never trusted
   let total;
   try {
-    total = co.authoritativeTotal(e.app, e.auth.id, shootingId, list);
+    total = co.authoritativeTotal(e.app, shootingId, list);
   } catch (err) {
     if (err instanceof BadRequestError) throw err;
     e.app.logger().error("stripe price calc failed", "error", String(err));
@@ -114,6 +114,9 @@ routerAdd("POST", "/api/custom/stripe/create-checkout-session", (e) => {
 
   const params = [
     "mode=payment",
+    // Managed Payments ist bei neuen Stripe-Konten an und verlangt dann einen
+    // Steuer-Code je Position; wir verkaufen direkt und rechnen selbst ab.
+    "managed_payments[enabled]=false",
     "line_items[0][quantity]=1",
     "line_items[0][price_data][currency]=" + encodeURIComponent(currency),
     "line_items[0][price_data][unit_amount]=" + amount,

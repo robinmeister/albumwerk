@@ -201,7 +201,7 @@ export default function AdminUsersPage(): ReactElement {
                       variant={user.verified ? "success" : "neutral"}
                       label={user.verified ? "Verifiziert" : "Nicht verifiziert"}
                     />
-                    <Badge variant="neutral" label={`${user.shootingIds.length} Shootings`} />
+                    <Badge variant="neutral" label={`${user.shootingIds.length} Alben`} />
                     {user.isAdmin && <Badge variant="info" label="Admin" />}
                   </div>
                 </div>
@@ -216,7 +216,7 @@ export default function AdminUsersPage(): ReactElement {
                 <tr>
                   <th {...stylex.props(s.th)}>Name</th>
                   <th {...stylex.props(s.th)}>E-Mail</th>
-                  <th {...stylex.props(s.th, s.center)}>Shootings</th>
+                  <th {...stylex.props(s.th, s.center)}>Alben</th>
                   <th {...stylex.props(s.th, s.center)}>Verifiziert</th>
                   <th {...stylex.props(s.th, s.center)}>Admin</th>
                 </tr>

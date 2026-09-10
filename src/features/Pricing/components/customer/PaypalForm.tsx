@@ -6,7 +6,6 @@ import { ReactElement } from "react";
 import { ImagePriceObject, User } from "../../../../utils/types";
 import { useSettings } from "../../../../context/SettingsContext";
 import { pb } from "../../../../config/pocketbase";
-import PaymentUnavailable from "../../../../components/feedback/PaymentUnavailable";
 
 type Props = {
   paymentCompleted: boolean;
@@ -30,14 +29,22 @@ export default function PaypalForm(props: Props): ReactElement {
   // configured at runtime on the admin payments page — single source
   const clientId = settings.paypalClientId || "";
 
-  if (!clientId) {
-    return <PaymentUnavailable />;
-  }
+  // Ist Stripe eingerichtet, laufen Karten dort. PayPals eigener
+  // Kartenknopf stünde sonst unter der Auswahl „PayPal" und hieße wieder
+  // „Debit- oder Kreditkarte" — genau die Verwechslung, die die Auswahl
+  // auflösen soll. Ohne Stripe bleibt er der einzige Kartenweg und bleibt an.
+  const funding = [
+    "bancontact", "eps", "ideal", "mercadopago", "mybank", "p24", "sepa",
+    ...(settings.stripeEnabled ? ["card"] : []),
+  ].join(",");
+
+  // PaymentForm zeigt PayPal nur mit Client-ID an; hier bleibt nur der Notnagel.
+  if (!clientId) return <></>;
 
   return (
     <PayPalScriptProvider options={{
       clientId,
-      disableFunding: "bancontact,eps,ideal,mercadopago,mybank,p24,sepa",
+      disableFunding: funding,
       currency: settings.currency || "EUR",
       locale: "de_DE",
     }}>

@@ -100,7 +100,7 @@ routerAdd("POST", "/api/custom/paypal/create-order", (e) => {
   // authoritative price — the client value is never trusted
   let total;
   try {
-    total = co.authoritativeTotal(e.app, e.auth.id, shootingId, list);
+    total = co.authoritativeTotal(e.app, shootingId, list);
   } catch (err) {
     if (err instanceof BadRequestError) throw err;
     e.app.logger().error("paypal price calc failed", "error", String(err));

@@ -1,6 +1,7 @@
 import { Badge } from "@astryxdesign/core/Badge";
 import { Button } from "@astryxdesign/core/Button";
 import { Divider } from "@astryxdesign/core/Divider";
+import { RadioList, RadioListItem } from "@astryxdesign/core/RadioList";
 import { Text } from "@astryxdesign/core/Text";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import * as stylex from "@stylexjs/stylex";
@@ -63,7 +64,46 @@ const s = stylex.create({
     gap: 16,
   },
   full: { gridColumn: "1 / -1" },
-  orRow: { marginBlock: 16 },
+  // Anbieterwahl: Liste und Zahlbereich sitzen aneinander, eine Umrandung um
+  // beides — der gewählte Weg gehört sichtbar zu der Zeile darüber.
+  // StyleX verwirft die border-Kurzform, nur die Longhands kommen im Bundle an.
+  // --color-border liegt zudem bei 10 % Deckkraft und verschwindet auf dem
+  // hellen Grund; die Umrandung muss hier tragen, also der kräftigere Token.
+  methodList: {
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "var(--color-border-emphasized)",
+    paddingBlock: 12,
+    paddingInline: 14,
+  },
+  methodPanel: {
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderStyle: "solid",
+    borderColor: "var(--color-border-emphasized)",
+    padding: 16,
+  },
+  methodMarks: { display: "flex", gap: 4 },
+  methodMark: {
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "var(--color-border-emphasized)",
+    color: "var(--color-text-secondary)",
+    fontSize: "0.6rem",
+    letterSpacing: "0.06em",
+    lineHeight: 1,
+    padding: "4px 5px",
+  },
+  // PayPal-Gelb ist die Marke, kein Theme-Wert — deshalb fest.
+  paypalMark: {
+    backgroundColor: "#ffc439",
+    color: "#003087",
+    fontSize: "0.78rem",
+    fontWeight: 700,
+    lineHeight: 1.35,
+    padding: "3px 7px",
+  },
+  paypalMarkTail: { color: "#0070ba" },
   back: { marginTop: 16 },
 });
 
@@ -98,8 +138,15 @@ export default function PaymentForm(props: Props): ReactElement {
   // show validation errors only after the customer has interacted with a field
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const paypalAvailable = Boolean(settings.paypalEnabled);
+  // "eingerichtet" heißt: Schalter an UND Zugangsdaten da. Ohne Client-ID
+  // (z. B. Demo-Seed) kann PayPal nicht laden — dann gar nicht anbieten.
+  const paypalAvailable = Boolean(settings.paypalEnabled && settings.paypalClientId);
   const stripeAvailable = Boolean(settings.stripeEnabled);
+  // Nur wenn beide Wege offen sind, muss der Kunde wählen. Steht genau einer
+  // bereit, zeigt der Zahlbereich ihn direkt — ohne Auswahl ohne Alternative.
+  const bothAvailable = paypalAvailable && stripeAvailable;
+  const [method, setMethod] = useState<"stripe" | "paypal">("stripe");
+  const activeMethod = bothAvailable ? method : stripeAvailable ? "stripe" : "paypal";
 
   // physical products (prints, canvases …) need a shipping address and a
   // phone number; a digital-only order does not. Package shootings may
@@ -183,6 +230,7 @@ export default function PaymentForm(props: Props): ReactElement {
   const totalPrice = shootingPackage && calculateTotalPrice(imagePriceObjectList) === 0
     ? parseFloat(calculateTotalPackagePrice(shootingPackage, selectedImages.length))
     : calculateTotalPrice(imagePriceObjectList);
+  const totalLabel = `${typeof totalPrice === "number" ? totalPrice.toFixed(2) : totalPrice} €`;
 
   if (loading) {
     return <PageLoader />;
@@ -227,10 +275,7 @@ export default function PaymentForm(props: Props): ReactElement {
 
         <div {...stylex.props(s.totalRow)}>
           <Text type="body" color="secondary">Gesamtpreis</Text>
-          <Badge
-            variant="info"
-            label={`${typeof totalPrice === "number" ? totalPrice.toFixed(2) : totalPrice} €`}
-          />
+          <Badge variant="info" label={totalLabel} />
         </div>
       </div>
 
@@ -287,33 +332,64 @@ export default function PaymentForm(props: Props): ReactElement {
           </div>
         )}
         {!paypalAvailable && !stripeAvailable && <PaymentUnavailable />}
-        {stripeAvailable && (
-          <div style={{ marginBottom: paypalAvailable ? 16 : 0 }}>
+
+        {bothAvailable && (
+          <div {...stylex.props(s.methodList)}>
+            <RadioList
+              label="Zahlungsart"
+              isLabelHidden
+              value={method}
+              onChange={(v) => setMethod(v as "stripe" | "paypal")}
+            >
+              <RadioListItem
+                value="stripe"
+                label="Kreditkarte"
+                description="Sichere Bezahlseite von Stripe"
+                endContent={
+                  <div {...stylex.props(s.methodMarks)}>
+                    {["VISA", "MC", "AMEX"].map((m) => (
+                      <span key={m} {...stylex.props(s.methodMark)}>{m}</span>
+                    ))}
+                  </div>
+                }
+              />
+              <RadioListItem
+                value="paypal"
+                label="PayPal"
+                description="Guthaben, Lastschrift oder hinterlegte Karte"
+                endContent={
+                  <span {...stylex.props(s.paypalMark)}>
+                    Pay<span {...stylex.props(s.paypalMarkTail)}>Pal</span>
+                  </span>
+                }
+              />
+            </RadioList>
+          </div>
+        )}
+
+        <div {...stylex.props(bothAvailable && s.methodPanel)}>
+          {stripeAvailable && activeMethod === "stripe" && (
             <StripeForm
               description={`Fotobestellung (${selectedImages.length} Bilder)`}
               disabled={paymentDisabled}
+              amountLabel={totalLabel}
               imagePriceObjectList={imagePriceObjectList}
               shootingId={shootingId}
               userData={userData}
             />
-          </div>
-        )}
-        {paypalAvailable && stripeAvailable && (
-          <div {...stylex.props(s.orRow)}>
-            <Divider label="oder" />
-          </div>
-        )}
-        {paypalAvailable && (
-          <PaypalForm
-            disabled={paymentDisabled}
-            paymentCompleted={paymentCompleted}
-            setPaymentCompleted={setPaymentCompleted}
-            userData={userData}
-            imagePriceObjectList={imagePriceObjectList}
-            shootingId={shootingId}
-            onPaid={onPaid}
-          />
-        )}
+          )}
+          {paypalAvailable && activeMethod === "paypal" && (
+            <PaypalForm
+              disabled={paymentDisabled}
+              paymentCompleted={paymentCompleted}
+              setPaymentCompleted={setPaymentCompleted}
+              userData={userData}
+              imagePriceObjectList={imagePriceObjectList}
+              shootingId={shootingId}
+              onPaid={onPaid}
+            />
+          )}
+        </div>
       </div>
 
       {/* ── Back button ── */}

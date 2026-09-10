@@ -15,7 +15,14 @@ import { X as Close } from "lucide-react";
 
 import { useAlbumContext } from "../utils/context";
 import { Package, Price, Shooting, User } from "../../../utils/types";
-import { emptyShooting } from "../utils/functions";
+
+// Wortlaut bewusst gleich dem Hilfe-Artikel "album-anlegen" — wer dort
+// nachliest, findet dieselbe Erklärung wieder.
+const TYP_HINWEIS: Record<string, string> = {
+  paid:   "Bezahlt: der Kunde hat schon bezahlt. Kein Kaufvorgang — er markiert Bilder und lädt sie direkt herunter.",
+  public: "Öffentlich: für alle mit dem Link sichtbar, ebenfalls ohne Kaufvorgang. Passt für Vereins-, Event- oder Familienalben.",
+  sale:   "Verkauf: der Kunde wählt Bilder aus und geht durch die Kasse. Nur hier ordnest du Preise oder ein Paket zu.",
+};
 
 const s = stylex.create({
   header: {
@@ -89,12 +96,12 @@ export default function ShootingModal(): ReactElement {
           }
           setSelectedShooting(newShooting)
           setShootings([...shootings, newShooting])
-          toast.success("Shooting erfolgreich erstellt!")
+          toast.success("Album erfolgreich erstellt!")
           await updateUserShootings(newShooting)
           setShootings([...shootings, newShooting])
       } catch (error) {
           console.error("Error adding document: ", error)
-          toast.error("Fehler beim Erstellen des Shootings!")
+          toast.error("Fehler beim Erstellen des Albums!")
       }
     }
 
@@ -113,11 +120,11 @@ export default function ShootingModal(): ReactElement {
             // update existing shooting in shootings array
             const updatedShootings = shootings.map((s: Shooting) => s.id === shooting.id ? shooting : s)
             setShootings(updatedShootings)
-            toast.success("Shooting erfolgreich aktualisiert!")
+            toast.success("Album erfolgreich aktualisiert!")
             await updateUserShootings(shooting)
         } catch (error) {
             console.error("Error updating document: ", error)
-            toast.error("Fehler beim Aktualisieren des Shootings!")
+            toast.error("Fehler beim Aktualisieren des Albums!")
         }
     }
 
@@ -145,7 +152,7 @@ export default function ShootingModal(): ReactElement {
       <Dialog isOpen={openEditModal} onOpenChange={setOpenEditModal} width={560}>
         <div {...stylex.props(s.header)}>
           <Heading level={6}>
-            {selectedShooting?.id ? "Shooting bearbeiten" : "Shooting erstellen"}
+            {selectedShooting?.id ? "Album bearbeiten" : "Neues Album"}
           </Heading>
           <IconButton
             icon={<Close />}
@@ -189,7 +196,11 @@ export default function ShootingModal(): ReactElement {
           <Selector
             placeholder="Bitte wählen"
             width="100%"
-            label="Shooting Typ"
+            label="Album-Typ"
+            description={
+              TYP_HINWEIS[selectedShooting?.type ?? ""] ??
+              "Legt fest, was der Kunde im Album tun kann: herunterladen, ansehen oder kaufen."
+            }
             options={[
               { value: "paid", label: "Bezahlt" },
               { value: "public", label: "Öffentlich" },
@@ -314,7 +325,11 @@ export default function ShootingModal(): ReactElement {
               label="Abbrechen"
               onClick={() => {
                 setOpenEditModal(false);
-                setSelectedShooting(emptyShooting);
+                // Bearbeitung verwerfen heißt: den gespeicherten Stand
+                // zurückholen. Ein noch nicht gespeichertes Album steht nicht
+                // in `shootings` — dort liefert find() undefined und die
+                // Detailansicht bleibt leer, statt einen Geist zu zeigen.
+                setSelectedShooting(shootings.find((sh: Shooting) => sh.id === selectedShooting?.id));
               }}
             />
             <Button variant="primary" label="Speichern" onClick={handleSaveShooting} />

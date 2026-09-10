@@ -200,7 +200,7 @@ function ShootingDetailHeader({
           <button aria-label="Bilder hochladen" title="Bilder hochladen" onClick={onUpload} {...stylex.props(s.overlayBtn)}>
             <Upload />
           </button>
-          <button aria-label="Shooting löschen" title="Shooting löschen" onClick={onDelete} {...stylex.props(s.overlayBtn, s.overlayBtnDanger)}>
+          <button aria-label="Album löschen" title="Album löschen" onClick={onDelete} {...stylex.props(s.overlayBtn, s.overlayBtnDanger)}>
             <Delete />
           </button>
         </div>
@@ -362,10 +362,10 @@ export default function AdminAlbumPage(): ReactElement {
       await pb.collection("shootings").delete(selectedShooting.id);
       setShootings(prev => prev.filter(s => s.id !== selectedShooting.id));
       setSelectedShooting(undefined);
-      toast.success("Shooting erfolgreich gelöscht");
+      toast.success("Album erfolgreich gelöscht");
     } catch (error) {
       console.error(error);
-      toast.error("Fehler beim Löschen des Shootings");
+      toast.error("Fehler beim Löschen des Albums");
     }
     setLoading(false);
   };
@@ -427,21 +427,21 @@ export default function AdminAlbumPage(): ReactElement {
 
         <HelpBanner
           slug="album-anlegen"
-          title="Leg dein erstes Shooting an"
+          title="Leg dein erstes Album an"
           isHidden={loading || shootings.length > 0}
         />
 
         {/* ===== Two-panel container ===== */}
         <div {...stylex.props(s.panels)}>
           {/* ===== LEFT PANEL ===== */}
-          <div {...stylex.props(s.left, selectedShooting && s.hideOnMobile)}>
+          <div {...stylex.props(s.left, !!selectedShooting?.id && s.hideOnMobile)}>
             <div {...stylex.props(s.leftHead)}>
               <Button
                 variant="primary"
                 width="100%"
                 size="sm"
                 icon={<Add />}
-                label="Neues Shooting"
+                label="Neues Album"
                 onClick={() => {
                   setSelectedShooting(emptyShooting);
                   setSelectedUsers([]);
@@ -466,7 +466,7 @@ export default function AdminAlbumPage(): ReactElement {
               {filteredShootings.length === 0 ? (
                 <div {...stylex.props(s.listEmpty)}>
                   <Text type="body" color="secondary">
-                    {search ? "Keine Ergebnisse" : "Keine Shootings"}
+                    {search ? "Keine Ergebnisse" : "Keine Alben"}
                   </Text>
                 </div>
               ) : (
@@ -484,11 +484,14 @@ export default function AdminAlbumPage(): ReactElement {
           </div>
 
           {/* ===== RIGHT PANEL ===== */}
-          <div {...stylex.props(s.right, !selectedShooting && s.hideOnMobile)}>
-            {!selectedShooting ? (
+          <div {...stylex.props(s.right, !selectedShooting?.id && s.hideOnMobile)}>
+            {/* Der Platzhalter „Neues Album“ trägt noch keine id — bis zum
+                Speichern zählt er nicht als Auswahl, sonst stünde hinter dem
+                Dialog bereits eine leere Detailansicht. */}
+            {!selectedShooting?.id ? (
               <div {...stylex.props(s.rightEmpty)}>
                 <PhotoCamera {...stylex.props(s.emptyIcon)} />
-                <Text type="body" color="secondary">Shooting auswählen</Text>
+                <Text type="body" color="secondary">Wähle links ein Album aus oder leg ein neues an.</Text>
               </div>
             ) : (
               <div {...stylex.props(s.rightScroll)}>
@@ -498,7 +501,7 @@ export default function AdminAlbumPage(): ReactElement {
                       variant="ghost"
                       size="sm"
                       icon={<ArrowBack />}
-                      label="Alle Shootings"
+                      label="Alle Alben"
                       onClick={() => setSelectedShooting(undefined)}
                     />
                   </div>
@@ -519,6 +522,7 @@ export default function AdminAlbumPage(): ReactElement {
                 <Album
                   isAdminAlbum={true}
                   shootingId={selectedShooting.id}
+                  onUpload={() => setOpenUploadModal(true)}
                   reloadKey={reload}
                   selected={selected}
                   setSelected={setSelected}

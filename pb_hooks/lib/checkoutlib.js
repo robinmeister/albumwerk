@@ -99,35 +99,35 @@ function itemsTotal(app, list) {
   return round2(total);
 }
 
-function packageTotal(app, userId, shootingId) {
+// The package attached to a shooting, or null when the shooting sells
+// per-image prices instead.
+function packageOf(app, shootingId) {
+  if (!shootingId) return null;
   var shooting;
   try {
     shooting = app.findRecordById("shootings", shootingId);
   } catch (err) {
-    return 0;
+    return null;
   }
   var packageId = shooting.getString("packageId");
-  if (!packageId) return 0;
-
-  var pkg;
+  if (!packageId) return null;
   try {
-    pkg = app.findRecordById("packages", packageId);
+    return app.findRecordById("packages", packageId);
   } catch (err) {
-    return 0;
+    return null;
   }
+}
 
-  var count = 0;
-  try {
-    var sel = app.findFirstRecordByFilter(
-      "userSelection",
-      "userId = {:u} && shootingId = {:s}",
-      { u: userId, s: shootingId }
-    );
-    count = (JSON.parse(sel.getString("selectedImages") || "[]") || []).length;
-  } catch (err) {
-    count = 0;
-  }
+// A package order is billed as: package price, plus the single-image price for
+// every image beyond the included count. The count comes from the order list
+// itself (one entry per chosen image) — `userSelection` is the album wish list,
+// which stays empty unless the shooting has that feature switched on, and
+// billing off it silently dropped the surcharge.
+function packageTotal(app, shootingId, list) {
+  var pkg = packageOf(app, shootingId);
+  if (!pkg) return 0;
 
+  var count = list.length;
   var included = pkg.getInt("numberOfImages");
   var totalPrice = parseFloat(pkg.getString("totalPrice")) || 0;
   var singlePrice = parseFloat(pkg.getString("singlePrice")) || 0;
@@ -135,14 +135,30 @@ function packageTotal(app, userId, shootingId) {
   return round2(totalPrice + (count - included) * singlePrice);
 }
 
+// True when the order is billed through the package: the shooting has one and
+// the order carries no per-image prices. The package flow (PackageForm) never
+// assigns any, so this is what a package purchase looks like on the wire.
+function isPackageOrder(app, shootingId, list) {
+  return itemsTotal(app, list) === 0 && packageOf(app, shootingId) !== null;
+}
+
 // Authoritative total in major currency units. Per-image prices take
 // precedence; if there are none, fall back to package pricing.
-function authoritativeTotal(app, userId, shootingId, list) {
+function authoritativeTotal(app, shootingId, list) {
   var total = itemsTotal(app, list);
   if (total === 0 && shootingId) {
-    total = packageTotal(app, userId, shootingId);
+    total = packageTotal(app, shootingId, list);
   }
   return total;
+}
+
+// Every image in the order, regardless of price — used for package orders.
+function allImages(list) {
+  var out = [];
+  for (var i = 0; i < list.length; i++) {
+    if (list[i] && list[i].image) out.push(String(list[i].image));
+  }
+  return out;
 }
 
 // Images the buyer may download: those whose selected price is downloadable
@@ -183,7 +199,11 @@ function finalizeOrder(app, opts) {
   order.set("userData", opts.userData || {});
   app.save(order);
 
-  var grant = downloadableImages(app, list);
+  // A package buys the images themselves, so everything in the order is
+  // downloadable. Per-image orders grant only what their prices allow.
+  var grant = isPackageOrder(app, opts.shootingId, list)
+    ? allImages(list)
+    : downloadableImages(app, list);
   if (grant.length) {
     try {
       var user = app.findRecordById("users", opts.userId);
@@ -208,5 +228,6 @@ module.exports = {
   paypalAccessToken: paypalAccessToken,
   authoritativeTotal: authoritativeTotal,
   downloadableImages: downloadableImages,
+  isPackageOrder: isPackageOrder,
   finalizeOrder: finalizeOrder,
 };

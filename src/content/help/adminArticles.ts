@@ -157,44 +157,44 @@ export const adminArticles: HelpArticle[] = [
   // --- Alben & Bilder ------------------------------------------------------
   {
     slug: "album-anlegen",
-    title: "Ein Album (Shooting) anlegen",
+    title: "Ein Album anlegen",
     summary:
-      "Titel, Kunden und Shooting-Typ festlegen — der Typ entscheidet, ob gekauft oder direkt heruntergeladen wird.",
+      "Titel, Kunden und Album-Typ festlegen — der Typ entscheidet, ob gekauft oder direkt heruntergeladen wird.",
     audience: ["admin"],
     category: "albums",
     keywords: ["shooting", "album", "anlegen", "neu", "erstellen", "typ"],
     relatedPath: "/album",
     bodyHtml: `
-<p>Jedes Shooting ist ein eigenes Album. Über <strong>Album → Neues Shooting</strong> legst du eins an.</p>
+<p>Jedes Shooting bekommt bei dir ein eigenes Album. Über <strong>Album → Neues Album</strong> legst du eins an.</p>
 <h2>Schritt für Schritt</h2>
 <ol>
-  <li>Links über der Albumliste auf <strong>Neues Shooting</strong> klicken.</li>
+  <li>Links über der Albumliste auf <strong>Neues Album</strong> klicken.</li>
 </ol>
 <figure>
-  <img src="/help/album-anlegen/01-neues-shooting.webp" alt="Der Button „Neues Shooting“" loading="lazy" />
+  <img src="/help/album-anlegen/01-neues-shooting.webp" alt="Der Button „Neues Album“" loading="lazy" />
   <figcaption>Der Einstieg liegt links über der Liste deiner Alben.</figcaption>
 </figure>
 <ol start="2">
-  <li>Titel, Beschreibung, Kunden und Shooting-Typ ausfüllen.</li>
+  <li>Titel, Beschreibung, Kunden und Album-Typ ausfüllen.</li>
 </ol>
 <figure>
-  <img src="/help/album-anlegen/02-formular.webp" alt="Das Formular für ein neues Shooting mit den Feldern Titel, Beschreibung, Kunden und Typ" loading="lazy" />
-  <figcaption>Der Shooting-Typ steht ganz unten — er entscheidet, was der Kunde später im Album tun kann.</figcaption>
+  <img src="/help/album-anlegen/02-formular.webp" alt="Das Formular für ein neues Album mit den Feldern Titel, Beschreibung, Kunden und Typ" loading="lazy" />
+  <figcaption>Der Album-Typ steht ganz unten — er entscheidet, was der Kunde später im Album tun kann.</figcaption>
 </figure>
 <ol start="3">
-  <li>Speichern. Das Album erscheint in der Liste und ist bereit für Bilder.</li>
+  <li>Speichern. Das Album erscheint in der Liste, ist ausgewählt und wartet auf Bilder — der Button <strong>Bilder hochladen</strong> steht mitten im leeren Album.</li>
 </ol>
 <figure>
   <img src="/help/album-anlegen/03-angelegt.webp" alt="Das neu angelegte Album in der Detailansicht, noch ohne Bilder" loading="lazy" />
-  <figcaption>Direkt nach dem Anlegen ist das Album leer — weiter geht es mit den Bildern.</figcaption>
+  <figcaption>Direkt nach dem Anlegen ist das Album leer — weiter geht es über „Bilder hochladen“.</figcaption>
 </figure>
 <h2>Die Felder</h2>
 <ul>
-  <li><strong>Titel</strong> — sieht der Kunde. Etwas Konkretes wie „Hochzeit Meyer, Juli 2026“ ist besser als „Shooting 1“.</li>
+  <li><strong>Titel</strong> — sieht der Kunde. Etwas Konkretes wie „Hochzeit Meyer, Juli 2026“ ist besser als „Album 1“.</li>
   <li><strong>Beschreibung</strong> — optionaler Text über dem Album, zum Beispiel ein Hinweis auf die Auswahlfrist.</li>
   <li><strong>Kunde(n)</strong> — welche Konten Zugriff bekommen. Du kannst das auch leer lassen und den Zugang später über Link oder QR-Code herstellen.</li>
 </ul>
-<h2>Der Shooting-Typ</h2>
+<h2>Der Album-Typ</h2>
 <p>Das ist die wichtigste Entscheidung, denn sie legt fest, was der Kunde im Album tun kann:</p>
 <ul>
   <li><strong>Bezahlt</strong> — der Kunde hat bereits bezahlt, zum Beispiel direkt bei dir. Es gibt keinen Kaufvorgang; er markiert Bilder und lädt sie über <em>Download</em> direkt herunter.</li>
@@ -215,7 +215,7 @@ export const adminArticles: HelpArticle[] = [
     keywords: ["upload", "hochladen", "bilder", "fotos", "vorschau", "original", "raw"],
     relatedPath: "/album",
     bodyHtml: `
-<p>Öffne ein Shooting und zieh die Bilder in den Upload-Bereich oder wähle sie über den Dateidialog aus. Mehrere Bilder auf einmal sind kein Problem.</p>
+<p>Öffne ein Album und zieh die Bilder in den Upload-Bereich oder wähle sie über den Dateidialog aus. Mehrere Bilder auf einmal sind kein Problem.</p>
 <h2>Schritt für Schritt</h2>
 <ol>
   <li>Das Album öffnen und oben rechts auf <strong>Bilder hochladen</strong> gehen.</li>
@@ -244,7 +244,7 @@ export const adminArticles: HelpArticle[] = [
   <li>ein <strong>Vorschaubild</strong> in reduzierter Größe und mit Wasserzeichen — das bekommen Kunden im Album zu sehen,</li>
   <li>ein <strong>Thumbnail</strong> für die Rasteransicht.</li>
 </ul>
-<p>Das Original bleibt geschützt und wird erst herausgegeben, wenn der Kunde es gekauft hat beziehungsweise das Shooting als bezahlt oder öffentlich markiert ist.</p>
+<p>Das Original bleibt geschützt und wird erst herausgegeben, wenn der Kunde es gekauft hat beziehungsweise das Album als bezahlt oder öffentlich markiert ist.</p>
 <h2>Verarbeitung im Hintergrund</h2>
 <p>Die Vorschauen werden nach dem Upload in einer Warteschlange erzeugt. Bei vielen oder sehr großen Bildern kann das einen Moment dauern — du kannst die Seite in der Zwischenzeit verlassen, die Verarbeitung läuft weiter. Bilder, deren Vorschau noch nicht fertig ist, sind entsprechend markiert.</p>
 <h2>Wenn etwas hakt</h2>
@@ -302,7 +302,7 @@ export const adminArticles: HelpArticle[] = [
   <img src="/help/album-teilen-qr/02-oeffentliche-ansicht.webp" alt="Ein öffentliches Album, geöffnet ohne Anmeldung" loading="lazy" />
   <figcaption>So sieht ein öffentliches Album aus, wenn es jemand ohne Konto über den Link öffnet.</figcaption>
 </figure>
-<p>Bei <strong>öffentlichen</strong> Shootings kann jeder mit dem Link das Album ansehen und die Bilder herunterladen — auch ohne Konto. Bei den Typen <strong>Bezahlt</strong> und <strong>Verkauf</strong> dient der Link dazu, das Album mit einem Konto zu verknüpfen; danach ist es nur noch für dieses Konto sichtbar.</p>
+<p>Bei <strong>öffentlichen</strong> Alben kann jeder mit dem Link das Album ansehen und die Bilder herunterladen — auch ohne Konto. Bei den Typen <strong>Bezahlt</strong> und <strong>Verkauf</strong> dient der Link dazu, das Album mit einem Konto zu verknüpfen; danach ist es nur noch für dieses Konto sichtbar.</p>
 <blockquote>Behandle den Link entsprechend wie ein Passwort und schick ihn nur an den tatsächlichen Kunden.</blockquote>
 `,
   },
@@ -316,7 +316,7 @@ export const adminArticles: HelpArticle[] = [
     keywords: ["sichtbarkeit", "öffentlich", "privat", "löschen", "verstecken", "freigabe"],
     relatedPath: "/album",
     bodyHtml: `
-<p>Alle Bilder eines Shootings sind für die zugeordneten Kunden sichtbar — allerdings immer nur als Vorschau mit Wasserzeichen.</p>
+<p>Alle Bilder eines Albums sind für die zugeordneten Kunden sichtbar — allerdings immer nur als Vorschau mit Wasserzeichen.</p>
 <h2>Wann bekommt jemand das Original?</h2>
 <ul>
   <li>Bei <strong>Bezahlt</strong> und <strong>Öffentlich</strong>: sofort, über den Download-Button im Album.</li>
@@ -371,9 +371,9 @@ export const adminArticles: HelpArticle[] = [
   <li><strong>Paketpreis</strong> — der Betrag für genau diese Anzahl.</li>
   <li><strong>Preis je weiterem Bild</strong> — gilt für jedes Bild über die Inklusiv-Anzahl hinaus.</li>
 </ul>
-<p>Hängt ein Paket an einem Shooting, muss der Kunde mindestens die Inklusiv-Anzahl auswählen, bevor er zur Kasse kommt. Die App zeigt ihm dabei laufend an, wie viele Bilder ihm noch fehlen.</p>
-<h2>Zuordnung zum Shooting</h2>
-<p>Angelegte Produkte und Pakete gelten nicht automatisch überall. Du ordnest sie beim Bearbeiten eines Shootings vom Typ <strong>Verkauf</strong> zu. So kann eine Hochzeit andere Preise haben als ein Bewerbungsfoto-Termin.</p>
+<p>Hängt ein Paket an einem Album, muss der Kunde mindestens die Inklusiv-Anzahl auswählen, bevor er zur Kasse kommt. Die App zeigt ihm dabei laufend an, wie viele Bilder ihm noch fehlen.</p>
+<h2>Zuordnung zum Album</h2>
+<p>Angelegte Produkte und Pakete gelten nicht automatisch überall. Du ordnest sie beim Bearbeiten eines Albums vom Typ <strong>Verkauf</strong> zu. So kann eine Hochzeit andere Preise haben als ein Bewerbungsfoto-Termin.</p>
 `,
   },
   {
@@ -431,7 +431,7 @@ export const adminArticles: HelpArticle[] = [
   <figcaption>Die vollständige Anleitung steht direkt auf der Seite — inklusive Testkarte zum gefahrlosen Ausprobieren.</figcaption>
 </figure>
 <h2>Beide Anbieter gleichzeitig</h2>
-<p>Sind PayPal und Stripe eingerichtet, kann der Kunde an der Kasse frei wählen. Ist keiner von beiden eingerichtet, bekommt er stattdessen den Hinweis, dich direkt zu kontaktieren — Shootings vom Typ <em>Verkauf</em> sind dann also faktisch nicht abschließbar.</p>
+<p>Sind PayPal und Stripe eingerichtet, kann der Kunde an der Kasse frei wählen. Ist keiner von beiden eingerichtet, bekommt er stattdessen den Hinweis, dich direkt zu kontaktieren — Alben vom Typ <em>Verkauf</em> sind dann also faktisch nicht abschließbar.</p>
 `,
   },
   {
@@ -476,7 +476,7 @@ export const adminArticles: HelpArticle[] = [
     bodyHtml: `
 <p>Unter <strong>Nutzer</strong> siehst du alle registrierten Konten mit ihren Kontaktdaten und den zugeordneten Alben.</p>
 <figure>
-  <img src="/help/nutzer-verwalten/01-suchen.webp" alt="Die Nutzertabelle mit den Spalten Name, E-Mail, Shootings, Verifiziert und Admin" loading="lazy" />
+  <img src="/help/nutzer-verwalten/01-suchen.webp" alt="Die Nutzertabelle mit den Spalten Name, E-Mail, Alben, Verifiziert und Admin" loading="lazy" />
   <figcaption>Die Suche oben grenzt die Liste auf einen Namen ein. Der Schalter rechts vergibt Adminrechte.</figcaption>
 </figure>
 <h2>Wie Kunden zu einem Konto kommen</h2>
