@@ -224,10 +224,30 @@ make dev          # bäckt die Dev-Instanz, App auf http://localhost:8091
 make e2e
 ```
 
-Erwartet: voller Lauf grün. **Ist er rot, endet die Aufgabe hier** und der
-Fehlschlag wird gemeldet — auf einem roten Ausgangszustand lässt sich keine
-Änderung beurteilen. Der Lauf geht ausdrücklich gegen die gebackene
-Dev-Instanz auf `:8091`, nicht gegen den Vite-Dev-Server.
+Erwartet: **40 bestanden, 1 Fehlschlag** — und zwar genau dieser eine:
+
+```
+e2e/tests/einstellungen/domain.spec.ts:117
+"scheitert nur die Zustellung, heisst es nicht 'nicht gesendet'"
+```
+
+Dieser Fehlschlag ist bekannt, vorbestehend und liegt ausserhalb dieses
+Plans. Er ist nachgemessen, nicht angenommen: der Test stubbt
+`/api/custom/support/forward`, aber `DomainPage.tsx` ruft diesen Endpunkt
+gar nicht mehr auf — sie importiert nur `createTicket, fetchTicket`
+(`src/pages/admin/DomainPage.tsx:19`). Weitergeleitet wird seit
+`a216c76d` (2026-09-02) serverseitig beim Anlegen der ersten Nachricht;
+der Test stammt von `b0b557f3` (2026-09-01), einen Tag davor. Der Stub
+greift also ins Leere. Kein Zweig dieses Plans kann das beeinflussen —
+gestaltet werden Formen, nicht Weiterleitungslogik.
+
+**Zeigt der Lauf genau diesen einen Fehlschlag, ist das Gatter offen.**
+Ist irgendein *anderer* Test rot, endet die Aufgabe hier und der
+Fehlschlag wird gemeldet — auf einem darüber hinaus roten Ausgangszustand
+lässt sich keine Änderung beurteilen.
+
+Der Lauf geht ausdrücklich gegen die gebackene Dev-Instanz auf `:8091`,
+nicht gegen den Vite-Dev-Server.
 
 - [ ] **Schritt 2: Die Anmeldung schreiben**
 
@@ -260,12 +280,28 @@ def token(email: str, passwort: str) -> dict:
         return json.loads(antwort.read())
 
 
-async def _anmelden(page, email: str, passwort: str) -> None:
+def skript(email: str, passwort: str) -> str:
+    """Der Init-Skripttext, der den PocketBase-Auth-Zustand setzt.
+
+    Pythons `add_init_script` nimmt — anders als die JS-Fassung in
+    `e2e/support/fixtures.ts` — **kein** Argument: die Signatur ist
+    `add_init_script(script=None, *, path=None)`. Die woertliche Uebersetzung
+    der TypeScript-Zeile scheitert darum mit
+    `TypeError: Page.add_init_script() takes from 1 to 2 positional arguments
+    but 3 were given`. Gemessen, nicht vermutet. Der Zustand wird stattdessen
+    in den Skripttext hineinserialisiert — zweimal `json.dumps`, weil der
+    innere Wert ein JS-Stringliteral werden muss.
+
+    Gibt einen Text zurueck statt ihn selbst zu setzen, damit die synchrone
+    kontrast.py denselben Weg nimmt wie die asynchronen Proben.
+    """
     auth = token(email, passwort)
-    await page.add_init_script(
-        "state => window.localStorage.setItem('pocketbase_auth', JSON.stringify(state))",
-        {"token": auth["token"], "model": auth["record"]},
-    )
+    zustand = json.dumps({"token": auth["token"], "model": auth["record"]})
+    return "window.localStorage.setItem('pocketbase_auth', %s)" % json.dumps(zustand)
+
+
+async def _anmelden(page, email: str, passwort: str) -> None:
+    await page.add_init_script(skript(email, passwort))
 
 
 async def als_kundin(page) -> None:
@@ -607,25 +643,6 @@ Dann den Nachweis, dass die Probe beißt: in der Konsole einer Seite
 `document.body.style.width = '3000px'` setzen lässt sich hier nicht
 persistieren — stattdessen `BREITEN` kurzzeitig auf `[("winzig", 200, 800)]`
 setzen, laufen lassen (**muss** Überlauf melden), zurücksetzen.
-
-- [ ] **Schritt 12: Ledger anlegen, kein Commit**
-
-```bash
-cd /data/albumwerk
-W=.superpowers/sdd/2026-09-21-app-stitch-umsetzung
-cat > $W/progress.md <<'EOF'
-# Stitch-Umsetzung App, Zyklus 1 — Ledger
-
-Rulings werden als `Ruling: <was> — <warum> — <Kosten wenn falsch>`
-festgehalten.
-
-## Aufgabe 2: Messstand
-EOF
-```
-
-Darunter die Ergebnisse der Schritte 1, 3, 7, 9 und 11 — jeweils mit der
-Zahl, nicht mit „grün". Nichts committen: das Verzeichnis ist über
-`.git/info/exclude` ausgeschlossen.
 
 ---
 
