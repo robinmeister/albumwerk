@@ -353,45 +353,56 @@ SEITEN = [
 ]
 ```
 
-- [ ] **Schritt 5: Den Termin-Token anlegen**
+- [ ] **Schritt 5: Den Termin-Token pruefen**
 
-Die Sammlung `appointments` hat ein Feld `token`
-(`pb_migrations/1785500001_booking.js:151ff`). Ohne echten Termin zeigt
-`/termin/:token` nur den Fehlerzustand — messbar, aber nicht die Form, um
-die es geht.
+Ohne echten Termin zeigt `/termin/:token` nur den Fehlerzustand — messbar,
+aber nicht die Form, um die es geht. Der Datensatz **ist bereits angelegt**;
+dieser Schritt prueft ihn nur nach.
 
-```bash
-cd /data/albumwerk/.superpowers/sdd/2026-09-21-app-stitch-umsetzung/mess
-python3 - <<'PY'
-import json, urllib.request
-from anmelden import BASIS, ADMIN, token
+Drei Dinge, die ich beim Anlegen gemessen habe und die du nicht neu
+herleiten musst:
 
-auth = token(*ADMIN)
-satz = {
-    "type": "", "typeName": "Kennenlernen",
-    "start": "2026-10-01 10:00:00.000Z", "end": "2026-10-01 11:00:00.000Z",
-    "durationMin": 60, "status": "confirmed",
-    "customerName": "Kim Muster", "customerEmail": "kunde@demo.test",
-    "token": "messstand0000001", "source": "web",
-}
-req = urllib.request.Request(
-    f"{BASIS}/api/collections/appointments/records",
-    data=json.dumps(satz).encode(),
-    headers={"Content-Type": "application/json",
-             "Authorization": auth["token"]},
-)
-try:
-    with urllib.request.urlopen(req, timeout=15) as a:
-        print("angelegt:", json.loads(a.read())["token"])
-except urllib.error.HTTPError as e:
-    print("FEHLER", e.code, e.read().decode()[:400])
-PY
+1. `appointments.createRule` ist `null`. Ein direkter POST auf
+   `/api/collections/appointments/records` scheitert mit
+   `403 Only superusers can perform this action` — auch mit dem Token von
+   `admin@demo.test`, der in der App Administrator ist. Termine entstehen
+   ausschliesslich ueber `POST /api/custom/booking`.
+2. `appointments.token` ist ein **verstecktes** Feld. Es kommt in keiner
+   API-Antwort vor (`token: None`) und laesst sich nicht setzen: ein PATCH
+   darauf antwortet `200`, ohne etwas zu aendern. Der Wert ist nur aus der
+   Antwort der Buchung bekannt.
+3. Damit ueberhaupt gebucht werden kann, mussten drei Dinge vorhanden sein,
+   die in dieser Instanz gefehlt haben: `settings.bookingEnabled` (stand auf
+   `false`), ein aktiver `appointmentTypes`-Datensatz und
+   `availabilityRules`. Alle drei sind gesetzt.
+
+Der Token lautet:
+
+```
+pXwdsP0Pe27DKUV6JieGVhxELFrPSfGFpN499KG4Qk
 ```
 
-Erwartet: `angelegt: messstand0000001`. Bei einem Feldfehler die Meldung
-lesen und die Pflichtfelder aus der Migration ergänzen — der Datensatz ist
-Messmittel, sein Inhalt ist gleichgültig, solange er gültig ist. Danach in
-`seiten.py` `{token}` durch `messstand0000001` ersetzen.
+Das ist der echte, erzeugte Wert, kein Platzhalter — auch wenn er so
+aussieht. Nachpruefen:
+
+```bash
+curl -s "http://localhost:8091/api/custom/booking/manage?token=pXwdsP0Pe27DKUV6JieGVhxELFrPSfGFpN499KG4Qk"
+```
+
+Erwartet: `"status":"ok"` und darin `"customerName":"Lena Demo"`,
+`"typeName":"Portraitshooting"`. Kommt stattdessen
+`Dieser Link ist nicht (mehr) gueltig.`, ist der Datensatz verschwunden —
+dann neu buchen und den neuen Token ueberall eintragen:
+
+```bash
+curl -s -X POST "http://localhost:8091/api/custom/booking" \
+  -H 'Content-Type: application/json' -d '{"type":"portrait",
+  "start":"2026-09-23T09:00:00.000Z","name":"Lena Demo",
+  "email":"kunde@demo.test","phone":"+49 170 1234567",
+  "message":"Bitte einen Termin am Vormittag, danke!","consent":true}'
+```
+
+Danach in `seiten.py` `{token}` durch den Tokenwert ersetzen.
 
 - [ ] **Schritt 6: Die Textprobe schreiben**
 
@@ -811,7 +822,7 @@ async def main():
     async with async_playwright() as p:
         br = await p.chromium.launch()
         for pfad, name in [("/buchen", "buchen"),
-                           ("/termin/messstand0000001", "termin")]:
+                           ("/termin/pXwdsP0Pe27DKUV6JieGVhxELFrPSfGFpN499KG4Qk", "termin")]:
             for w, h, br_name in [(390, 844, "mobil"), (1440, 900, "desktop")]:
                 pg = await br.new_page(viewport={"width": w, "height": h})
                 await pg.goto(BASIS + pfad, wait_until="networkidle")
