@@ -363,7 +363,15 @@ export default function AppShell(props: Props): ReactElement {
         </nav>
         {/* Bei einer Supportanfrage ist die erste Frage immer, welcher Stand
             läuft. Bisher stand die Nummer nur im Hilfebereich. */}
-        <Text type="supporting" color="disabled">
+        {/*
+          "secondary", nicht "disabled": dieselbe Sache wie in EmptyState.tsx
+          (d1d0a3db). "disabled" ist der Ton für ein abgeschaltetes
+          Bedienelement; diese Zeile ist lesbarer Text. Gemessen kam
+          rgb(159, 141, 136) auf der Seitenleiste rgb(237, 234, 225) = 2,63:1
+          und damit unter die geforderten 4,5:1 — auf jeder angemeldeten Seite,
+          weil die Zeile in der Seitenleiste steht.
+        */}
+        <Text type="supporting" color="secondary">
           Albumwerk {APP_VERSION}
         </Text>
       </div>
