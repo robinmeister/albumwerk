@@ -39,16 +39,21 @@ const s = stylex.create({
   chipRight: { marginLeft: "auto" },
   overviewHead: {
     display: "flex",
-    alignItems: "center",
+    flexDirection: { default: "column", "@media (min-width: 600px)": "row" },
+    alignItems: { default: "stretch", "@media (min-width: 600px)": "flex-end" },
     justifyContent: "space-between",
-    gap: 16,
+    gap: 24,
     paddingTop: 24,
-    paddingBottom: 16,
-    flexWrap: "wrap",
+    paddingBottom: 24,
+    marginBottom: 40,
+    borderBottom: "1px solid var(--color-border)",
   },
-  headActions: { display: "flex", gap: 8, alignItems: "center" },
-  emptyBox: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, paddingBlock: 80, textAlign: "center" },
-  emptyIcon: { fontSize: 72, color: "var(--color-icon-disabled)" },
+  headActions: {
+    display: "flex",
+    gap: 8,
+    alignItems: "center",
+    alignSelf: { default: "flex-start", "@media (min-width: 600px)": "auto" },
+  },
   grid: {
     display: "grid",
     gridTemplateColumns: {
@@ -56,16 +61,23 @@ const s = stylex.create({
       "@media (min-width: 600px)": "1fr 1fr",
       "@media (min-width: 900px)": "repeat(3, 1fr)",
     },
-    gap: 16,
+    gap: { default: 16, "@media (min-width: 600px)": 32 },
   },
   card: {
-    position: "relative",
+    display: "flex",
+    flexDirection: "column",
     borderRadius: "var(--radius-container)",
     overflow: "hidden",
     cursor: "pointer",
-    aspectRatio: "4 / 3",
-    backgroundColor: "var(--color-background-muted)",
+    backgroundColor: "var(--color-background-card)",
+    // Langform, nicht `border: "1px solid …"`: StyleX verwirft die
+    // Allseiten-Kurzform ersatzlos (in stylex.css kommt `border:` kein
+    // einziges Mal vor), gemessen als borderTopWidth 0px.
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "var(--color-border)",
   },
+  cardMedia: { aspectRatio: "4 / 3", backgroundColor: "var(--color-background-muted)" },
   cardImg: (loaded: boolean) => ({
     width: "100%",
     height: "100%",
@@ -76,19 +88,32 @@ const s = stylex.create({
   }),
   cardPlaceholder: { width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" },
   placeholderIcon: { fontSize: 48, color: "var(--color-icon-disabled)" },
-  cardOverlay: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: "40px 16px 12px",
-    background: "linear-gradient(transparent, rgba(0,0,0,0.72))",
-    color: "#fff",
+  cardCaption: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: 12 },
+  cardTitle: { minWidth: 0 },
+  // Versalien wie bisher: die Art des Albums stand schon vorher als
+  // "VERKAUF" auf der Karte. `inner_text` liest den umgewandelten Text --
+  // ohne diese Zeile meldet die Textprobe eine Textaenderung.
+  // paddingInlineEnd: die Sperrung setzt auch hinter den letzten Buchstaben
+  // noch 0.1em; ohne Ausgleich klebt das "F" von "VERKAUF" am rechten Rand
+  // der Marke. --spacing-2 ist das paddingInline der Badge-Grundform.
+  cardType: {
+    textTransform: "uppercase",
+    letterSpacing: "0.1em",
+    paddingInlineEnd: "calc(var(--spacing-2) + 0.1em)",
   },
-  cardType: { letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.85, marginTop: 4, display: "block" },
 });
 
-// Album card: full-bleed cover with the title in a gradient overlay.
+// Album card, Form des Entwurfs: Cover oben im 4:3-Feld, darunter eine
+// Bildunterschrift auf der Kartenfläche — Titel links, Art rechts.
+//
+// Die Beschriftung liegt bewusst NICHT mehr über dem Foto. Dort stand sie in
+// Weiß auf einem Verlauf, den es live nie gab: StyleX verwirft die
+// `background`-Kurzform ersatzlos (in stylex.css taucht ausschließlich
+// `background-color` auf, kein einziges `background:`), gemessen als
+// `backgroundImage: "none"` am Overlay. Weißer Text lag also ungeschützt auf
+// dem Cover der Kundin — auf einem hellen Foto unlesbar, und für jede
+// Kontrastprobe ein unmessbarer Grund. Auf der Kartenfläche ist der Grund ein
+// Wert statt eines Bereichs und mit Token gesetzt.
 function AlbumCard({
   shooting,
   onClick,
@@ -99,29 +124,29 @@ function AlbumCard({
   const [loaded, setLoaded] = useState(false);
   return (
     <div className="album-card" onClick={onClick} {...stylex.props(s.card)}>
-      {shooting.coverUrl ? (
-        <img
-          src={shooting.coverUrl}
-          alt={shooting.title}
-          onLoad={() => setLoaded(true)}
-          {...stylex.props(s.cardImg(loaded))}
-        />
-      ) : (
-        <div {...stylex.props(s.cardPlaceholder)}>
-          <Collections {...stylex.props(s.placeholderIcon)} />
-        </div>
-      )}
+      <div {...stylex.props(s.cardMedia)}>
+        {shooting.coverUrl ? (
+          <img
+            src={shooting.coverUrl}
+            alt={shooting.title}
+            onLoad={() => setLoaded(true)}
+            {...stylex.props(s.cardImg(loaded))}
+          />
+        ) : (
+          <div {...stylex.props(s.cardPlaceholder)}>
+            <Collections {...stylex.props(s.placeholderIcon)} />
+          </div>
+        )}
+      </div>
 
-      {/* color="inherit": der Verlauf setzt #fff, aber Text färbt sich sonst
-          selbst mit --color-text-primary — auf einem dunklen Foto unsichtbar. */}
-      <div {...stylex.props(s.cardOverlay)}>
-        <Text type="large" weight="semibold" color="inherit" maxLines={1}>
-          {shooting.title || "Ohne Titel"}
-        </Text>
+      <div {...stylex.props(s.cardCaption)}>
+        <div {...stylex.props(s.cardTitle)}>
+          <Text type="large" weight="semibold" maxLines={1}>
+            {shooting.title || "Ohne Titel"}
+          </Text>
+        </div>
         {typeLabel[shooting.type] && (
-          <span {...stylex.props(s.cardType)}>
-            <Text type="supporting" color="inherit">{typeLabel[shooting.type]}</Text>
-          </span>
+          <Badge variant="neutral" label={typeLabel[shooting.type]} xstyle={s.cardType} />
         )}
       </div>
     </div>
