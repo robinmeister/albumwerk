@@ -22,6 +22,14 @@ const s = stylex.create({
     border: "1px solid var(--color-border)",
     backgroundColor: "var(--color-background-card)",
   },
+  // Setzt den Rueckverweis als eigenen, abgesetzten Abschnitt ab (Entwurf:
+  // Trennlinie + groesserer Abstand vor "Zurueck zur Anmeldung"), statt ihn
+  // im gleichmaessigen gap:16-Fluss der Karte mitlaufen zu lassen.
+  back: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTop: "1px solid var(--color-border)",
+  },
 });
 
 // Public legal pages fed from the settings collection (admin-maintained HTML,
@@ -46,7 +54,9 @@ export default function LegalPage({ kind }: Props): ReactElement {
             Diese Seite wurde noch nicht ausgefüllt.
           </Text>
         )}
-        <Link href="/login">Zurück zur Anmeldung</Link>
+        <Link href="/login" xstyle={s.back}>
+          Zurück zur Anmeldung
+        </Link>
       </div>
     </div>
   );
