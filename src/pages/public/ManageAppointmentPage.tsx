@@ -26,7 +26,22 @@ const s = stylex.create({
     backgroundColor: "var(--color-background-card)",
     overflow: "hidden",
   },
-  footer: { display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap", marginTop: 24 },
+  // Entwurf (termin-verwalten-{desktop,mobil}.html) gruppiert den
+  // Weiterleitungslink zur Neubuchung dicht unter der Terminkarte, getrennt
+  // von den Rechtslinks, die erst danach hinter einer Trennlinie folgen —
+  // statt beide in einer Reihe zu vermengen.
+  secondary: { textAlign: "center", marginTop: 24 },
+  // Gleiches Trennlinien-Muster wie BookingPage.tsx und LegalPage.tsx
+  // (Commit cbf95192).
+  footer: {
+    display: "flex",
+    justifyContent: "center",
+    gap: 12,
+    flexWrap: "wrap",
+    marginTop: 24,
+    paddingTop: 16,
+    borderTop: "1px solid var(--color-border)",
+  },
   footerLink: { color: "var(--color-text-secondary)", textDecoration: "none" },
 });
 
@@ -51,10 +66,13 @@ export default function ManageAppointmentPage(): ReactElement {
         <ManageView token={token ?? ""} />
       </div>
 
-      <div {...stylex.props(s.footer)}>
+      <div {...stylex.props(s.secondary)}>
         <Link to="/buchen" {...stylex.props(s.footerLink)}>
           <Text type="supporting" color="secondary">Neuen Termin buchen</Text>
         </Link>
+      </div>
+
+      <div {...stylex.props(s.footer)}>
         <Link to="/imprint" {...stylex.props(s.footerLink)}>
           <Text type="supporting" color="secondary">Impressum</Text>
         </Link>
