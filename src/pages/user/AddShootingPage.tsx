@@ -19,7 +19,20 @@ import { parseShootingId } from "../../utils/shootingLink";
 
 const s = stylex.create({
   box: { display: "flex", flexDirection: "column", alignItems: "center", gap: 16, textAlign: "center" },
-  actions: { display: "flex", flexDirection: "column", gap: 8, width: "100%" },
+  // Setzt die Aktion als eigenen, abgesetzten Abschnitt ab (Entwurf:
+  // album-hinzufuegen-{desktop,mobil}.html trennt die Handlung von der
+  // Meldung darueber durch eine eigene Flaeche/Trennlinie), statt sie im
+  // gleichmaessigen gap:16-Fluss der Box mitlaufen zu lassen. Gleiches Muster
+  // wie LegalPage.tsx (Commit cbf95192) und die Terminseiten (Commit 5900e639).
+  actions: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+    width: "100%",
+    marginTop: 16,
+    paddingTop: 16,
+    borderTop: "1px solid var(--color-border)",
+  },
 });
 
 export default function AddShootingPage(): ReactElement {
