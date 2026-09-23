@@ -27,13 +27,26 @@ import { fetchShootingPackage } from "../../utils/functions";
 
 const steps = ["Preise auswählen", "Bezahlen", "Download"];
 
+// Derselbe Bruchpunkt, an dem PricingForm direkt darunter auf zwei Spalten
+// geht — die Kopfzeile soll mit ihrem Inhalt umschalten, nicht davor.
+const DESKTOP = "@media (min-width: 900px)";
+
 const s = stylex.create({
   stepper: {
     display: "flex",
     alignItems: "center",
     gap: 8,
-    marginBottom: 24,
     flexWrap: "wrap",
+    // Entwurf: jede Meta-Zeile steht über einer feinen Linie
+    // (`border-b border-fine-edge pb-4`, beide Entwürfe). borderBottom
+    // (eine Seite) überlebt StyleX — die Allseiten-Kurzform `border:` nicht.
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomStyle: "solid",
+    borderBottomColor: "var(--color-border)",
+    // Blockrhythmus der Entwürfe: mobil 24px (`space-y-6`), am Desktop 40px
+    // (`gap-10` der linken Spalte).
+    marginBottom: { default: 24, [DESKTOP]: 40 },
   },
   step: { display: "flex", alignItems: "center", gap: 8 },
   dot: {
@@ -43,8 +56,16 @@ const s = stylex.create({
     width: 26,
     height: 26,
     borderRadius: "var(--radius-full)",
-    fontSize: 13,
-    fontWeight: 600,
+    // Auszeichnungsschrift für Zahlen (DESIGN.md §3: 12px, Gewicht 400,
+    // Tracking 0). Die Familie kommt aus der Theme-Rolle
+    // `--font-family-code`, nicht als fester Name — welche Schrift das ist,
+    // setzt die Fotografin unter /branding. Tracking steht hier nicht:
+    // der Punkt erbt kein letter-spacing (gemessen "normal"), eine eigene
+    // Null-Angabe erzeugt in StyleX keine Deklaration und wäre tote Zeile.
+    fontFamily: "var(--font-family-code)",
+    fontSize: 12,
+    fontWeight: 400,
+    fontVariantNumeric: "tabular-nums",
     backgroundColor: "var(--color-background-muted)",
     color: "var(--color-text-secondary)",
   },
