@@ -24,20 +24,49 @@ import { AuthUser } from "../../config/authUser";
 
 const s = stylex.create({
   card: {
-    padding: 24,
+    padding: { default: 32, "@media (min-width: 600px)": 48 },
     borderRadius: "var(--radius-container)",
-    border: "1px solid var(--color-border)",
+    // StyleX verwirft die Allseiten-Kurzform `border:` ersatzlos (live
+    // gemessen: borderTopWidth 0px). Langform, sonst gibt es keinen Rahmen.
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "var(--color-border)",
     backgroundColor: "var(--color-background-card)",
   },
-  form: { display: "flex", flexDirection: "column", gap: 16 },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: { default: 32, "@media (min-width: 600px)": 48 },
+  },
+  group: {
+    display: "flex",
+    flexDirection: "column",
+    gap: { default: 16, "@media (min-width: 600px)": 24 },
+  },
+  groupHead: {
+    paddingBottom: 12,
+    borderBottom: "1px solid var(--color-border)",
+  },
   row2: {
     display: "grid",
     gridTemplateColumns: { default: "1fr", "@media (min-width: 600px)": "1fr 1fr" },
-    gap: 16,
+    gap: { default: 16, "@media (min-width: 600px)": 24 },
   },
-  actions: { display: "flex", gap: 12 },
-  cancel: { flex: 1 },
-  save: { flex: 2 },
+  actions: {
+    display: "flex",
+    gap: { default: 12, "@media (min-width: 600px)": 24 },
+    justifyContent: { default: "flex-start", "@media (min-width: 600px)": "flex-end" },
+    paddingTop: 24,
+    borderTop: "1px solid var(--color-border)",
+  },
+  cancel: {
+    flexGrow: { default: 1, "@media (min-width: 600px)": 0 },
+    flexBasis: { default: 0, "@media (min-width: 600px)": "auto" },
+  },
+  save: {
+    flexGrow: { default: 2, "@media (min-width: 600px)": 0 },
+    flexBasis: { default: 0, "@media (min-width: 600px)": "auto" },
+  },
   danger: { marginTop: 32, display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" },
 });
 
@@ -130,59 +159,73 @@ export default function ProfilePage(): ReactElement {
     <Page title="Profil">
       <div {...stylex.props(s.card)}>
         <form onSubmit={handleSubmit} {...stylex.props(s.form)}>
-          <Heading level={6}>Kontaktinformationen</Heading>
-          <TextInput
-            width="100%"
-            label="Vorname"
-            value={userData.firstName ?? ""}
-            onChange={(v) => set({ firstName: v })}
-          />
-          <TextInput
-            width="100%"
-            label="Nachname"
-            value={userData.lastName ?? ""}
-            onChange={(v) => set({ lastName: v })}
-          />
-          <TextInput
-            width="100%"
-            label="E-Mail-Adresse"
-            isDisabled
-            value={userData.email ?? ""}
-            onChange={() => undefined}
-          />
-          <TextInput
-            width="100%"
-            label="Telefonnummer"
-            value={userData.phone ?? ""}
-            onChange={(v) => set({ phone: v })}
-          />
-          <Heading level={6}>Adressinformationen</Heading>
-          <TextInput
-            width="100%"
-            label="Straße"
-            value={userData.street ?? ""}
-            onChange={(v) => set({ street: v })}
-          />
-          <div {...stylex.props(s.row2)}>
-            <TextInput
-              width="100%"
-              label="Stadt"
-              value={userData.city ?? ""}
-              onChange={(v) => set({ city: v })}
-            />
-            <TextInput
-              width="100%"
-              label="Bundesland"
-              value={userData.state ?? ""}
-              onChange={(v) => set({ state: v })}
-            />
+          <div {...stylex.props(s.group)}>
+            <div {...stylex.props(s.groupHead)}>
+              <Heading level={6}>Kontaktinformationen</Heading>
+            </div>
+            <div {...stylex.props(s.row2)}>
+              <TextInput
+                width="100%"
+                label="Vorname"
+                value={userData.firstName ?? ""}
+                onChange={(v) => set({ firstName: v })}
+              />
+              <TextInput
+                width="100%"
+                label="Nachname"
+                value={userData.lastName ?? ""}
+                onChange={(v) => set({ lastName: v })}
+              />
+            </div>
+            <div {...stylex.props(s.row2)}>
+              <TextInput
+                width="100%"
+                label="E-Mail-Adresse"
+                isDisabled
+                value={userData.email ?? ""}
+                onChange={() => undefined}
+              />
+              <TextInput
+                width="100%"
+                label="Telefonnummer"
+                value={userData.phone ?? ""}
+                onChange={(v) => set({ phone: v })}
+              />
+            </div>
           </div>
-          <TextInput
-            width="100%"
-            label="Postleitzahl"
-            value={userData.zip ?? ""}
-            onChange={(v) => set({ zip: v })}
-          />
+          <div {...stylex.props(s.group)}>
+            <div {...stylex.props(s.groupHead)}>
+              <Heading level={6}>Adressinformationen</Heading>
+            </div>
+            <TextInput
+              width="100%"
+              label="Straße"
+              value={userData.street ?? ""}
+              onChange={(v) => set({ street: v })}
+            />
+            <div {...stylex.props(s.row2)}>
+              <TextInput
+                width="100%"
+                label="Stadt"
+                value={userData.city ?? ""}
+                onChange={(v) => set({ city: v })}
+              />
+              <TextInput
+                width="100%"
+                label="Bundesland"
+                value={userData.state ?? ""}
+                onChange={(v) => set({ state: v })}
+              />
+            </div>
+            <div {...stylex.props(s.row2)}>
+              <TextInput
+                width="100%"
+                label="Postleitzahl"
+                value={userData.zip ?? ""}
+                onChange={(v) => set({ zip: v })}
+              />
+            </div>
+          </div>
           <div {...stylex.props(s.actions)}>
             <Button
               variant="secondary"
