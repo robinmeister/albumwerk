@@ -11,7 +11,10 @@ export const supportStyles = stylex.create({
   center: { display: "flex", justifyContent: "center", padding: 48 },
   card: {
     borderRadius: "var(--radius-container)",
-    border: "1px solid var(--color-border)",
+    // Einzeleigenschaften: StyleX verwirft die border-Kurzform ersatzlos.
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "var(--color-border)",
     backgroundColor: "var(--color-background-card)",
     textAlign: "left",
     color: "inherit",
@@ -58,7 +61,9 @@ export const supportStyles = stylex.create({
   },
   bubbleOther: {
     alignSelf: "flex-start",
-    border: "1px solid var(--color-border)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "var(--color-border)",
     backgroundColor: "var(--color-background-card)",
   },
   linkButton: {

@@ -27,12 +27,18 @@ const s = stylex.create({
     backgroundColor: "var(--color-background-card)",
     overflow: "hidden",
   },
+  // Setzt die Rechtslinks als eigenen, abgesetzten Abschnitt ab (Entwurf
+  // termin-buchen-{desktop,mobil}.html: Trennlinie vor dem Footer), statt sie
+  // ohne Übergang direkt unter die Karte laufen zu lassen. Gleiches Muster
+  // wie LegalPage.tsx (Commit cbf95192).
   footer: {
     display: "flex",
     justifyContent: "center",
     gap: 12,
     flexWrap: "wrap",
     marginTop: 24,
+    paddingTop: 16,
+    borderTop: "1px solid var(--color-border)",
   },
   footerLink: { color: "var(--color-text-secondary)", textDecoration: "none" },
 });

@@ -14,6 +14,17 @@ import { downloadImageFromUrl } from "../../utils/functions";
 import { thumbUrl } from "../../features/Album/components/AlbumImage";
 
 const s = stylex.create({
+  // Diese Seite laeuft ueber `EmptyLayout` (kein `AppShell`, s. App.tsx) und
+  // hatte deshalb bisher gar keine Breitenbegrenzung — die Karten liefen
+  // randlos ueber die volle Fensterbreite. Der Entwurf (downloads-desktop
+  // .html) zentriert den Inhalt in einem `max-w-[1076px]`-Container mit
+  // Seitenabstand; uebernommen wird hier nicht dieser Pixelwert, sondern die
+  // Breite, die `AppShell` fuer eingeloggte Kundinnen ohnehin schon benutzt
+  // (`CONTENT_MAX_WIDTH.lg = 1200`, `padding: 16px` in AppShell.tsx) — damit
+  // `/publicDownloads` und `/downloads` (Aufgabe 7, dieselbe Sache fuer eine
+  // andere Rolle) gleich breit erscheinen, statt zwei verschiedene Werte zu
+  // erfinden.
+  container: { width: "100%", maxWidth: 1200, margin: "0 auto", padding: 16 },
   stack: { display: "flex", flexDirection: "column", gap: 16 },
   card: {
     display: "flex",
@@ -53,7 +64,8 @@ export default function DownloadsPage(): ReactElement {
     // Originals are token-protected (migration 1784600007) — downloading
     // requires a signed-in account. Previews/galleries stay public.
     if (!pb.authStore.isValid) { return (
-        <Page title="Bilder herunterladen">
+        <div {...stylex.props(s.container)}>
+        <Page title="Bilder herunterladen" showTitleOnMobile>
             <EmptyState
                 icon={<LockOutlined />}
                 title="Zum Herunterladen bitte anmelden"
@@ -61,10 +73,12 @@ export default function DownloadsPage(): ReactElement {
                 action={{ label: "Anmelden", onClick: () => navigate("/login") }}
             />
         </Page>
+        </div>
     ); }
 
     if(downloadableImages === undefined || downloadableImages.length === 0) { return (
-        <Page title="Bilder herunterladen">
+        <div {...stylex.props(s.container)}>
+        <Page title="Bilder herunterladen" showTitleOnMobile>
             <EmptyState
                 icon={<CloudOff />}
                 title="Keine Bilder zum Herunterladen"
@@ -72,10 +86,12 @@ export default function DownloadsPage(): ReactElement {
                 action={{ label: "Zum Album", onClick: () => navigate("/album") }}
             />
         </Page>
+        </div>
     ); }
 
     return (
-        <Page title="Downloads">
+        <div {...stylex.props(s.container)}>
+        <Page title="Downloads" showTitleOnMobile>
             <div {...stylex.props(s.stack)}>
                 <div {...stylex.props(s.card)}>
                     <Heading level={5}>Alle Bilder herunterladen</Heading>
@@ -116,5 +132,6 @@ export default function DownloadsPage(): ReactElement {
                 </div>
             </div>
         </Page>
+        </div>
     );
 }

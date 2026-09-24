@@ -44,6 +44,37 @@ import { supportStyles as s, statusVariant } from "./supportStyles";
 
 type View = "list" | "new" | "thread";
 
+// Bruchpunkt dieser App (haeufigster Wert in src/), derselbe wie in
+// PricingPage.tsx.
+const DESKTOP = "@media (min-width: 900px)";
+
+// Zusaetze aus den Entwuerfen (screens/support-{desktop,mobil}.html). Sie
+// stehen hier und nicht in supportStyles.ts, weil diese Datei sich die Stile
+// mit admin/AdminSupportPage.tsx teilt — eine Aenderung dort veraenderte eine
+// zweite Seite mit, die auf keiner Probenroute liegt.
+const seite = stylex.create({
+  // Entwurf: Betreff und Statusmarke auf einer Hoehe an der Oberkante
+  // (flex justify-between items-start), nicht senkrecht mittig.
+  ticketTop: { alignItems: "flex-start" },
+  // Entwurf Desktop: der Formularblock traegt 40px Polsterung und 24px
+  // zwischen den Feldern (p-space-3xl, space-y-space-xl). Der Mobil-Entwurf
+  // kennt keinen Block um das Formular — dort bleibt es beim Bestand.
+  panel: {
+    padding: { default: 16, [DESKTOP]: 40 },
+    gap: { default: 16, [DESKTOP]: 24 },
+  },
+  // Entwurf Mobil: feine Linie zwischen zwei Abschnitten. Hier zwischen der
+  // Anfragenliste und der Kontaktzeile, die sonst wie eine weitere Ticketzeile
+  // unter der Liste haengt.
+  contact: {
+    marginTop: 12,
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopStyle: "solid",
+    borderTopColor: "var(--color-border)",
+  },
+});
+
 export default function SupportPage(): ReactElement {
   const { settings } = useSettings();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -245,7 +276,7 @@ export default function SupportPage(): ReactElement {
           </div>
 
           {/* data-testid: Ankerpunkt für die E2E-Suite (Screenshot-Zuschnitt). */}
-          <div data-testid="anfrage-formular" {...stylex.props(s.card, s.cardPad)}>
+          <div data-testid="anfrage-formular" {...stylex.props(s.card, s.cardPad, seite.panel)}>
             <Selector
               placeholder="Bitte wählen"
               width="100%"
@@ -401,7 +432,7 @@ export default function SupportPage(): ReactElement {
           </div>
 
           {activeTicket.status !== "closed" && (
-            <div {...stylex.props(s.card, s.cardPad)}>
+            <div {...stylex.props(s.card, s.cardPad, seite.panel)}>
               <TextArea
                 width="100%"
                 label="Antwort"
@@ -468,7 +499,7 @@ export default function SupportPage(): ReactElement {
             <button
               key={ticket.id}
               onClick={() => void openThread(ticket)}
-              {...stylex.props(s.card, s.ticketRow)}
+              {...stylex.props(s.card, s.ticketRow, seite.ticketTop)}
             >
               <div {...stylex.props(s.ticketMain)}>
                 <Heading level={6}>{ticket.subject}</Heading>
@@ -484,13 +515,15 @@ export default function SupportPage(): ReactElement {
           ))
         )}
 
-        <Text type="supporting" color="secondary">
-          Du erreichst uns auch direkt per E-Mail
-          {settings.contactEmail ? ": " : "."}
-          {settings.contactEmail && (
-            <Link href={`mailto:${settings.contactEmail}`}>{settings.contactEmail}</Link>
-          )}
-        </Text>
+        <div {...stylex.props(seite.contact)}>
+          <Text type="supporting" color="secondary">
+            Du erreichst uns auch direkt per E-Mail
+            {settings.contactEmail ? ": " : "."}
+            {settings.contactEmail && (
+              <Link href={`mailto:${settings.contactEmail}`}>{settings.contactEmail}</Link>
+            )}
+          </Text>
+        </div>
       </div>
     </Page>
   );

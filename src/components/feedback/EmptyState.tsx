@@ -59,7 +59,15 @@ export default function EmptyState({
       </Text>
       {description && (
         <div {...stylex.props(s.desc)}>
-          <Text type="body" color="disabled">
+          {/*
+            "secondary", nicht "disabled": das hier ist ein Beschreibungstext,
+            kein abgeschaltetes Bedienelement. Gemessen kam "disabled" auf
+            rgb(159, 141, 136) auf Weiss = 3,16:1 und lag damit unter den
+            geforderten 4,5:1 — auf allen dreizehn Seiten, die EmptyState
+            benutzen, nicht nur auf /publicDownloads, wo die Kontrastprobe es
+            gefunden hat.
+          */}
+          <Text type="body" color="secondary">
             {description}
           </Text>
         </div>
