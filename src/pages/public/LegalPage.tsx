@@ -12,14 +12,27 @@ type Props = {
 };
 
 const s = stylex.create({
-  container: { maxWidth: 820, margin: "32px auto", padding: "0 16px" },
+  // width:100% ist noetig, nicht redundant: der Eltern-Container ist ein
+  // Flex-Container, das Flex-Item zieht sich sonst auf den Inhalt zusammen
+  // (gemessen: 227px bei 1440 UND bei 390) und margin:auto zentriert dann
+  // die geschrumpfte Kiste.
+  container: {
+    width: "100%",
+    maxWidth: 820,
+    margin: "32px auto",
+    padding: "0 16px",
+  },
   card: {
     display: "flex",
     flexDirection: "column",
     gap: 16,
     padding: 24,
     borderRadius: "var(--radius-container)",
-    border: "1px solid var(--color-border)",
+    // Einzeleigenschaften statt der border-Kurzform: StyleX verwirft die
+    // Allseiten-Kurzform ersatzlos, der Rahmen war unsichtbar.
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "var(--color-border)",
     backgroundColor: "var(--color-background-card)",
   },
   // Setzt den Rueckverweis als eigenen, abgesetzten Abschnitt ab (Entwurf:

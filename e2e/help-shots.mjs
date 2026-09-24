@@ -59,13 +59,24 @@ for await (const png of pngDateien(QUELLE)) {
   const ziel = join(ZIEL, relativerPfad);
   await mkdir(dirname(ziel), { recursive: true });
 
-  const info = await sharp(png)
-    // Einfarbige Ränder wegschneiden. Container wie <main> spannen die volle
-    // Viewporthöhe, der Inhalt endet aber oft nach der Hälfte — ohne das steht
-    // unter jedem Handy-Screenshot eine große leere Fläche. Der Zuschnitt
-    // stoppt an der ersten Zeile, die nicht mehr Hintergrundfarbe ist, und
-    // kann deshalb keinen Inhalt abschneiden.
+  // Einfarbige Ränder wegschneiden. Container wie <main> spannen die volle
+  // Viewporthöhe, der Inhalt endet aber oft nach der Hälfte — ohne das steht
+  // unter jedem Handy-Screenshot eine große leere Fläche.
+  //
+  // Der Zuschnitt ist ausdrücklich nur für diese SENKRECHTE Leere gedacht.
+  // sharp nimmt ohne Angabe das Eckpixel als Hintergrundfarbe. Bei Aufnahmen,
+  // deren Ziel nur ein Knopf ist, füllt der Knopf das PNG randlos aus — dann
+  // ist das Eckpixel die Knopffüllung und `trim` schneidet bis an die Glyphen.
+  // Solange die Ecken rund waren, ragten sie über die Füllung hinaus und haben
+  // das zufällig verhindert; mit Radius 0 fällt dieser Schutz weg. Deshalb:
+  // schneidet der Zuschnitt seitlich, war er nicht gemeint und wird verworfen.
+  const roh = await sharp(png).toBuffer({ resolveWithObject: true });
+  let beschnitten = await sharp(png)
     .trim({ threshold: 5 })
+    .toBuffer({ resolveWithObject: true });
+  if (beschnitten.info.width < roh.info.width - 2) beschnitten = roh;
+
+  const info = await sharp(beschnitten.data)
     .resize({ width: MAX_BREITE, withoutEnlargement: true })
     .webp({ quality: QUALITAET })
     .toFile(ziel);

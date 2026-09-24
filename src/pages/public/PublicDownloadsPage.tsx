@@ -65,7 +65,7 @@ export default function DownloadsPage(): ReactElement {
     // requires a signed-in account. Previews/galleries stay public.
     if (!pb.authStore.isValid) { return (
         <div {...stylex.props(s.container)}>
-        <Page title="Bilder herunterladen">
+        <Page title="Bilder herunterladen" showTitleOnMobile>
             <EmptyState
                 icon={<LockOutlined />}
                 title="Zum Herunterladen bitte anmelden"
@@ -78,7 +78,7 @@ export default function DownloadsPage(): ReactElement {
 
     if(downloadableImages === undefined || downloadableImages.length === 0) { return (
         <div {...stylex.props(s.container)}>
-        <Page title="Bilder herunterladen">
+        <Page title="Bilder herunterladen" showTitleOnMobile>
             <EmptyState
                 icon={<CloudOff />}
                 title="Keine Bilder zum Herunterladen"
@@ -91,7 +91,7 @@ export default function DownloadsPage(): ReactElement {
 
     return (
         <div {...stylex.props(s.container)}>
-        <Page title="Downloads">
+        <Page title="Downloads" showTitleOnMobile>
             <div {...stylex.props(s.stack)}>
                 <div {...stylex.props(s.card)}>
                     <Heading level={5}>Alle Bilder herunterladen</Heading>
