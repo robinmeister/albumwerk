@@ -43,13 +43,12 @@ type Props = {
   error: string;
   /** Zeitpunkt, zu dem die Buchung begonnen wurde (nicht: dieses Formular). */
   startedAt: number;
-  onBack: () => void;
   onSubmit: (values: FormValues) => void;
 };
 
 export default function BookingForm(props: Props): ReactElement {
   const {
-    type, slot, timezone, zoneNote, privacyUrl, busy, error, startedAt, onBack, onSubmit,
+    type, slot, timezone, zoneNote, privacyUrl, busy, error, startedAt, onSubmit,
   } = props;
 
   const [name, setName] = useState("");
@@ -81,6 +80,7 @@ export default function BookingForm(props: Props): ReactElement {
 
   return (
     <form onSubmit={submit} {...stylex.props(s.stack)} data-testid="buchungsformular">
+      <h2 {...stylex.props(s.kicker)}>4. Kontaktdaten</h2>
       <div {...stylex.props(s.summary)}>
         <strong>{type.name}</strong>
         <span {...stylex.props(s.cardMeta)}>
@@ -92,66 +92,68 @@ export default function BookingForm(props: Props): ReactElement {
         </span>
       </div>
 
-      <div {...stylex.props(s.field)}>
-        <label htmlFor="booking-name" {...stylex.props(s.label)}>
-          Name
-        </label>
-        <input
-          id="booking-name"
-          name="name"
-          autoComplete="name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          {...stylex.props(s.input)}
-        />
-      </div>
-
-      <div {...stylex.props(s.field)}>
-        <label htmlFor="booking-email" {...stylex.props(s.label)}>
-          E-Mail
-        </label>
-        <input
-          id="booking-email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          {...stylex.props(s.input)}
-        />
-        <span {...stylex.props(s.muted)}>
-          Hierhin geht die Bestätigung — darüber kannst du auch absagen.
-        </span>
-      </div>
-
-      {type.phoneMode !== "off" && (
+      <div {...stylex.props(s.formGrid)}>
         <div {...stylex.props(s.field)}>
-          <label htmlFor="booking-phone" {...stylex.props(s.label)}>
-            Telefon{phoneRequired ? "" : " (optional)"}
+          <label htmlFor="booking-name" {...stylex.props(s.label)}>
+            Name
           </label>
           <input
-            id="booking-phone"
-            name="tel"
-            type="tel"
-            autoComplete="tel"
-            value={phone}
-            onChange={(event) => setPhone(event.target.value)}
+            id="booking-name"
+            name="name"
+            autoComplete="name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
             {...stylex.props(s.input)}
           />
         </div>
-      )}
 
-      <div {...stylex.props(s.field)}>
-        <label htmlFor="booking-message" {...stylex.props(s.label)}>
-          Dein Anliegen (optional)
-        </label>
-        <textarea
-          id="booking-message"
-          value={message}
-          maxLength={1000}
-          onChange={(event) => setMessage(event.target.value)}
-          {...stylex.props(s.textarea)}
-        />
+        <div {...stylex.props(s.field)}>
+          <label htmlFor="booking-email" {...stylex.props(s.label)}>
+            E-Mail
+          </label>
+          <input
+            id="booking-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            {...stylex.props(s.input)}
+          />
+          <span {...stylex.props(s.muted)}>
+            Hierhin geht die Bestätigung — darüber kannst du auch absagen.
+          </span>
+        </div>
+
+        {type.phoneMode !== "off" && (
+          <div {...stylex.props(s.field, s.fullRow)}>
+            <label htmlFor="booking-phone" {...stylex.props(s.label)}>
+              Telefon{phoneRequired ? "" : " (optional)"}
+            </label>
+            <input
+              id="booking-phone"
+              name="tel"
+              type="tel"
+              autoComplete="tel"
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
+              {...stylex.props(s.input)}
+            />
+          </div>
+        )}
+
+        <div {...stylex.props(s.field, s.fullRow)}>
+          <label htmlFor="booking-message" {...stylex.props(s.label)}>
+            Dein Anliegen (optional)
+          </label>
+          <textarea
+            id="booking-message"
+            value={message}
+            maxLength={1000}
+            onChange={(event) => setMessage(event.target.value)}
+            {...stylex.props(s.textarea)}
+          />
+        </div>
       </div>
 
       {/* Honeypot. `aria-hidden` und `tabIndex={-1}`, damit Screenreader und
@@ -208,14 +210,6 @@ export default function BookingForm(props: Props): ReactElement {
           {...stylex.props(s.button)}
         >
           {busy ? "Wird gebucht …" : type.requiresApproval ? "Termin anfragen" : "Verbindlich buchen"}
-        </button>
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={busy}
-          {...stylex.props(s.button, s.buttonSecondary)}
-        >
-          Zurück
         </button>
       </div>
 

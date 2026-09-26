@@ -1,6 +1,8 @@
 // Der Buchungsablauf (docs/terminbuchung.md §2.2, §4).
 //
-// Reihenfolge: Leistung → Termin → Kontaktdaten → Bestätigung.
+// Reihenfolge: Leistung → Termin → Kontaktdaten → Bestätigung. Die ersten
+// drei stehen nach dem Stitch-Entwurf "Termin buchen" nebeneinander auf einer
+// Seite; die Kontaktdaten erscheinen darunter, sobald eine Zeit gewählt ist.
 //
 // Dass die Leistung ZUERST gewählt wird, ist keine Geschmacksfrage: Regeln
 // können Arten einschränken („Sa nur Shootings“), damit ist die Verfügbarkeit
@@ -35,7 +37,7 @@ type Props = {
   originUrl?: string;
 };
 
-type Step = "type" | "slot" | "form" | "done";
+type Step = "choose" | "done";
 
 export default function BookingFlow(props: Props): ReactElement {
   const { preselectedType, originUrl } = props;
@@ -47,7 +49,7 @@ export default function BookingFlow(props: Props): ReactElement {
 
   const [type, setType] = useState<BookingType | null>(null);
   const [slot, setSlot] = useState<Slot | null>(null);
-  const [step, setStep] = useState<Step>("type");
+  const [step, setStep] = useState<Step>("choose");
   const [busy, setBusy] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [result, setResult] = useState<{ requiresApproval: boolean; start: string } | null>(null);
@@ -72,10 +74,7 @@ export default function BookingFlow(props: Props): ReactElement {
           : undefined;
         const only = loadedTypes.length === 1 ? loadedTypes[0] : undefined;
         const chosen = preselected ?? only;
-        if (chosen) {
-          setType(chosen);
-          setStep("slot");
-        }
+        if (chosen) setType(chosen);
       })
       .catch((error: Error) => {
         if (!cancelled) setLoadError(error.message);
@@ -115,12 +114,9 @@ export default function BookingFlow(props: Props): ReactElement {
     } catch (error) {
       const failure = error as BookingError;
       setSubmitError(failure.message);
-      // Ist die Zeit inzwischen weg, zurück zur Auswahl — im Formular
-      // stehenzubleiben wäre eine Sackgasse.
-      if (failure.code === "slot_taken") {
-        setSlot(null);
-        setStep("slot");
-      }
+      // Ist die Zeit inzwischen weg, Auswahl lösen — sonst bliebe das
+      // Formular an einer Zeit hängen, die es nicht mehr gibt.
+      if (failure.code === "slot_taken") setSlot(null);
     } finally {
       setBusy(false);
     }
@@ -130,7 +126,7 @@ export default function BookingFlow(props: Props): ReactElement {
     setResult(null);
     setSlot(null);
     setSubmitError("");
-    setStep(types.length === 1 || preselectedType ? "slot" : "type");
+    setStep("choose");
   };
 
   const root = (children: ReactElement | ReactElement[]) => (
@@ -205,105 +201,83 @@ export default function BookingFlow(props: Props): ReactElement {
     );
   }
 
-  // --- Leistung wählen -----------------------------------------------------
-  if (step === "type") {
-    return root(
-      <>
-        <h2 {...stylex.props(s.headline)}>Was möchtest du buchen?</h2>
-        <div {...stylex.props(s.stackTight)}>
-          {types.map((candidate) => (
+  // --- Leistung, Datum, Uhrzeit ------------------------------------------
+  // Mit Vorwahl per URL steht nur die vorgewählte Leistung da — wer über
+  // einen Link für ein bestimmtes Shooting kommt, soll nicht umwählen.
+  const shownTypes = preselectedType && type ? [type] : types;
+  const price = (candidate: BookingType) =>
+    candidate.price > 0 ? `${candidate.price} ${branding?.currency ?? "EUR"}` : "kostenlos";
+
+  return root(
+    <>
+      {zoneNote && <p {...stylex.props(s.muted)}>Alle Zeiten: {zoneNote}.</p>}
+      {submitError && !slot && <p {...stylex.props(s.error)}>{submitError}</p>}
+
+      <div {...stylex.props(s.columns)}>
+        <section {...stylex.props(s.stackTight)}>
+          <h2 {...stylex.props(s.kicker)}>1. Was möchtest du buchen?</h2>
+          {shownTypes.map((candidate) => (
             <button
               key={candidate.id}
               type="button"
               data-testid="art"
+              aria-pressed={type?.id === candidate.id}
               onClick={() => {
+                if (type?.id !== candidate.id) setSlot(null);
                 setType(candidate);
-                setStep("slot");
+                setSubmitError("");
               }}
-              {...stylex.props(s.card)}
+              {...stylex.props(s.card, type?.id === candidate.id && s.cardSelected)}
             >
-              <span {...stylex.props(s.cardTitle)}>{candidate.name}</span>
-              <span {...stylex.props(s.cardMeta)}>
-                {candidate.durationMin} Minuten
-                {candidate.price > 0
-                  ? ` · ${candidate.price} ${branding?.currency ?? "EUR"}`
-                  : " · kostenlos"}
-                {candidate.location ? ` · ${candidate.location}` : ""}
+              <span {...stylex.props(s.cardHead)}>
+                <span {...stylex.props(s.cardTitle)}>{candidate.name}</span>
+                <span {...stylex.props(s.cardMono)}>{candidate.durationMin} Minuten</span>
               </span>
-              {candidate.description && (
-                <span {...stylex.props(s.cardMeta)}>{candidate.description}</span>
-              )}
+              <span {...stylex.props(s.cardFoot)}>
+                <span {...stylex.props(s.cardMeta)}>
+                  {[candidate.description, candidate.location].filter(Boolean).join(" · ")}
+                </span>
+                <span {...stylex.props(s.price)}>{price(candidate)}</span>
+              </span>
             </button>
           ))}
-        </div>
-      </>,
-    );
-  }
+        </section>
 
-  // --- Termin wählen -------------------------------------------------------
-  if (step === "slot" && type) {
-    const canGoBack = types.length > 1 && !preselectedType;
-    return root(
-      <>
-        <div {...stylex.props(s.stackTight)}>
-          <h2 {...stylex.props(s.headline)}>{type.name}</h2>
-          <p {...stylex.props(s.subline)}>
-            {type.durationMin} Minuten
-            {type.price > 0 ? ` · ${type.price} ${branding?.currency ?? "EUR"}` : " · kostenlos"}
-            {type.location ? ` · ${type.location}` : ""}
+        {type ? (
+          <SlotPicker
+            key={type.slug}
+            typeSlug={type.slug}
+            timezone={timezone}
+            selected={slot}
+            firstStep={2}
+            onSelect={(chosen) => {
+              setSlot(chosen);
+              setSubmitError("");
+            }}
+            onTimezoneKnown={setTimezone}
+          />
+        ) : (
+          <p {...stylex.props(s.muted, s.spanTwo)}>
+            Wähle zuerst eine Leistung, dann zeigen wir dir die freien Zeiten.
           </p>
-          {zoneNote && <p {...stylex.props(s.muted)}>Alle Zeiten: {zoneNote}.</p>}
-        </div>
-
-        {submitError && <p {...stylex.props(s.error)}>{submitError}</p>}
-
-        <SlotPicker
-          typeSlug={type.slug}
-          timezone={timezone}
-          selected={slot}
-          onSelect={(chosen) => {
-            setSlot(chosen);
-            setSubmitError("");
-            setStep("form");
-          }}
-          onTimezoneKnown={setTimezone}
-        />
-
-        {canGoBack && (
-          <div {...stylex.props(s.buttonRow)}>
-            <button
-              type="button"
-              onClick={() => {
-                setType(null);
-                setStep("type");
-              }}
-              {...stylex.props(s.button, s.buttonSecondary)}
-            >
-              Andere Leistung
-            </button>
-          </div>
         )}
-      </>,
-    );
-  }
+      </div>
 
-  // --- Kontaktdaten --------------------------------------------------------
-  if (step === "form" && type && slot) {
-    return root(
-      <BookingForm
-        type={type}
-        slot={slot}
-        timezone={timezone}
-        zoneNote={zoneNote}
-        privacyUrl={privacyUrl}
-        busy={busy}
-        error={submitError}
-        startedAt={startedAt.current}
-        onBack={() => setStep("slot")}
-        onSubmit={(values) => void submit(values)}
-      />,
-    );
-  }
-
-  return root(<p {...stylex.props(s.muted)}>Wird geladen …</p>);
+      {type && slot && (
+        <section {...stylex.props(s.formSection)}>
+          <BookingForm
+            type={type}
+            slot={slot}
+            timezone={timezone}
+            zoneNote={zoneNote}
+            privacyUrl={privacyUrl}
+            busy={busy}
+            error={submitError}
+            startedAt={startedAt.current}
+            onSubmit={(values) => void submit(values)}
+          />
+        </section>
+      )}
+    </>,
+  );
 }

@@ -42,6 +42,9 @@ LABEL org.opencontainers.image.title="Albumwerk" \
 
 RUN apk add --no-cache \
       ca-certificates \
+      # IANA-Zeitzonen für die Terminbuchung (pb_hooks/lib/tzlib.js) — ohne
+      # fällt Europe/Berlin still auf UTC zurück, alle Slots 1–2 h verschoben
+      tzdata \
       unzip \
       # preview/watermark generation (pb_hooks/lib/previewlib.js)
       imagemagick imagemagick-jpeg imagemagick-webp imagemagick-heic \

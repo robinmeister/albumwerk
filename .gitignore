@@ -38,3 +38,6 @@ e2e/.shots/
 *.njsproj
 *.sln
 *.sw?
+
+# Platzhalter-Fotos für Demo-Alben (scripts/demo-fotos.mjs)
+demo-fotos/
