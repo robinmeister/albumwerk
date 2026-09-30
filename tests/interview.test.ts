@@ -6,6 +6,8 @@ import {
   addCustomService,
   answersFromPlan,
   currentPlan,
+  diffPlans,
+  formatSpan,
   planFromAnswers,
   rulesFromAnswers,
 } from '../src/features/Appointments/interview'
@@ -157,5 +159,55 @@ describe('rulesFromAnswers', () => {
       services: [{ ...portrait, restriction: 'weekend' }], days: [2], restrict: false,
       windows: { 2: [{ startMinute: 540, endMinute: 780 }] },
     }))).toEqual([{ weekday: 2, startMinute: 540, endMinute: 780, allowedSlugs: [] }])
+  })
+})
+
+describe('formatSpan', () => {
+  it('wählt die größte glatte Einheit', () => {
+    expect([0, 30, 120, 1440, 4320, 10080].map(formatSpan))
+      .toEqual(['keine', '30 Min', '2 Std', '1 Tag', '3 Tage', '1 Woche'])
+  })
+})
+
+describe('diffPlans', () => {
+  const plan = currentPlan([type({})], [rule({})], SETTINGS)
+
+  it('Rundreise ohne Änderungen ergibt eine leere Liste', () => {
+    expect(diffPlans(plan, planFromAnswers(answersFromPlan(plan), plan))).toEqual([])
+  })
+
+  it('benennt geänderte Felder mit alt → neu', () => {
+    const a = answersFromPlan(plan)
+    a.services[0] = { ...a.services[0], durationMin: 60, requiresApproval: true, price: 150 }
+    expect(diffPlans(plan, planFromAnswers(a, plan))).toEqual([
+      { field: 'durationMin', kind: 'geändert', text: '„Portraitshooting": 90 Min → 60 Min' },
+      { field: 'requiresApproval', kind: 'geändert', text: '„Portraitshooting": sofort verbindlich → erst nach deiner Zusage' },
+      { field: 'price', kind: 'geändert', text: '„Portraitshooting": kostenlos → 150 EUR' },
+    ])
+  })
+
+  it('abgewählte Art', () => {
+    const next = planFromAnswers({ ...answersFromPlan(plan), services: [] }, plan)
+    expect(diffPlans(plan, next)).toContainEqual({
+      field: 'service', kind: 'deaktiviert',
+      text: '„Portraitshooting" ist nicht mehr buchbar – bestehende Termine bleiben',
+    })
+  })
+
+  it('Fenster: entfällt und neu, mit Einschränkung im Text', () => {
+    const next: Plan = { ...plan, rules: [{ weekday: 2, startMinute: 1020, endMinute: 1260, allowedSlugs: ['portrait'] }] }
+    expect(diffPlans(plan, next)).toEqual([
+      { field: 'rules', kind: 'entfällt', text: 'Sa 09:00 – 13:00 entfällt' },
+      { field: 'rules', kind: 'neu', text: 'Di 17:00 – 21:00 (nur „Portraitshooting")' },
+    ])
+  })
+
+  it('Grenzen und Einschalten', () => {
+    const off = { ...plan, enabled: false, maxPerDay: 0 }
+    expect(diffPlans(off, { ...off, enabled: true, maxPerDay: 2, horizonDays: 180 })).toEqual([
+      { field: 'maxPerDay', kind: 'geändert', text: 'Höchstens pro Tag: unbegrenzt → 2' },
+      { field: 'horizonDays', kind: 'geändert', text: 'Buchbar im Voraus: 90 → 180 Tage' },
+      { field: 'enabled', kind: 'neu', text: 'Die Terminbuchung wird eingeschaltet' },
+    ])
   })
 })

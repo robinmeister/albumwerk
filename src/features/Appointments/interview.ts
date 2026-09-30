@@ -10,6 +10,7 @@
 
 import type { AppointmentType, AvailabilityRule } from "./api";
 import { slugify } from "../../utils/slug";
+import { formatWindow } from "../Booking/time";
 
 export type Restriction = "all" | "weekdays" | "weekend" | "evening";
 
@@ -291,4 +292,112 @@ export function planFromAnswers(answers: Answers, current: Plan): Plan {
     horizonDays: answers.horizonDays,
     enabled: true,
   };
+}
+
+// --- Änderungen ------------------------------------------------------------
+
+export type ChangeField =
+  | "service"
+  | "durationMin"
+  | "bufferMin"
+  | "leadTimeMin"
+  | "requiresApproval"
+  | "location"
+  | "price"
+  | "rules"
+  | "maxPerDay"
+  | "horizonDays"
+  | "enabled";
+
+export type ChangeKind = "neu" | "geändert" | "deaktiviert" | "entfällt";
+
+export interface Change {
+  field: ChangeField;
+  kind: ChangeKind;
+  text: string;
+}
+
+const WEEKDAY_SHORT = ["", "Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+
+export function formatSpan(minutes: number): string {
+  if (minutes === 0) return "keine";
+  if (minutes % 10080 === 0) return minutes === 10080 ? "1 Woche" : `${minutes / 10080} Wochen`;
+  if (minutes % 1440 === 0) return minutes === 1440 ? "1 Tag" : `${minutes / 1440} Tage`;
+  if (minutes % 60 === 0) return `${minutes / 60} Std`;
+  return `${minutes} Min`;
+}
+
+export function diffPlans(old: Plan, next: Plan, currency = "EUR"): Change[] {
+  const changes: Change[] = [];
+  const oldBySlug = new Map(old.types.map((type) => [type.slug, type]));
+  const price = (value: number) => (value > 0 ? `${value} ${currency}` : "kostenlos");
+  const approval = (value: boolean) => (value ? "erst nach deiner Zusage" : "sofort verbindlich");
+
+  for (const type of next.types) {
+    const label = `„${type.name}"`;
+    const before = oldBySlug.get(type.slug);
+    if (!before) {
+      if (type.active) changes.push({ field: "service", kind: "neu", text: `${label} wird neu angelegt` });
+      continue;
+    }
+    if (before.active && !type.active) {
+      changes.push({
+        field: "service",
+        kind: "deaktiviert",
+        text: `${label} ist nicht mehr buchbar – bestehende Termine bleiben`,
+      });
+      continue;
+    }
+    if (!type.active) continue;
+    if (!before.active) changes.push({ field: "service", kind: "neu", text: `${label} wird wieder buchbar` });
+    if (before.name !== type.name) {
+      changes.push({ field: "service", kind: "geändert", text: `„${before.name}" heißt jetzt ${label}` });
+    }
+    const field = (name: ChangeField, from: string, to: string) => {
+      if (from !== to) changes.push({ field: name, kind: "geändert", text: `${label}: ${from} → ${to}` });
+    };
+    field("durationMin", `${before.durationMin} Min`, `${type.durationMin} Min`);
+    field("bufferMin", `Puffer ${formatSpan(before.bufferMin)}`, `Puffer ${formatSpan(type.bufferMin)}`);
+    field("leadTimeMin", `Vorlauf ${formatSpan(before.leadTimeMin)}`, `Vorlauf ${formatSpan(type.leadTimeMin)}`);
+    field("requiresApproval", approval(before.requiresApproval), approval(type.requiresApproval));
+    field("location", before.location || "kein Ort", type.location || "kein Ort");
+    field("price", price(before.price), price(type.price));
+  }
+
+  // Namen für „(nur …)": neue Namen vor alten, damit Umbenennungen stimmen
+  const names = new Map([...old.types, ...next.types].map((type) => [type.slug, type.name]));
+  const key = (rule: PlanRule) =>
+    `${rule.weekday}|${rule.startMinute}|${rule.endMinute}|${rule.allowedSlugs.join(",")}`;
+  const describe = (rule: PlanRule) => {
+    const only = rule.allowedSlugs.map((slug) => `„${names.get(slug) ?? slug}"`).join(", ");
+    return `${WEEKDAY_SHORT[rule.weekday]} ${formatWindow(rule.startMinute, rule.endMinute)}${only ? ` (nur ${only})` : ""}`;
+  };
+  const oldKeys = new Set(old.rules.map(key));
+  const nextKeys = new Set(next.rules.map(key));
+  for (const rule of old.rules) {
+    if (!nextKeys.has(key(rule))) changes.push({ field: "rules", kind: "entfällt", text: `${describe(rule)} entfällt` });
+  }
+  for (const rule of next.rules) {
+    if (!oldKeys.has(key(rule))) changes.push({ field: "rules", kind: "neu", text: describe(rule) });
+  }
+
+  const perDay = (value: number) => (value > 0 ? String(value) : "unbegrenzt");
+  if (old.maxPerDay !== next.maxPerDay) {
+    changes.push({
+      field: "maxPerDay",
+      kind: "geändert",
+      text: `Höchstens pro Tag: ${perDay(old.maxPerDay)} → ${perDay(next.maxPerDay)}`,
+    });
+  }
+  if (old.horizonDays !== next.horizonDays) {
+    changes.push({
+      field: "horizonDays",
+      kind: "geändert",
+      text: `Buchbar im Voraus: ${old.horizonDays} → ${next.horizonDays} Tage`,
+    });
+  }
+  if (!old.enabled && next.enabled) {
+    changes.push({ field: "enabled", kind: "neu", text: "Die Terminbuchung wird eingeschaltet" });
+  }
+  return changes;
 }
