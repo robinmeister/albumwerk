@@ -127,7 +127,7 @@ describe('rulesFromAnswers', () => {
     ])
   })
 
-  it('„nur abends" teilt das Fenster bei 17 Uhr', () => {
+  it('„nur abends“ teilt das Fenster bei 17 Uhr', () => {
     expect(rulesFromAnswers(answers({
       services: [portrait, { ...talk, restriction: 'evening' }], days: [3], restrict: true,
       windows: { 3: [{ startMinute: 540, endMinute: 1260 }] },
@@ -137,7 +137,7 @@ describe('rulesFromAnswers', () => {
     ])
   })
 
-  it('„nur am Wochenende" nimmt die Leistung werktags heraus', () => {
+  it('„nur am Wochenende“ nimmt die Leistung werktags heraus', () => {
     expect(rulesFromAnswers(answers({
       services: [{ ...portrait, restriction: 'weekend' }, talk], days: [2, 6], restrict: true,
       windows: { 2: [{ startMinute: 540, endMinute: 780 }], 6: [{ startMinute: 540, endMinute: 780 }] },
@@ -154,7 +154,7 @@ describe('rulesFromAnswers', () => {
     }))).toEqual([{ weekday: 5, startMinute: 1200, endMinute: 1500, allowedSlugs: [] }])
   })
 
-  it('Einschränkung ohne Wirkung, solange Frage 9 mit „Nein" beantwortet ist', () => {
+  it('Einschränkung ohne Wirkung, solange Frage 9 mit „Nein“ beantwortet ist', () => {
     expect(rulesFromAnswers(answers({
       services: [{ ...portrait, restriction: 'weekend' }], days: [2], restrict: false,
       windows: { 2: [{ startMinute: 540, endMinute: 780 }] },
@@ -180,9 +180,9 @@ describe('diffPlans', () => {
     const a = answersFromPlan(plan)
     a.services[0] = { ...a.services[0], durationMin: 60, requiresApproval: true, price: 150 }
     expect(diffPlans(plan, planFromAnswers(a, plan))).toEqual([
-      { field: 'durationMin', kind: 'geändert', text: '„Portraitshooting": 90 Min → 60 Min' },
-      { field: 'requiresApproval', kind: 'geändert', text: '„Portraitshooting": sofort verbindlich → erst nach deiner Zusage' },
-      { field: 'price', kind: 'geändert', text: '„Portraitshooting": kostenlos → 150 EUR' },
+      { field: 'durationMin', kind: 'geändert', text: '„Portraitshooting“: 90 Min → 60 Min' },
+      { field: 'requiresApproval', kind: 'geändert', text: '„Portraitshooting“: sofort verbindlich → erst nach deiner Zusage' },
+      { field: 'price', kind: 'geändert', text: '„Portraitshooting“: kostenlos → 150 EUR' },
     ])
   })
 
@@ -190,7 +190,7 @@ describe('diffPlans', () => {
     const next = planFromAnswers({ ...answersFromPlan(plan), services: [] }, plan)
     expect(diffPlans(plan, next)).toContainEqual({
       field: 'service', kind: 'deaktiviert',
-      text: '„Portraitshooting" ist nicht mehr buchbar – bestehende Termine bleiben',
+      text: '„Portraitshooting“ ist nicht mehr buchbar – bestehende Termine bleiben',
     })
   })
 
@@ -198,7 +198,7 @@ describe('diffPlans', () => {
     const next: Plan = { ...plan, rules: [{ weekday: 2, startMinute: 1020, endMinute: 1260, allowedSlugs: ['portrait'] }] }
     expect(diffPlans(plan, next)).toEqual([
       { field: 'rules', kind: 'entfällt', text: 'Sa 09:00 – 13:00 entfällt' },
-      { field: 'rules', kind: 'neu', text: 'Di 17:00 – 21:00 (nur „Portraitshooting")' },
+      { field: 'rules', kind: 'neu', text: 'Di 17:00 – 21:00 (nur „Portraitshooting“)' },
     ])
   })
 

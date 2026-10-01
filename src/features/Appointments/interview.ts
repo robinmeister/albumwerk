@@ -4,7 +4,7 @@
 // Reine Logik, kein React, kein PocketBase. Der Assistent hält nur `Answers`
 // im State; Plan und Änderungsliste werden bei jedem Klick neu abgeleitet.
 //
-// Ein „Plan" ist die Konfiguration in einer Form, die sich vergleichen lässt:
+// Ein „Plan“ ist die Konfiguration in einer Form, die sich vergleichen lässt:
 // Fenster verweisen über Slugs statt IDs auf Arten, weil neue Arten noch
 // keine ID haben. Der Server übersetzt beim Speichern zurück.
 
@@ -79,7 +79,7 @@ export interface BookingSettings {
   bookingHorizonDays: number;
 }
 
-/** „Abends" beginnt um 17 Uhr. */
+/** „Abends“ beginnt um 17 Uhr. */
 export const EVENING = 17 * 60;
 
 const base = { location: "", price: 0, requiresApproval: false, restriction: "all" as const };
@@ -148,7 +148,7 @@ function mergeWindows(windows: TimeWindow[]): TimeWindow[] {
 }
 
 // Nur für die Vorbelegung von Frage 9. Was sich nicht einordnen lässt, wird
-// „all" angezeigt; wirksam wird es erst, wenn die Zeitfragen angefasst werden.
+// „all“ angezeigt; wirksam wird es erst, wenn die Zeitfragen angefasst werden.
 function inferRestriction(slug: string, rules: PlanRule[]): Restriction {
   const open = rules.filter((r) => r.allowedSlugs.length === 0 || r.allowedSlugs.includes(slug));
   if (open.length === rules.length || open.length === 0) return "all";
@@ -334,7 +334,7 @@ export function diffPlans(old: Plan, next: Plan, currency = "EUR"): Change[] {
   const approval = (value: boolean) => (value ? "erst nach deiner Zusage" : "sofort verbindlich");
 
   for (const type of next.types) {
-    const label = `„${type.name}"`;
+    const label = `„${type.name}“`;
     const before = oldBySlug.get(type.slug);
     if (!before) {
       if (type.active) changes.push({ field: "service", kind: "neu", text: `${label} wird neu angelegt` });
@@ -351,7 +351,7 @@ export function diffPlans(old: Plan, next: Plan, currency = "EUR"): Change[] {
     if (!type.active) continue;
     if (!before.active) changes.push({ field: "service", kind: "neu", text: `${label} wird wieder buchbar` });
     if (before.name !== type.name) {
-      changes.push({ field: "service", kind: "geändert", text: `„${before.name}" heißt jetzt ${label}` });
+      changes.push({ field: "service", kind: "geändert", text: `„${before.name}“ heißt jetzt ${label}` });
     }
     const field = (name: ChangeField, from: string, to: string) => {
       if (from !== to) changes.push({ field: name, kind: "geändert", text: `${label}: ${from} → ${to}` });
@@ -364,12 +364,12 @@ export function diffPlans(old: Plan, next: Plan, currency = "EUR"): Change[] {
     field("price", price(before.price), price(type.price));
   }
 
-  // Namen für „(nur …)": neue Namen vor alten, damit Umbenennungen stimmen
+  // Namen für „(nur …)“: neue Namen vor alten, damit Umbenennungen stimmen
   const names = new Map([...old.types, ...next.types].map((type) => [type.slug, type.name]));
   const key = (rule: PlanRule) =>
     `${rule.weekday}|${rule.startMinute}|${rule.endMinute}|${rule.allowedSlugs.join(",")}`;
   const describe = (rule: PlanRule) => {
-    const only = rule.allowedSlugs.map((slug) => `„${names.get(slug) ?? slug}"`).join(", ");
+    const only = rule.allowedSlugs.map((slug) => `„${names.get(slug) ?? slug}“`).join(", ");
     return `${WEEKDAY_SHORT[rule.weekday]} ${formatWindow(rule.startMinute, rule.endMinute)}${only ? ` (nur ${only})` : ""}`;
   };
   const oldKeys = new Set(old.rules.map(key));
