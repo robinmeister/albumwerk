@@ -1,5 +1,5 @@
 import { ComponentType } from "react";
-import { CalendarClock, CircleHelp as HelpIcon, Download, Globe, Image, Image as ImageIcon, ListChecks, Mail, Palette, Scale, Wallet as Payments, Users as People, User as Person, Tag as PriceChange, ReceiptText as ReceiptLong, Headset as SupportAgent } from "lucide-react";
+import { CalendarClock, CircleHelp as HelpIcon, Download, Globe, Image, Image as ImageIcon, ListChecks, Mail, Palette, Printer, Scale, Wallet as Payments, Users as People, User as Person, Tag as PriceChange, ReceiptText as ReceiptLong, Headset as SupportAgent } from "lucide-react";
 
 // Single source for navigation: Header (desktop), TabBar (mobile) and the
 // user menu all render from these arrays — labels are no longer coupled to
@@ -35,6 +35,7 @@ export const adminNavGroups: NavGroup[] = [
     items: [
       { key: "pricing", label: "Preise", path: "/pricing", Icon: PriceChange },
       { key: "orders", label: "Bestellungen", path: "/orders", Icon: ReceiptLong },
+      { key: "print", label: "Druckaufträge", path: "/print", Icon: Printer },
       { key: "payments", label: "Zahlungen", path: "/payments", Icon: Payments },
     ],
   },

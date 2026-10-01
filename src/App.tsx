@@ -29,6 +29,7 @@ import EmbedPage from "./pages/admin/EmbedPage";
 import AdminPricingPage from "./pages/admin/AdminPricingPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminPaymentsPage from "./pages/admin/AdminPaymentsPage";
+import PrintJobsPage from "./pages/admin/PrintJobsPage";
 import NoMatchPage from "./pages/NoMatchPage";
 
 import "react-toastify/dist/ReactToastify.css";
@@ -186,6 +187,7 @@ function ThemedApp(): ReactElement {
                   <Route path="orderDetails/:orderId" element={<OrderDetailsPage />} />
                   <Route path="users" element={<AdminUsersPage />} />
                   <Route path="payments" element={<AdminPaymentsPage />} />
+                  <Route path="print" element={<PrintJobsPage />} />
                   <Route path="einrichtung" element={<EinrichtungPage />} />
                   <Route path="branding" element={<BrandingPage />} />
                   {/* /branding?setup=1 war der alte Wizard-Link — Checklisten-Route
