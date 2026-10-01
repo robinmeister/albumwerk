@@ -66,9 +66,77 @@ function shippingCost(app, list, goodsTotal) {
   return shippingFor(goodsTotal, true, s.getFloat("shippingFlat"), s.getFloat("freeShippingFrom"));
 }
 
+// Gleiches Muster wie fileUrlRecordId in src/utils/functions.ts: Die Bestellung
+// trägt die URL der Vorschau, das Original hat denselben Namen im selben Shooting.
+var FILE_URL_RE = /\/api\/files\/[^/]+\/([^/]+)\//;
+
+function originalIdFor(app, imageUrl) {
+  var m = String(imageUrl || "").match(FILE_URL_RE);
+  if (!m) return "";
+  try {
+    var image = app.findRecordById("images", m[1]);
+    if (image.getString("type") === "original") return image.id;
+    var original = app.findFirstRecordByFilter(
+      "images",
+      "shootingId = {:s} && type = 'original' && name = {:n}",
+      { s: image.getString("shootingId"), n: image.getString("name") }
+    );
+    return original.id;
+  } catch (_) {
+    return "";
+  }
+}
+
+// Schnappschuss der Lieferadresse zum Zeitpunkt der Zahlung. Ändert die
+// Kund:in später ihr Profil, bleibt der Auftrag, wie er bezahlt wurde.
+function recipientFromUserData(userData) {
+  var d = userData || {};
+  return {
+    name: [d.firstName, d.lastName].filter(Boolean).join(" ").trim(),
+    email: String(d.email || ""),
+    phone: String(d.phone || ""),
+    line1: String(d.street || ""),
+    postalCode: String(d.zip || ""),
+    city: String(d.city || ""),
+    state: String(d.state || ""),
+    countryCode: String(d.country || "DE").toUpperCase(),
+  };
+}
+
+function createPrintJob(app, order, list) {
+  var items = labItems(app, list);
+  if (!items.length) return null;
+
+  var missing = false;
+  for (var i = 0; i < items.length; i++) {
+    items[i].originalId = originalIdFor(app, items[i].image);
+    if (!items[i].originalId) missing = true;
+  }
+
+  var s = readSettings(app);
+  var userData = {};
+  try {
+    userData = JSON.parse(order.getString("userData") || "{}");
+  } catch (_) {
+    userData = {};
+  }
+
+  var job = new Record(app.findCollectionByNameOrId("printJobs"));
+  job.set("orderId", order.id);
+  job.set("route", (s && s.getString("printDefaultRoute")) || "customer");
+  job.set("recipient", recipientFromUserData(userData));
+  job.set("items", items);
+  job.set("status", "awaiting_approval");
+  job.set("error", missing ? "Zu mindestens einem Bild fehlt das Original." : "");
+  app.save(job);
+  return job;
+}
+
 module.exports = {
   readSettings: readSettings,
   labItems: labItems,
   shippingFor: shippingFor,
   shippingCost: shippingCost,
+  recipientFromUserData: recipientFromUserData,
+  createPrintJob: createPrintJob,
 };

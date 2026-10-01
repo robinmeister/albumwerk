@@ -121,3 +121,68 @@ describe("Versand", () => {
     expect(co.authoritativeTotal(app(null), "s1", l)).toBe(10);
   });
 });
+
+const KUNDIN = {
+  firstName: "Ada", lastName: "Muster", email: "ada@example.org", phone: "0170",
+  street: "Hauptstr. 1", zip: "10115", city: "Berlin", state: "",
+};
+
+const druckauftrag = (a: ReturnType<typeof app>) =>
+  a.gespeichert.find((r: any) => r.collection === "printJobs");
+
+describe("Druckauftrag nach der Zahlung", () => {
+  it("entsteht für Positionen mit Laborprodukt", () => {
+    const a = app();
+    co.finalizeOrder(a, {
+      userId: "kunde1", shootingId: "s1",
+      imagePriceObjectList: liste([["vorschau1", "preis-abzug", 2], ["vorschau1", "preis-digital", 1]]),
+      userData: KUNDIN,
+    });
+    const job = druckauftrag(a);
+    expect(job.data.orderId).toBe("orders-neu");
+    expect(job.data.status).toBe("awaiting_approval");
+    expect(job.data.route).toBe("customer");
+    expect(job.data.items).toEqual([
+      { image: bild("vorschau1"), sku: "GLOBAL-PHO-5X7", copies: 2, originalId: "original1" },
+    ]);
+    expect(job.data.recipient).toEqual({
+      name: "Ada Muster", email: "ada@example.org", phone: "0170",
+      line1: "Hauptstr. 1", postalCode: "10115", city: "Berlin", state: "", countryCode: "DE",
+    });
+    expect(job.data.error).toBe("");
+  });
+
+  it("übernimmt den Lieferweg aus den Einstellungen", () => {
+    const a = app({ ...EINSTELLUNGEN, printDefaultRoute: "studio" });
+    co.finalizeOrder(a, {
+      userId: "kunde1", shootingId: "s1",
+      imagePriceObjectList: liste([["vorschau1", "preis-abzug", 1]]), userData: KUNDIN,
+    });
+    expect(druckauftrag(a).data.route).toBe("studio");
+  });
+
+  it("entsteht nicht für Bestellungen ohne Laborprodukt", () => {
+    const a = app();
+    co.finalizeOrder(a, {
+      userId: "kunde1", shootingId: "s1",
+      imagePriceObjectList: liste([["vorschau1", "preis-handabzug", 1]]), userData: KUNDIN,
+    });
+    expect(druckauftrag(a)).toBeUndefined();
+  });
+
+  it("vermerkt ein fehlendes Original, statt die Bestellung zu kippen", () => {
+    const a = app();
+    const orderId = co.finalizeOrder(a, {
+      userId: "kunde1", shootingId: "s1",
+      imagePriceObjectList: liste([["vorschau2", "preis-abzug", 1]]), userData: KUNDIN,
+    });
+    expect(orderId).toBe("orders-neu");
+    const job = druckauftrag(a);
+    expect(job.data.items[0].originalId).toBe("");
+    expect(job.data.error).toContain("Original");
+  });
+
+  it("übernimmt ein gewähltes Land in Großbuchstaben", () => {
+    expect(pl.recipientFromUserData({ ...KUNDIN, country: "at" }).countryCode).toBe("AT");
+  });
+});

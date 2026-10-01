@@ -207,6 +207,20 @@ function finalizeOrder(app, opts) {
   order.set("userData", opts.userData || {});
   app.save(order);
 
+  // Drucke mit Laborprodukt werden ein Druckauftrag, der auf Freigabe wartet.
+  // Die Bestellung ist bezahlt — ein Fehler hier darf sie nicht kippen.
+  try {
+    var job = pl.createPrintJob(app, order, list);
+    if (job) {
+      var pm = typeof __hooks !== "undefined"
+        ? require(__hooks + "/lib/printmaillib.js")
+        : require("./printmaillib.js");
+      pm.notifyAwaitingApproval(app, job);
+    }
+  } catch (err) {
+    app.logger().error("print job create failed", "error", String(err));
+  }
+
   // A package buys the images themselves, so everything in the order is
   // downloadable. Per-image orders grant only what their prices allow.
   var grant = isPackageOrder(app, opts.shootingId, list)
