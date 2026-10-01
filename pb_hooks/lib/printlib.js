@@ -284,7 +284,171 @@ function fileAccessOk(token, expected, expiresMs, nowMs, equal) {
   return Boolean(equal(String(token), String(expected)));
 }
 
+// --- Prodigi-Aufrufe ---------------------------------------------------------
+// Ab hier $http / $security / Mails: nur in der JSVM, nicht im Unit-Test.
+
+function isAdmin(e) {
+  return e.hasSuperuserAuth() || !!(e.auth && e.auth.getBool("isAdmin"));
+}
+
+function mails() {
+  return typeof __hooks !== "undefined"
+    ? require(__hooks + "/lib/printmaillib.js")
+    : require("./printmaillib.js");
+}
+
+function setFields(rec, fields) {
+  Object.keys(fields).forEach(function (k) { rec.set(k, fields[k]); });
+}
+
+function prodigiKey(s) {
+  return s ? s.getString("prodigiApiKey") : "";
+}
+
+function fail(app, job, message) {
+  job.set("status", "failed");
+  job.set("error", message);
+  app.save(job);
+  return { ok: false, message: message };
+}
+
+function submitJob(app, job) {
+  var st = job.getString("status");
+  if (st !== "awaiting_approval" && st !== "failed") {
+    return { ok: false, message: "Der Auftrag ist schon beim Labor." };
+  }
+  var s = readSettings(app);
+  var key = prodigiKey(s);
+  if (!key) return { ok: false, message: "Prodigi-Schlüssel fehlt. Verbinde Prodigi oben auf dieser Seite." };
+
+  var view = jobView(job);
+  for (var i = 0; i < view.items.length; i++) {
+    if (!view.items[i].originalId) {
+      return { ok: false, message: "Zu mindestens einem Bild fehlt das Original." };
+    }
+  }
+  var recipient = recipientFor(view, parseJson(s.getString("studioAddress"), {}));
+  if (!addressComplete(recipient)) {
+    return {
+      ok: false,
+      message: view.route === "studio" ? "Deine Studioadresse ist unvollständig." : "Die Lieferadresse ist unvollständig.",
+    };
+  }
+  var baseUrl = String(app.settings().meta.appURL || "").replace(/\/+$/, "");
+  if (baseUrl.indexOf("http") !== 0) {
+    return { ok: false, message: "Die App-URL fehlt in den Server-Einstellungen — ohne sie findet Prodigi die Bilder nicht." };
+  }
+
+  var token = $security.randomString(40);
+  job.set("fileToken", token);
+  job.set("fileTokenExpires", Date.now() + FILE_TOKEN_DAYS * 86400000);
+
+  var res;
+  try {
+    res = $http.send({
+      url: prodigiBase(s.getBool("prodigiLive")) + "/orders",
+      method: "POST",
+      body: JSON.stringify(prodigiOrderBody(view, recipient, baseUrl, token)),
+      headers: { "Content-Type": "application/json", "X-API-Key": key },
+      timeout: 30,
+    });
+  } catch (err) {
+    app.logger().warn("prodigi unreachable", "error", String(err));
+    return fail(app, job, "Prodigi war nicht erreichbar. Versuch es gleich noch einmal.");
+  }
+  if (res.statusCode !== 200 || !res.json || !res.json.order) {
+    app.logger().warn("prodigi order rejected", "status", res.statusCode, "body", res.raw);
+    return fail(app, job, "Prodigi hat den Auftrag abgelehnt (" + res.statusCode + "): " + String(res.raw || "").slice(0, 300));
+  }
+
+  setFields(job, applyLabOrder(st, res.json.order));
+  app.save(job);
+  if (job.getString("status") === "failed") return { ok: false, message: job.getString("error") };
+  return { ok: true, message: "" };
+}
+
+// Fragt den Auftrag bei Prodigi ab und übernimmt den Stand. Mails gehen nur
+// bei einem echten Wechsel raus, damit doppelte Webhooks keine doppelten Mails
+// auslösen.
+function syncJob(app, job) {
+  var s = readSettings(app);
+  var key = prodigiKey(s);
+  var labOrderId = job.getString("labOrderId");
+  if (!key || !labOrderId) return;
+
+  var res = $http.send({
+    url: prodigiBase(s.getBool("prodigiLive")) + "/orders/" + encodeURIComponent(labOrderId),
+    method: "GET",
+    headers: { "X-API-Key": key },
+    timeout: 20,
+  });
+  if (res.statusCode !== 200 || !res.json || !res.json.order) return;
+
+  var before = job.getString("status");
+  setFields(job, applyLabOrder(before, res.json.order));
+  app.save(job);
+
+  var after = job.getString("status");
+  if (after === before) return;
+  if (after === "failed") mails().notifyFailed(app, job);
+  if (after === "shipped") {
+    if (job.getString("route") === "studio") mails().notifyStudioShipped(app, job);
+    else mails().notifyCustomerShipped(app, job);
+  }
+}
+
+function cancelJob(app, job) {
+  var st = job.getString("status");
+  if (st === "cancelled" || st === "shipped" || st === "delivered_to_customer") {
+    return { ok: false, message: "Der Auftrag lässt sich nicht mehr stornieren." };
+  }
+  var labOrderId = job.getString("labOrderId");
+  if (!labOrderId) {
+    job.set("status", "cancelled");
+    app.save(job);
+    return { ok: true, message: "" };
+  }
+
+  var s = readSettings(app);
+  var key = prodigiKey(s);
+  if (!key) return { ok: false, message: "Prodigi-Schlüssel fehlt." };
+  var res;
+  try {
+    res = $http.send({
+      url: prodigiBase(s.getBool("prodigiLive")) + "/orders/" + encodeURIComponent(labOrderId) + "/actions/cancel",
+      method: "POST",
+      body: "",
+      headers: { "X-API-Key": key },
+      timeout: 20,
+    });
+  } catch (err) {
+    return { ok: false, message: "Prodigi war nicht erreichbar." };
+  }
+  var outcome = res.json ? String(res.json.outcome || "").toLowerCase() : "";
+  if (res.statusCode === 200 && outcome === "cancelled") {
+    job.set("status", "cancelled");
+    app.save(job);
+    return { ok: true, message: "" };
+  }
+  return { ok: false, message: "Prodigi konnte den Auftrag nicht mehr stornieren — er ist vermutlich schon in Produktion." };
+}
+
+function markDelivered(app, job, trackingNumber, trackingUrl) {
+  if (job.getString("route") !== "studio" || job.getString("status") !== "shipped") {
+    return { ok: false, message: "Nur Aufträge, die bei dir angekommen sind, lassen sich als weiterversendet markieren." };
+  }
+  setFields(job, deliveredFields(trackingNumber, trackingUrl));
+  app.save(job);
+  mails().notifyCustomerShipped(app, job);
+  return { ok: true, message: "" };
+}
+
 module.exports = {
+  isAdmin: isAdmin,
+  submitJob: submitJob,
+  syncJob: syncJob,
+  cancelJob: cancelJob,
+  markDelivered: markDelivered,
   FILE_TOKEN_DAYS: FILE_TOKEN_DAYS,
   prodigiBase: prodigiBase,
   parseJson: parseJson,
