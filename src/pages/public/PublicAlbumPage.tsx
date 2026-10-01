@@ -29,18 +29,7 @@ const s = stylex.create({
     gap: 8,
     marginBottom: 32,
   },
-  logoRing: {
-    borderRadius: "50%",
-    overflow: "hidden",
-    width: { default: 88, [MD]: 120 },
-    height: { default: 88, [MD]: 120 },
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "1px solid var(--color-border)",
-    backgroundColor: "var(--color-background-surface)",
-    marginBottom: 8,
-  },
+  logo: { marginBottom: 8, maxWidth: "100%" },
   overline: { letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 8 },
   divider: { marginBottom: 8 },
   footer: {
@@ -76,8 +65,8 @@ export default function PublicAlbumPage(): ReactElement {
       <div {...stylex.props(s.container)}>
         {/* profile header */}
         <div {...stylex.props(s.header)}>
-          <div {...stylex.props(s.logoRing)}>
-            <BrandLogo size={120} />
+          <div {...stylex.props(s.logo)}>
+            <BrandLogo platz="seitenkopf" />
           </div>
           <Heading level={3} accessibilityLevel={1}>
             {settings.businessName}

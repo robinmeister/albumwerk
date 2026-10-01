@@ -193,7 +193,7 @@ export default function HelpPage({ standalone = false }: Props): ReactElement {
     return (
       <div {...stylex.props(s.standalone)}>
         <div {...stylex.props(s.standaloneHead)}>
-          <BrandLogo size={44} />
+          <BrandLogo platz="seitenkopf" />
           <h1 {...stylex.props(s.pageTitle)}>
             {settings.businessName || "Hilfe"}
           </h1>

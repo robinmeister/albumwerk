@@ -15,12 +15,12 @@ import { Link, useSearchParams } from "react-router-dom";
 
 import { settingsFileUrl } from "../../config/settings";
 import { useSettings } from "../../context/SettingsContext";
+import BrandLogo from "../../components/widgets/BrandLogo";
 import BookingFlow from "../../features/Booking/BookingFlow";
 
 const s = stylex.create({
   container: { maxWidth: 640, margin: "32px auto", padding: "0 16px", width: "100%" },
   header: { display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginBottom: 16 },
-  logo: { height: 48, maxWidth: 200, objectFit: "contain" },
   card: {
     borderRadius: "var(--radius-container)",
     border: "1px solid var(--color-border)",
@@ -52,7 +52,7 @@ export default function BookingPage(): ReactElement {
     <div {...stylex.props(s.container)}>
       <div {...stylex.props(s.header)}>
         {logoUrl ? (
-          <img src={logoUrl} alt={settings.businessName} {...stylex.props(s.logo)} />
+          <BrandLogo platz="seitenkopf" />
         ) : (
           <Heading level={4} accessibilityLevel={1}>
             {settings.businessName}

@@ -18,6 +18,22 @@ onRecordCreateRequest((e) => {
 onRecordUpdateRequest((e) => {
   const privileged =
     e.hasSuperuserAuth() || !!(e.auth && e.auth.getBool("isAdmin"));
+  // Admin-Rechte vergeben ist kein Klick nebenbei: Wer sich selbst entzieht,
+  // sperrt im Zweifel das ganze Studio aus — und nur bestätigte, echte Konten
+  // dürfen hochgestuft werden. Da sich niemand selbst herabstufen kann, bleibt
+  // immer mindestens ein Admin übrig. Superuser (PB-Dashboard) bleiben frei.
+  if (privileged && !e.hasSuperuserAuth()) {
+    const original = e.record.original();
+    const promote = e.record.getBool("isAdmin");
+    if (promote !== original.getBool("isAdmin")) {
+      if (e.auth.id === e.record.id) {
+        throw new BadRequestError("Den eigenen Admin-Status kannst du nicht ändern.");
+      }
+      if (promote && (!original.getBool("verified") || original.getBool("isPreview"))) {
+        throw new BadRequestError("Nur Konten mit bestätigter E-Mail können Admin werden.");
+      }
+    }
+  }
   if (!privileged) {
     const original = e.record.original();
     if (e.record.getBool("isAdmin") !== original.getBool("isAdmin")) {

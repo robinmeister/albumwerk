@@ -111,8 +111,8 @@ export default function CustomerPreview({
             {fehler
               ? fehler
               : ansicht === "angemeldet" && sitzung
-                ? `${spiegeltText(sitzung.spiegelt.anzahl, sitzung.spiegelt.name)} · Bestellungen und Downloads bleiben hier leer`
-                : "Wie jemand die Galerie über den Freigabelink sieht"}
+                ? `${spiegeltText(sitzung.spiegelt.anzahl, sitzung.spiegelt.name)} · Nur ansehen · Bestellungen und Downloads bleiben hier leer`
+                : "Wie jemand die Galerie über den Freigabelink sieht · Nur ansehen"}
           </Text>
         </div>
         <Button variant="ghost" label="Schließen" onClick={schliessen} data-testid="vorschau:schliessen" />

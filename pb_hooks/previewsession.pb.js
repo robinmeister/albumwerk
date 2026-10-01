@@ -135,3 +135,17 @@ cronAdd("previewSessionSweep", "*/5 * * * *", () => {
     $app.logger().warn("Vorschau-Sweep fehlgeschlagen", "error", String(err));
   }
 });
+
+// Die Vorschau ist schreibgeschuetzt. Ein Schattenkonto koennte sonst
+// bestellen, bezahlen, Support-Nachrichten schicken oder eine Auswahl
+// speichern — nichts davon soll ein Blick auf die Galerie ausloesen. Die
+// Sperre steht hier, nicht nur im Browser: dort ist sie bloss Komfort.
+routerUse((e) => {
+  if (e.auth && e.auth.getBool("isPreview")) {
+    const preview = require(__hooks + "/lib/previewsessionlib.js");
+    if (!preview.istLesend(e.request.method, e.request.url.path)) {
+      return e.json(403, { status: "error", code: "preview-readonly", message: "In der Kundenansicht kann nichts geändert werden." });
+    }
+  }
+  return e.next();
+});

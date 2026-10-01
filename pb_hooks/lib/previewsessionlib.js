@@ -44,8 +44,21 @@ function isExpired(expiresAtIso, nowMs) {
   return ts <= nowMs;
 }
 
+// Die Vorschau ist nur zum Ansehen da. Lesen ist GET/HEAD; dazu zwei POSTs,
+// die nichts veraendern: authRefresh (main.tsx laedt damit das Konto nach)
+// und /api/realtime (setzt nur Abos). Alles andere wird abgewiesen.
+// src/config/pocketbase.ts spiegelt diese Regel im Browser.
+const LESENDE_POSTS = ["/api/collections/users/auth-refresh", "/api/realtime"];
+
+function istLesend(method, path) {
+  const m = String(method || "").toUpperCase();
+  if (m === "GET" || m === "HEAD" || m === "OPTIONS") return true;
+  return m === "POST" && LESENDE_POSTS.indexOf(String(path || "")) !== -1;
+}
+
 module.exports = {
   TTL_MINUTES: TTL_MINUTES,
+  istLesend: istLesend,
   buildShadowUser: buildShadowUser,
   isExpired: isExpired,
 };

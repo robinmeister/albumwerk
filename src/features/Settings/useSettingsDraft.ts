@@ -46,6 +46,7 @@ export function useSettingsDraft() {
       const fd = new FormData();
       TEXT_FIELDS.forEach((k) => fd.append(k, String(draft[k] ?? "")));
       fd.append("borderRadius", String(draft.borderRadius ?? 0));
+      fd.append("logoScales", JSON.stringify(draft.logoScales ?? {}));
       fd.append("themeOverrides", JSON.stringify(draft.themeOverrides ?? []));
       fd.append("watermarkOpacity", String(draft.watermarkOpacity ?? 40));
       fd.append("previewMaxSize", String(draft.previewMaxSize ?? 1200));

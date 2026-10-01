@@ -96,7 +96,7 @@ export default function AuthHero({ children, maxWidth = 420 }: Props): ReactElem
 
       <div {...stylex.props(s.card)} style={{ maxWidth }}>
         <div {...stylex.props(s.head)}>
-          <BrandLogo size={56} />
+          <BrandLogo platz="seitenkopf" />
           <Heading level={4} accessibilityLevel={1}>
             {settings.businessName}
           </Heading>

@@ -21,6 +21,17 @@ export type OverridableField =
 
 export type ThemeMode = "light" | "dark" | "auto";
 
+// Wo das Logo erscheint, mit der Grundhöhe in px bei 100 %. Die Seitenleiste
+// ist eng und bekommt deshalb eine eigene Größe; alle Seitenköpfe (Galerie,
+// Anmeldung, Terminbuchung samt -verwaltung, Hilfe) teilen sich eine.
+export const LOGO_PLAETZE = {
+  navigation: { label: "Navigation", size: 32 },
+  seitenkopf: { label: "Galerie, Anmeldung, Terminbuchung & Hilfe", size: 80 },
+} as const;
+
+export type LogoPlatz = keyof typeof LOGO_PLAETZE;
+export type LogoScales = Partial<Record<LogoPlatz, number>>;
+
 export interface AppSettings {
   id: string;
   businessName: string;
@@ -33,6 +44,8 @@ export interface AppSettings {
   fontFamily: FontKey;
   themeMode: ThemeMode;
   borderRadius: number;
+  // Logogröße je Einsatzort in Prozent der Grundgröße (LOGO_PLAETZE).
+  logoScales: LogoScales;
   // Gewähltes Design-Register (docs/design-presets.md).
   designPreset: DesignPresetKey;
   // Welche der vier Branding-Werte der Admin bewusst gesetzt hat. Alles, was
@@ -85,6 +98,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   fontFamily: "public-sans",
   themeMode: "light",
   borderRadius: 0,
+  logoScales: {},
   designPreset: "kontaktbogen",
   themeOverrides: [],
   contactEmail: "",
@@ -140,6 +154,10 @@ function normalizeThemeFields(settings: AppSettings): AppSettings {
     designPreset: DESIGN_PRESET_KEYS.includes(settings.designPreset)
       ? settings.designPreset
       : DEFAULT_SETTINGS.designPreset,
+    logoScales:
+      settings.logoScales && typeof settings.logoScales === "object" && !Array.isArray(settings.logoScales)
+        ? settings.logoScales
+        : {},
     themeOverrides: Array.isArray(settings.themeOverrides)
       ? settings.themeOverrides.filter((f): f is OverridableField =>
           OVERRIDABLE_FIELDS.includes(f as OverridableField))
@@ -173,6 +191,18 @@ export async function fetchSettings(): Promise<AppSettings> {
     ...DEFAULT_SETTINGS,
     ...(record as unknown as Partial<AppSettings>),
   });
+}
+
+export const LOGO_SCALE_MIN = 50;
+export const LOGO_SCALE_MAX = 300;
+
+// Nie gespeichert heißt 100 %; alles andere wird auf den erlaubten Bereich
+// begrenzt, damit ein Ausreißer keine Navigation sprengt. logoScales ist
+// client-schreibbar und kommt als rohes JSON — also nichts voraussetzen.
+export function logoScale(scales: LogoScales | null | undefined, platz: LogoPlatz): number {
+  const wert = scales?.[platz];
+  if (typeof wert !== "number" || !Number.isFinite(wert) || wert <= 0) return 100;
+  return Math.min(Math.max(wert, LOGO_SCALE_MIN), LOGO_SCALE_MAX);
 }
 
 // URL for a settings file field (logo, favicon, watermarkLogo); "" when unset.

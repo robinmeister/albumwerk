@@ -1,4 +1,4 @@
-import PocketBase, { BaseAuthStore } from 'pocketbase';
+import PocketBase, { BaseAuthStore, ClientResponseError } from 'pocketbase';
 
 // In production PocketBase serves the built SPA itself (pb_public), so the API
 // lives on the same origin. For local dev point VITE_PB_URL at your instance.
@@ -32,6 +32,33 @@ export const IST_VORSCHAU: boolean =
 export const pb = IST_VORSCHAU
   ? new PocketBase(baseUrl, new MemoryAuthStore())
   : new PocketBase(baseUrl);
+
+/*
+  Die Vorschau ist nur zum Ansehen da. Spiegelt istLesend() aus
+  pb_hooks/lib/previewsessionlib.js — der Server sperrt fuer Schattenkonten
+  ohnehin, das hier deckt zusaetzlich die anonyme Link-Ansicht ab, die er
+  nicht von echter Kundschaft unterscheiden kann.
+*/
+const LESENDE_POSTS = ['/api/collections/users/auth-refresh', '/api/realtime'];
+
+export function istLesend(method: string | undefined, path: string): boolean {
+  const m = (method || 'GET').toUpperCase();
+  if (m === 'GET' || m === 'HEAD' || m === 'OPTIONS') return true;
+  return m === 'POST' && LESENDE_POSTS.includes(path);
+}
+
+if (IST_VORSCHAU) {
+  pb.beforeSend = (url, options) => {
+    if (!istLesend(options.method, new URL(url, baseUrl).pathname)) {
+      throw new ClientResponseError({
+        url,
+        status: 403,
+        response: { code: 'preview-readonly', message: 'In der Kundenansicht kann nichts geändert werden.' },
+      });
+    }
+    return { url, options };
+  };
+}
 
 // `getOne` that yields null instead of throwing when the record is not there.
 // A missing record is an ordinary outcome for most reads here (a customer

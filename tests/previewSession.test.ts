@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createRequire } from "node:module";
-import { istVorschauUrl } from "../src/config/pocketbase";
+import { istLesend, istVorschauUrl } from "../src/config/pocketbase";
 
 // Wie tests/time.test.ts: der Hook-Helfer ist CommonJS und wird direkt
 // eingebunden, damit Test und Server denselben Code benutzen.
@@ -119,5 +119,25 @@ describe("Erkennung des Vorschaumodus", () => {
     expect(istVorschauUrl("")).toBe(false);
     expect(istVorschauUrl("?a=b")).toBe(false);
     expect(istVorschauUrl("?vorschauen=1")).toBe(false);
+  });
+});
+
+describe("Vorschau ist schreibgeschützt", () => {
+  const faelle: [string, string, boolean][] = [
+    ["GET", "/api/collections/images/records", true],
+    ["POST", "/api/collections/users/auth-refresh", true],
+    ["POST", "/api/realtime", true],
+    ["POST", "/api/collections/userSelection/records", false],
+    ["PATCH", "/api/collections/users/records/abc", false],
+    ["DELETE", "/api/collections/users/records/abc", false],
+    ["POST", "/api/custom/stripe/create-checkout-session", false],
+    ["POST", "/api/batch", false],
+  ];
+
+  it("Server und Browser wenden dieselbe Regel an", () => {
+    for (const [method, path, lesend] of faelle) {
+      expect(preview.istLesend(method, path), `${method} ${path}`).toBe(lesend);
+      expect(istLesend(method, path), `${method} ${path}`).toBe(lesend);
+    }
   });
 });

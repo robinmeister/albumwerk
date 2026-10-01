@@ -9,14 +9,21 @@ import * as stylex from "@stylexjs/stylex";
 import { ReactElement, useEffect, useMemo, useState } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 
+import { SIDEBAR_WIDTH } from "../../components/layout/AppShell";
 import Page from "../../components/layout/Page";
+import BrandLogo from "../../components/widgets/BrandLogo";
 import { pb } from "../../config/pocketbase";
 import {
   AppSettings,
   DesignPresetKey,
   FontKey,
+  LOGO_SCALE_MAX,
+  LOGO_SCALE_MIN,
+  LOGO_PLAETZE,
+  LogoPlatz,
   OverridableField,
   ThemeMode,
+  logoScale,
   settingsFileUrl,
 } from "../../config/settings";
 import { buildAstryxTheme, themeModeProp } from "../../utils/theme";
@@ -73,7 +80,56 @@ const preview = stylex.create({
     backgroundColor: "var(--color-accent)",
     borderRadius: "var(--radius-element)",
   },
+  // So breit wie die echte Seitenleiste, damit ein zu großes Logo hier
+  // genauso umbricht wie dort.
+  navigation: {
+    maxWidth: "100%", boxSizing: "border-box",
+    display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12, padding: 20,
+    backgroundColor: "var(--color-background-surface)",
+  },
+  kopf: {
+    display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+    padding: 20, textAlign: "center",
+  },
 });
+
+const logoZeile = stylex.create({
+  liste: { display: "flex", flexDirection: "column", gap: 24 },
+  zeile: {
+    display: "grid", gap: 16, alignItems: "center",
+    gridTemplateColumns: { default: "1fr", "@media (min-width: 700px)": "minmax(180px, 1fr) 2fr" },
+  },
+});
+
+// Das Logo an einem Ort, so wie es dort erscheint: die Navigation mit Name
+// daneben in Seitenleistenbreite, alle anderen als zentrierter Seitenkopf.
+function LogoOrtVorschau({ draft, logoUrl, platz }: {
+  draft: AppSettings; logoUrl: string; platz: LogoPlatz;
+}): ReactElement {
+  const previewTheme = useMemo(() => buildAstryxTheme(draft), [draft]);
+  const name = draft.businessName || "Fotogalerie";
+  const logo = (
+    <BrandLogo platz={platz} scale={logoScale(draft.logoScales, platz)} src={logoUrl}
+      fallback={platz !== "navigation"} />
+  );
+  return (
+    <Theme theme={previewTheme} mode={themeModeProp(draft)}>
+      <div {...stylex.props(preview.card)} data-testid={`logo-vorschau:${platz}`}>
+        {platz === "navigation" ? (
+          <div {...stylex.props(preview.navigation)} style={{ width: SIDEBAR_WIDTH }}>
+            {logo}
+            <Text type="label" weight="semibold">{name}</Text>
+          </div>
+        ) : (
+          <div {...stylex.props(preview.kopf)}>
+            {logo}
+            <Heading level={4}>{name}</Heading>
+          </div>
+        )}
+      </div>
+    </Theme>
+  );
+}
 
 function ThemePreview({ draft }: { draft: AppSettings }): ReactElement {
   const previewTheme = useMemo(() => buildAstryxTheme(draft), [draft]);
@@ -131,6 +187,12 @@ export default function BrandingPage(): ReactElement {
       .then((res) => setBeispielGalerie(res.items[0]?.id ?? ""))
       .catch(() => setBeispielGalerie(""));
   }, []);
+
+  // Ein frisch gewähltes, noch nicht gespeichertes Logo soll die Vorschau
+  // schon zeigen. Die Objekt-URL wird beim Wechsel wieder freigegeben.
+  const neuesLogo = useMemo(() => (files.logo ? URL.createObjectURL(files.logo) : ""), [files.logo]);
+  useEffect(() => () => { if (neuesLogo) URL.revokeObjectURL(neuesLogo); }, [neuesLogo]);
+  const vorschauLogo = neuesLogo || settingsFileUrl(settings, "logo");
 
   const resetToPreset = (feld: OverridableField) => setDraft((d) => clearOverride(d, feld));
 
@@ -200,11 +262,34 @@ export default function BrandingPage(): ReactElement {
     </SectionCard>
   );
 
+  const logoSection = (
+    <SectionCard title="Logogröße" subtitle="Navigation und Seitenköpfe getrennt — die Vorschau zeigt das Logo so, wie es dort erscheint">
+      <div {...stylex.props(logoZeile.liste)}>
+        {(Object.keys(LOGO_PLAETZE) as LogoPlatz[]).map((platz) => {
+          const wert = logoScale(draft.logoScales, platz);
+          return (
+            <div key={platz} {...stylex.props(logoZeile.zeile)}>
+              <div {...stylex.props(sf.sliderWrap)}>
+                <Text type="label" weight="semibold">{LOGO_PLAETZE[platz].label}</Text>
+                <Text type="supporting" color="secondary">{wert} %</Text>
+                <Slider label={`Logogröße ${LOGO_PLAETZE[platz].label}`} isLabelHidden
+                  min={LOGO_SCALE_MIN} max={LOGO_SCALE_MAX} step={10} value={wert}
+                  onChange={(v) => setDraft((d) => ({ ...d, logoScales: { ...d.logoScales, [platz]: v } }))} />
+              </div>
+              <LogoOrtVorschau draft={draft} logoUrl={vorschauLogo} platz={platz} />
+            </div>
+          );
+        })}
+      </div>
+    </SectionCard>
+  );
+
   return (
     <Page title="Branding">
       <div {...stylex.props(f.layout)}>
         <div {...stylex.props(sf.sections)}>
           {brandingSection}
+          {logoSection}
           <div {...stylex.props(sf.saveRow)}>
             <Button variant="primary" size="lg" label="Speichern" isDisabled={saving} isLoading={saving}
               onClick={() => void save()} />

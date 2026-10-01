@@ -5,12 +5,12 @@ import { LogOut as Logout, Menu as MenuIcon } from "lucide-react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { pb } from "../../config/pocketbase";
-import { settingsFileUrl } from "../../config/settings";
 import { APP_VERSION } from "../../utils/errorReport";
 import { useSettings } from "../../context/SettingsContext";
 import useSupportUnread from "../../hooks/useSupportUnread";
 import { NavGroup, NavItem } from "../../utils/routes";
 import StorageMeter from "./StorageMeter";
+import BrandLogo from "../widgets/BrandLogo";
 
 export const SIDEBAR_WIDTH = 240;
 
@@ -71,6 +71,9 @@ const s = stylex.create({
   brand: {
     display: "flex",
     alignItems: "center",
+    // Ein groß eingestelltes Logo (Branding → Logogröße) füllt die Leiste;
+    // der Name rutscht dann darunter, statt über den Rand zu ragen.
+    flexWrap: "wrap",
     gap: 12,
     cursor: "pointer",
     padding: "20px",
@@ -80,7 +83,6 @@ const s = stylex.create({
     width: "100%",
     color: "inherit",
   },
-  logo: { height: 32, width: 32, objectFit: "contain" },
   navList: { display: "flex", flexDirection: "column", gap: 4, padding: "0 12px" },
   gruppe: { display: "flex", flexDirection: "column" },
   gruppeKopf: {
@@ -213,7 +215,6 @@ export default function AppShell(props: Props): ReactElement {
   const { settings, verkauf } = useSettings();
   const ungelesen = useSupportUnread(isAdmin);
 
-  const logoUrl = settingsFileUrl(settings, "logo");
   const groupedItems = navGroups?.flatMap((gruppe) => gruppe.items) ?? [];
   const allItems = [...navItems, ...groupedItems, ...menuItems];
   const sectionLabel =
@@ -299,9 +300,7 @@ export default function AppShell(props: Props): ReactElement {
   const sidebarContent = (
     <>
       <button onClick={() => go("/album")} {...stylex.props(s.brand)}>
-        {logoUrl && (
-          <img src={logoUrl} alt={settings.businessName} {...stylex.props(s.logo)} />
-        )}
+        <BrandLogo platz="navigation" fallback={false} />
         <Text type="label" weight="semibold">
           {settings.businessName}
         </Text>

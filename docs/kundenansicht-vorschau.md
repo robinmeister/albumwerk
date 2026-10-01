@@ -253,3 +253,18 @@ Ausstellung mitprüft; der Sweep ist die zweite Linie, nicht die erste.
 **Die Erkennung des Vorschaumodus.** Sie entscheidet nur über den Auth-Store,
 nicht über Rechte. Falls später etwas anderes an diesem Parameter hängt, ist
 das hier nachzutragen — dann wäre er nicht mehr bloß privilegienmindernd.
+
+## Nachtrag 2026-09-30: Die Vorschau ist schreibgeschützt
+
+Die Kundenansicht dient nur dem Ansehen. Erlaubt sind GET/HEAD sowie die zwei
+nicht verändernden POSTs `auth-refresh` und `/api/realtime`
+(`istLesend()` in `pb_hooks/lib/previewsessionlib.js`).
+
+- **Server:** eine `routerUse`-Middleware in `previewsession.pb.js` weist
+  jede andere Anfrage eines Schattenkontos mit 403 `preview-readonly` ab.
+- **Browser:** im Vorschaumodus blockt `pb.beforeSend` dieselben Anfragen
+  (`src/config/pocketbase.ts`). Das deckt auch die anonyme Link-Ansicht ab,
+  die der Server nicht von echter Kundschaft unterscheiden kann.
+
+Der `vorschau`-Parameter hängt damit an einer zweiten Stelle — bleibt aber
+privilegienmindernd: wer ihn fälscht, kann weniger, nicht mehr.
