@@ -14,6 +14,7 @@
 // weder Zeit noch Status und ist ein reines Schreiben eines Feldes.
 
 import { pb } from "../../config/pocketbase";
+import type { Plan } from "./interview";
 
 export type AppointmentStatus =
   | "pending"
@@ -399,4 +400,15 @@ export async function findAccountByEmail(
 
 export async function linkAccount(appointmentId: string, userId: string): Promise<void> {
   await pb.collection("appointments").update(appointmentId, { user: userId });
+}
+
+// --- Termin-Interview ------------------------------------------------------
+
+/** Ersetzt Arten, aktive Fenster und Grenzen in einer Transaktion. */
+export async function applyPlan(plan: Plan): Promise<void> {
+  try {
+    await pb.send("/api/custom/booking/apply-plan", { method: "POST", body: plan });
+  } catch (error) {
+    throw apiError(error);
+  }
 }

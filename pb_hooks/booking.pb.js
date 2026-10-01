@@ -620,3 +620,97 @@ routerAdd("POST", "/api/custom/booking/owner-cancel", (e) => {
     return e.json(200, { status: "ok" });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Admin: Plan aus dem Termin-Interview übernehmen
+// ---------------------------------------------------------------------------
+//
+// Alles oder nichts: Arten, Fenster und Grenzen in EINER Transaktion. Bricht
+// das nach dem Löschen der alten Fenster ab, wäre plötzlich nichts mehr
+// buchbar — und das eingebettete Formular auf der Website der Fotograf:in
+// zeigte „keine Termine“, ohne dass es jemand merkt.
+
+routerAdd("POST", "/api/custom/booking/apply-plan", (e) => {
+  const booking = require(__hooks + "/lib/bookinglib.js");
+  const planlib = require(__hooks + "/lib/planlib.js");
+  return booking.guard(e, "Plan übernehmen", () => {
+
+    if (!e.hasSuperuserAuth() && !(e.auth && e.auth.getBool("isAdmin"))) {
+      return e.json(403, { status: "error", message: "Nur für Administrator:innen." });
+    }
+
+    const body = e.requestInfo().body || {};
+    const problem = planlib.validatePlan(body);
+    if (problem) {
+      return e.json(400, { status: "error", message: problem });
+    }
+
+    try {
+      e.app.runInTransaction((txApp) => {
+        const typeCol = txApp.findCollectionByNameOrId("appointmentTypes");
+        const bySlug = {};
+        txApp.findAllRecords("appointmentTypes").forEach((record) => {
+          bySlug[record.getString("slug")] = record;
+        });
+
+        const idBySlug = {};
+        body.types.forEach((type) => {
+          let record = bySlug[type.slug];
+          if (!record) {
+            record = new Record(typeCol);
+            record.set("slug", type.slug);
+            record.set("phoneMode", "optional");
+          }
+          delete bySlug[type.slug];
+          record.set("name", booking.cleanText(type.name, 80));
+          record.set("location", booking.cleanText(type.location, 200));
+          record.set("durationMin", Math.round(Number(type.durationMin)));
+          record.set("bufferMin", Math.max(0, Math.round(Number(type.bufferMin) || 0)));
+          record.set("leadTimeMin", Math.max(0, Math.round(Number(type.leadTimeMin) || 0)));
+          record.set("price", Math.max(0, Number(type.price) || 0));
+          record.set("sort", Math.round(Number(type.sort) || 0));
+          record.set("requiresApproval", !!type.requiresApproval);
+          record.set("active", !!type.active);
+          txApp.save(record);
+          idBySlug[type.slug] = record.id;
+        });
+
+        // Was der Client nicht mitgeschickt hat, wird nicht mehr angeboten —
+        // gelöscht wird nie: bestehende Termine verweisen darauf.
+        Object.keys(bySlug).forEach((slug) => {
+          bySlug[slug].set("active", false);
+          txApp.save(bySlug[slug]);
+        });
+
+        // Inaktive Fenster sind geparkte Handarbeit aus dem Formular und
+        // bleiben stehen. Ersetzt werden nur die aktiven.
+        txApp.findRecordsByFilter("availabilityRules", "active = true", "", 0, 0)
+          .forEach((record) => txApp.delete(record));
+        const ruleCol = txApp.findCollectionByNameOrId("availabilityRules");
+        body.rules.forEach((rule) => {
+          const record = new Record(ruleCol);
+          record.set("weekday", Number(rule.weekday));
+          record.set("startMinute", Number(rule.startMinute));
+          record.set("endMinute", Number(rule.endMinute));
+          record.set("allowedTypes", (rule.allowedSlugs || []).map((slug) => idBySlug[slug]));
+          record.set("active", true);
+          txApp.save(record);
+        });
+
+        const settings = txApp.findRecordById("settings", "appsettings0001");
+        settings.set("bookingMaxPerDay", Math.max(0, Math.round(Number(body.maxPerDay) || 0)));
+        settings.set("bookingHorizonDays", Math.max(1, Math.round(Number(body.horizonDays) || 90)));
+        settings.set("bookingEnabled", true);
+        txApp.save(settings);
+      });
+    } catch (err) {
+      e.app.logger().warn("[booking] Plan abgelehnt", "error", String(err));
+      return e.json(400, {
+        status: "error",
+        message: "Der Plan konnte nicht gespeichert werden. Es wurde nichts verändert.",
+      });
+    }
+
+    return e.json(200, { status: "ok" });
+  });
+});
