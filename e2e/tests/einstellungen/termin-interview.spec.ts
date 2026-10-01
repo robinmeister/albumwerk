@@ -10,8 +10,8 @@ import { PbAdmin, PbRecord } from "../../support/pb";
 
 test.describe.configure({ mode: "serial" });
 
-let typesBefore: PbRecord[] = [];
-let rulesBefore: PbRecord[] = [];
+let typesBefore: PbRecord[] | null = null;
+let rulesBefore: PbRecord[] | null = null;
 
 test.beforeAll(async () => {
   const pb = new PbAdmin();
@@ -28,6 +28,8 @@ test.afterAll(async () => {
   const pb = new PbAdmin();
   await pb.login();
   await einstellungenWiederherstellen(pb);
+  // Ohne Sicherung nichts anfassen — sonst löschte der Abgleich alle Live-Daten
+  if (!typesBefore || !rulesBefore) return;
   for (const rule of await pb.list("availabilityRules")) await pb.delete("availabilityRules", rule.id);
   for (const rule of rulesBefore) {
     const { id: _id, collectionId: _c, collectionName: _n, created: _cr, updated: _u, ...data } = rule;
