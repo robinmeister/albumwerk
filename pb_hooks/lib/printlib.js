@@ -287,6 +287,10 @@ function fileAccessOk(token, expected, expiresMs, nowMs, equal) {
 // --- Prodigi-Aufrufe ---------------------------------------------------------
 // Ab hier $http / $security / Mails: nur in der JSVM, nicht im Unit-Test.
 
+function tokenToReuse(token, expiresMs, nowMs) {
+  return token && expiresMs - nowMs > 86400000 ? String(token) : "";
+}
+
 function isAdmin(e) {
   return e.hasSuperuserAuth() || !!(e.auth && e.auth.getBool("isAdmin"));
 }
@@ -317,6 +321,12 @@ function submitJob(app, job) {
   if (st !== "awaiting_approval" && st !== "failed") {
     return { ok: false, message: "Der Auftrag ist schon beim Labor." };
   }
+  // Prodigi kennt den Auftrag schon: nicht noch einmal anlegen, nur abgleichen.
+  if (job.getString("labOrderId")) {
+    syncJob(app, job);
+    var failed = job.getString("status") === "failed";
+    return { ok: !failed, message: failed ? job.getString("error") : "" };
+  }
   var s = readSettings(app);
   var key = prodigiKey(s);
   if (!key) return { ok: false, message: "Prodigi-Schlüssel fehlt. Verbinde Prodigi oben auf dieser Seite." };
@@ -339,9 +349,18 @@ function submitJob(app, job) {
     return { ok: false, message: "Die App-URL fehlt in den Server-Einstellungen — ohne sie findet Prodigi die Bilder nicht." };
   }
 
-  var token = $security.randomString(40);
-  job.set("fileToken", token);
-  job.set("fileTokenExpires", Date.now() + FILE_TOKEN_DAYS * 86400000);
+  // Token wiederverwenden, damit die Bild-URLs eines schon bei Prodigi
+  // liegenden Auftrags gültig bleiben.
+  var token = tokenToReuse(job.getString("fileToken"), job.getFloat("fileTokenExpires"), Date.now());
+  if (!token) {
+    token = $security.randomString(40);
+    job.set("fileToken", token);
+    job.set("fileTokenExpires", Date.now() + FILE_TOKEN_DAYS * 86400000);
+  }
+  // Vor dem Aufruf sichern: ein zweiter Klick läuft dann in die Statusprüfung.
+  job.set("status", "submitted");
+  job.set("error", "");
+  app.save(job);
 
   var res;
   try {
@@ -444,6 +463,7 @@ function markDelivered(app, job, trackingNumber, trackingUrl) {
 }
 
 module.exports = {
+  tokenToReuse: tokenToReuse,
   isAdmin: isAdmin,
   submitJob: submitJob,
   syncJob: syncJob,

@@ -81,6 +81,13 @@ const bild = (id: string) => `https://galerie.example/api/files/images/${id}/a_t
 const liste = (eintraege: Array<[string, string, number]>) =>
   eintraege.map(([image, preisId, quantity]) => ({ image: bild(image), price: [{ id: preisId, quantity }] }));
 
+describe("tokenToReuse", () => {
+  const day = 86400000;
+  it("reuses a valid token", () => expect(pl.tokenToReuse("abc", 5 * day, 0)).toBe("abc"));
+  it("replaces a missing token", () => expect(pl.tokenToReuse("", 5 * day, 0)).toBe(""));
+  it("replaces one expiring within a day", () => expect(pl.tokenToReuse("abc", day, 0)).toBe(""));
+});
+
 describe("Versand", () => {
   it("rechnet die Pauschale nur mit Laborprodukt", () => {
     expect(pl.shippingFor(10, true, 4.9, 0)).toBe(4.9);

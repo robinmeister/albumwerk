@@ -16,7 +16,7 @@ routerAdd("POST", "/api/custom/prodigi/config", (e) => {
 
   const data = e.requestInfo().body || {};
   const apiKey = String(data.apiKey || "").trim();
-  const live = !!data.live;
+  const live = data.live === true;
   const settings = e.app.findRecordById("settings", "appsettings0001");
 
   if (apiKey === "") {
@@ -127,7 +127,7 @@ routerAdd("GET", "/api/custom/printfile/{id}/{index}", (e) => {
   );
   if (!ok) return notFound();
 
-  const items = JSON.parse(job.getString("items") || "[]");
+  const items = pl.parseJson(job.getString("items"), []);
   const item = items[parseInt(e.request.pathValue("index"), 10)];
   if (!item || !item.originalId) return notFound();
 
