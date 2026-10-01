@@ -5,7 +5,7 @@
 // steht sofort unter der Frage. Gespeichert wird erst im letzten Schritt —
 // Abbrechen lässt alles, wie es war.
 
-import { ReactElement, ReactNode, useEffect, useMemo, useState } from "react";
+import { ComponentProps, ReactElement, ReactNode, useEffect, useMemo, useState } from "react";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { Heading } from "@astryxdesign/core/Heading";
@@ -130,6 +130,15 @@ const s = stylex.create({
  * kommt eine zusätzliche, gewählte Kachel „Eigene Einstellung“ dazu — so
  * überschreibt das Interview nichts, was im Formular feiner eingestellt war.
  */
+// SelectableCard nutzt `label` nur als aria-label — sichtbar wird erst das Kind
+function Tile(props: ComponentProps<typeof SelectableCard>): ReactElement {
+  return (
+    <SelectableCard {...props}>
+      <Text type="body">{props.label}</Text>
+    </SelectableCard>
+  );
+}
+
 function Tiles<T>({
   options,
   value,
@@ -145,7 +154,7 @@ function Tiles<T>({
   return (
     <div {...stylex.props(s.tiles)}>
       {options.map((option) => (
-        <SelectableCard
+        <Tile
           key={option.label}
           label={option.label}
           isSelected={same(option.value, value)}
@@ -154,7 +163,7 @@ function Tiles<T>({
         />
       ))}
       {!known && custom && (
-        <SelectableCard label={`Eigene Einstellung: ${custom(value)}`} isSelected onChange={() => undefined} />
+        <Tile label={`Eigene Einstellung: ${custom(value)}`} isSelected onChange={() => undefined} />
       )}
     </div>
   );
@@ -319,7 +328,7 @@ export default function AppointmentSetupPage(): ReactElement {
     <>
       <div {...stylex.props(s.tiles)}>
         {serviceOptions.map((option) => (
-          <SelectableCard
+          <Tile
             key={option.slug}
             label={option.name}
             isSelected={answers.services.some((sv) => sv.slug === option.slug)}
@@ -400,7 +409,7 @@ export default function AppointmentSetupPage(): ReactElement {
     <>
       <div {...stylex.props(s.tiles)}>
         {WEEKDAYS.map((day) => (
-          <SelectableCard
+          <Tile
             key={day.value}
             label={day.label}
             isSelected={answers.days.includes(day.value)}
