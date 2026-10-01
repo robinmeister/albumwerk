@@ -9,6 +9,12 @@
 // collections, drives the payment with its own credentials, and — only after a
 // verified payment — writes the `orders` record and grants downloadable images.
 
+// `__hooks` gibt es nur in der PocketBase-JSVM; unter Vitest wird relativ
+// geladen (Muster availabilitylib.js).
+var pl = typeof __hooks !== "undefined"
+  ? require(__hooks + "/lib/printlib.js")
+  : require("./printlib.js");
+
 // --- base64 (JSVM has no btoa; $security only does the S256 challenge) --------
 function base64(input) {
   var chars =
@@ -143,13 +149,15 @@ function isPackageOrder(app, shootingId, list) {
 }
 
 // Authoritative total in major currency units. Per-image prices take
-// precedence; if there are none, fall back to package pricing.
+// precedence; if there are none, fall back to package pricing. Shipping is
+// added for per-image orders that contain a lab product — packages sell
+// images, not prints.
 function authoritativeTotal(app, shootingId, list) {
   var total = itemsTotal(app, list);
   if (total === 0 && shootingId) {
-    total = packageTotal(app, shootingId, list);
+    return packageTotal(app, shootingId, list);
   }
-  return total;
+  return round2(total + pl.shippingCost(app, list, total));
 }
 
 // Every image in the order, regardless of price — used for package orders.
