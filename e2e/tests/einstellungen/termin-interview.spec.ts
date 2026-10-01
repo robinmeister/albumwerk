@@ -19,6 +19,9 @@ test.beforeAll(async () => {
   await einstellungenSichern(pb);
   typesBefore = await pb.list("appointmentTypes");
   rulesBefore = await pb.list("availabilityRules");
+  // Bekannter Ausgangsplan: Sa vormittags — Frage 8 wählt bewusst etwas anderes
+  for (const rule of rulesBefore.filter((r) => r.active)) await pb.delete("availabilityRules", rule.id);
+  await pb.create("availabilityRules", { weekday: 6, startMinute: 540, endMinute: 780, active: true });
 });
 
 test.afterAll(async () => {
@@ -66,7 +69,7 @@ test("Interview legt Leistung und Arbeitszeit an und zeigt Änderungen vorher an
   if (!(await samstag.isChecked())) await samstag.click({ force: true });
   await weiter.click();
 
-  // Frage 8: nachmittags (weicht von den Seed-Zeiten ab, damit ein Hinweis erscheint)
+  // Frage 8: nachmittags (weicht vom Ausgangsplan ab, damit ein Hinweis erscheint)
   await page.getByRole("checkbox", { name: "Nachmittags 13–18" }).click({ force: true });
   await expect(page.getByTestId("interview-aenderungen")).toContainText("Sa 13:00 – 18:00");
 
