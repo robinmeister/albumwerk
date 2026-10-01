@@ -132,7 +132,170 @@ function createPrintJob(app, order, list) {
   return job;
 }
 
+var FILE_TOKEN_DAYS = 14;
+
+function prodigiBase(live) {
+  return live ? "https://api.prodigi.com/v4.0" : "https://api.sandbox.prodigi.com/v4.0";
+}
+
+function parseJson(text, fallback) {
+  try {
+    return JSON.parse(text || "");
+  } catch (_) {
+    return fallback;
+  }
+}
+
+function jobView(rec) {
+  return {
+    id: rec.id,
+    orderId: rec.getString("orderId"),
+    route: rec.getString("route"),
+    status: rec.getString("status"),
+    recipient: parseJson(rec.getString("recipient"), {}),
+    items: parseJson(rec.getString("items"), []),
+  };
+}
+
+function studioRecipient(a) {
+  var s = a || {};
+  return {
+    name: String(s.name || ""),
+    email: "",
+    phone: "",
+    line1: String(s.line1 || ""),
+    postalCode: String(s.zip || ""),
+    city: String(s.city || ""),
+    state: "",
+    countryCode: String(s.country || "DE").toUpperCase(),
+  };
+}
+
+function recipientFor(view, studioAddress) {
+  return view.route === "studio" ? studioRecipient(studioAddress) : view.recipient;
+}
+
+function addressComplete(r) {
+  return Boolean(r && r.name && r.line1 && r.postalCode && r.city && r.countryCode);
+}
+
+function prodigiOrderBody(view, recipient, baseUrl, token) {
+  var address = {
+    line1: recipient.line1,
+    postalOrZipCode: recipient.postalCode,
+    townOrCity: recipient.city,
+    countryCode: recipient.countryCode,
+  };
+  if (recipient.state) address.stateOrCounty = recipient.state;
+  var to = { name: recipient.name };
+  if (recipient.email) to.email = recipient.email;
+  if (recipient.phone) to.phoneNumber = recipient.phone;
+  to.address = address;
+
+  return {
+    merchantReference: view.orderId,
+    // Doppelklick oder "Erneut senden" erzeugt bei Prodigi keinen zweiten Auftrag
+    idempotencyKey: view.id,
+    callbackUrl: baseUrl + "/api/custom/prodigi/callback",
+    shippingMethod: "Standard",
+    recipient: to,
+    items: view.items.map(function (it, i) {
+      return {
+        merchantReference: it.originalId,
+        sku: it.sku,
+        copies: it.copies,
+        sizing: "fillPrintArea",
+        assets: [{
+          printArea: "default",
+          url: baseUrl + "/api/custom/printfile/" + view.id + "/" + i + "?t=" + encodeURIComponent(token),
+        }],
+      };
+    }),
+  };
+}
+
+function labCostOf(charges) {
+  var sum = 0;
+  var currency = "";
+  (charges || []).forEach(function (c) {
+    if (!c || !c.totalCost) return;
+    sum += parseFloat(c.totalCost.amount) || 0;
+    currency = c.totalCost.currency || currency;
+  });
+  return currency ? sum.toFixed(2) + " " + currency : "";
+}
+
+function issueText(issue) {
+  var text = issue.description || issue.errorCode || "Unbekanntes Problem";
+  var auth = issue.authorisationDetails && issue.authorisationDetails.authorisationUrl;
+  return auth ? text + " — freigeben unter " + auth : text;
+}
+
+// Übersetzt einen Prodigi-Auftrag in die Felder des Druckauftrags. Was das
+// Studio schon selbst weiterversandt hat, setzt eine späte Meldung nicht zurück.
+function applyLabOrder(currentStatus, o) {
+  var status = (o && o.status) || {};
+  var details = status.details || {};
+  var issues = status.issues || [];
+  var shipped = ((o && o.shipments) || []).filter(function (s) {
+    return String(s.status || "").toLowerCase() === "shipped";
+  });
+  var tracking = (shipped[0] && shipped[0].tracking) || {};
+
+  var out = {
+    labOrderId: String((o && o.id) || ""),
+    status: "submitted",
+    trackingUrl: String(tracking.url || ""),
+    trackingNumber: String(tracking.number || ""),
+    labCost: labCostOf(o && o.charges),
+    error: "",
+  };
+
+  if (status.stage === "Cancelled") {
+    out.status = "cancelled";
+  } else if (issues.length) {
+    out.status = "failed";
+    out.error = issues.map(issueText).join(" · ");
+  } else if (shipped.length || status.stage === "Complete") {
+    out.status = "shipped";
+  } else if (details.inProduction === "InProgress" || details.inProduction === "Complete") {
+    out.status = "in_production";
+  }
+
+  if (currentStatus === "delivered_to_customer") out.status = currentStatus;
+  return out;
+}
+
+// Ohne eigene Sendungsnummer bleibt das Feld leer — sonst bekäme die Kund:in
+// die Sendung Labor → Studio als ihre eigene.
+function deliveredFields(trackingNumber, trackingUrl) {
+  var url = String(trackingUrl || "").trim();
+  return {
+    status: "delivered_to_customer",
+    trackingNumber: String(trackingNumber || "").trim(),
+    trackingUrl: /^https?:\/\//i.test(url) ? url : "",
+  };
+}
+
+// `equal` ist in der JSVM $security.equal (zeitkonstant), im Test ein ===.
+function fileAccessOk(token, expected, expiresMs, nowMs, equal) {
+  if (!expected || !token) return false;
+  if (!(nowMs < expiresMs)) return false;
+  return Boolean(equal(String(token), String(expected)));
+}
+
 module.exports = {
+  FILE_TOKEN_DAYS: FILE_TOKEN_DAYS,
+  prodigiBase: prodigiBase,
+  parseJson: parseJson,
+  jobView: jobView,
+  studioRecipient: studioRecipient,
+  recipientFor: recipientFor,
+  addressComplete: addressComplete,
+  prodigiOrderBody: prodigiOrderBody,
+  applyLabOrder: applyLabOrder,
+  deliveredFields: deliveredFields,
+  fileAccessOk: fileAccessOk,
   readSettings: readSettings,
   labItems: labItems,
   shippingFor: shippingFor,

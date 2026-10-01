@@ -186,3 +186,121 @@ describe("Druckauftrag nach der Zahlung", () => {
     expect(pl.recipientFromUserData({ ...KUNDIN, country: "at" }).countryCode).toBe("AT");
   });
 });
+
+const VIEW = {
+  id: "job1", orderId: "order1", route: "customer", status: "awaiting_approval",
+  recipient: {
+    name: "Ada Muster", email: "ada@example.org", phone: "", line1: "Hauptstr. 1",
+    postalCode: "10115", city: "Berlin", state: "", countryCode: "DE",
+  },
+  items: [{ image: "x", sku: "GLOBAL-PHO-5X7", copies: 2, originalId: "original1" }],
+};
+
+describe("Prodigi-Auftrag", () => {
+  it("bildet Empfänger, Positionen und Rückruf ab", () => {
+    const body = pl.prodigiOrderBody(VIEW, VIEW.recipient, "https://galerie.example", "tok");
+    expect(body).toEqual({
+      merchantReference: "order1",
+      idempotencyKey: "job1",
+      callbackUrl: "https://galerie.example/api/custom/prodigi/callback",
+      shippingMethod: "Standard",
+      recipient: {
+        name: "Ada Muster",
+        email: "ada@example.org",
+        address: { line1: "Hauptstr. 1", postalOrZipCode: "10115", townOrCity: "Berlin", countryCode: "DE" },
+      },
+      items: [{
+        merchantReference: "original1",
+        sku: "GLOBAL-PHO-5X7",
+        copies: 2,
+        sizing: "fillPrintArea",
+        assets: [{ printArea: "default", url: "https://galerie.example/api/custom/printfile/job1/0?t=tok" }],
+      }],
+    });
+  });
+
+  it("schickt beim Weg 'an mich' an die Studioadresse", () => {
+    const studio = { name: "Studio Licht", line1: "Atelierweg 2", zip: "20095", city: "Hamburg", country: "de" };
+    const r = pl.recipientFor({ ...VIEW, route: "studio" }, studio);
+    expect(r).toEqual({
+      name: "Studio Licht", email: "", phone: "", line1: "Atelierweg 2",
+      postalCode: "20095", city: "Hamburg", state: "", countryCode: "DE",
+    });
+  });
+
+  it("erkennt eine unvollständige Adresse", () => {
+    expect(pl.addressComplete(VIEW.recipient)).toBe(true);
+    expect(pl.addressComplete({ ...VIEW.recipient, city: "" })).toBe(false);
+  });
+});
+
+describe("Status von Prodigi", () => {
+  const auftrag = (o: Felder) => ({ id: "ord_1", status: { stage: "InProgress", issues: [], details: {} }, charges: [], shipments: [], ...o });
+
+  it("bleibt 'beim Labor', solange nichts produziert wird", () => {
+    expect(pl.applyLabOrder("awaiting_approval", auftrag({})).status).toBe("submitted");
+  });
+
+  it("meldet die Produktion", () => {
+    const o = auftrag({ status: { stage: "InProgress", issues: [], details: { inProduction: "InProgress" } } });
+    expect(pl.applyLabOrder("submitted", o).status).toBe("in_production");
+  });
+
+  it("übernimmt Sendung und Kosten", () => {
+    const o = auftrag({
+      shipments: [{ status: "Shipped", tracking: { url: "https://track.example/1", number: "TR1" } }],
+      charges: [
+        { totalCost: { amount: "3.10", currency: "EUR" } },
+        { totalCost: { amount: "4.20", currency: "EUR" } },
+      ],
+    });
+    expect(pl.applyLabOrder("in_production", o)).toEqual({
+      labOrderId: "ord_1", status: "shipped", trackingUrl: "https://track.example/1",
+      trackingNumber: "TR1", labCost: "7.30 EUR", error: "",
+    });
+  });
+
+  it("meldet eine Stornierung", () => {
+    const o = auftrag({ status: { stage: "Cancelled", issues: [], details: {} } });
+    expect(pl.applyLabOrder("submitted", o).status).toBe("cancelled");
+  });
+
+  it("macht aus issues mit authorisationUrl einen Fehler mit Link", () => {
+    const o = auftrag({ status: { stage: "InProgress", details: {}, issues: [{
+      errorCode: "order.ChargesNotAuthorized", description: "Zahlung nicht freigegeben",
+      authorisationDetails: { authorisationUrl: "https://dashboard.prodigi.com/pay/1" },
+    }] } });
+    const f = pl.applyLabOrder("submitted", o);
+    expect(f.status).toBe("failed");
+    expect(f.error).toContain("Zahlung nicht freigegeben");
+    expect(f.error).toContain("https://dashboard.prodigi.com/pay/1");
+  });
+
+  it("setzt einen weiterversandten Auftrag nicht zurück", () => {
+    const o = auftrag({ shipments: [{ status: "Shipped", tracking: { url: "u", number: "n" } }] });
+    expect(pl.applyLabOrder("delivered_to_customer", o).status).toBe("delivered_to_customer");
+  });
+});
+
+describe("Weiterversand durch das Studio", () => {
+  it("leert die Laborsendung, wenn keine eigene angegeben ist", () => {
+    expect(pl.deliveredFields("", "")).toEqual({ status: "delivered_to_customer", trackingNumber: "", trackingUrl: "" });
+  });
+
+  it("nimmt nur http(s)-Links an", () => {
+    expect(pl.deliveredFields("DHL1", "javascript:alert(1)").trackingUrl).toBe("");
+    expect(pl.deliveredFields("DHL1", "https://dhl.example/DHL1").trackingUrl).toBe("https://dhl.example/DHL1");
+  });
+});
+
+describe("Zugang zur Druckdatei", () => {
+  const gleich = (a: string, b: string) => a === b;
+  it("lässt das richtige, gültige Token durch", () => {
+    expect(pl.fileAccessOk("abc", "abc", 2000, 1000, gleich)).toBe(true);
+  });
+  it("lehnt falsches, abgelaufenes oder fehlendes Token ab", () => {
+    expect(pl.fileAccessOk("xyz", "abc", 2000, 1000, gleich)).toBe(false);
+    expect(pl.fileAccessOk("abc", "abc", 1000, 2000, gleich)).toBe(false);
+    expect(pl.fileAccessOk("", "", 2000, 1000, gleich)).toBe(false);
+  });
+});
