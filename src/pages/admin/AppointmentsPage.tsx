@@ -26,6 +26,8 @@ import { useSettings } from "../../context/SettingsContext";
 import AppointmentsTabs from "../../features/Appointments/components/AppointmentsTabs";
 import DayDetail from "../../features/Appointments/components/DayDetail";
 import MonthGrid, { DaySummary } from "../../features/Appointments/components/MonthGrid";
+import { BookableType, bookableByDay } from "../../features/Appointments/bookable";
+import { fetchAvailability } from "../../features/Booking/api";
 import {
   Appointment,
   AppointmentType,
@@ -116,6 +118,7 @@ export default function AppointmentsPage(): ReactElement {
   const [exceptions, setExceptions] = useState<AvailabilityException[]>([]);
   const [pending, setPending] = useState<Appointment[]>([]);
   const [types, setTypes] = useState<AppointmentType[]>([]);
+  const [bookable, setBookable] = useState<Map<string, BookableType[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [unavailable, setUnavailable] = useState(false);
 
@@ -145,6 +148,28 @@ export default function AppointmentsPage(): ReactElement {
       setPending(loadedPending);
       setTypes(loadedTypes);
       setUnavailable(false);
+
+      // Was Kund:innen sehen: derselbe Endpunkt wie die Buchungsseite, je Art
+      // ein Aufruf. Ist die Buchung aus, antwortet er 404 — dann bleibt es leer.
+      // Eine fehlgeschlagene Art soll den Kalender nicht mitreißen.
+      const first = { ...month, day: 1 };
+      const last = { ...month, day: daysInMonth(month.year, month.month) };
+      const results = settings.bookingEnabled
+        ? await Promise.allSettled(
+            loadedTypes
+              .filter((type) => type.active)
+              .map(async (type) => ({
+                name: type.name,
+                slots: (await fetchAvailability(type.slug, toIsoDate(first), toIsoDate(last))).slots,
+              })),
+          )
+        : [];
+      setBookable(
+        bookableByDay(
+          results.flatMap((result) => (result.status === "fulfilled" ? [result.value] : [])),
+          timezone,
+        ),
+      );
     } catch {
       // Wahrscheinlichster Grund: Die Migration ist auf dieser Instanz noch
       // nicht gelaufen (gleiche Behandlung wie bei den Hilfe-Artikeln).
@@ -152,7 +177,7 @@ export default function AppointmentsPage(): ReactElement {
     } finally {
       setLoading(false);
     }
-  }, [range.fromMs, range.toMs]);
+  }, [range.fromMs, range.toMs, month, settings.bookingEnabled, timezone]);
 
   useEffect(() => {
     void load();
@@ -165,7 +190,7 @@ export default function AppointmentsPage(): ReactElement {
     const ensure = (iso: string): DaySummary => {
       let entry = map.get(iso);
       if (!entry) {
-        entry = { confirmed: 0, pending: 0, blocked: false, imported: false, opened: false };
+        entry = { confirmed: 0, pending: 0, blocked: false, imported: false, opened: false, bookable: 0 };
         map.set(iso, entry);
       }
       return entry;
@@ -197,8 +222,10 @@ export default function AppointmentsPage(): ReactElement {
       }
     }
 
+    for (const [iso, list] of bookable) ensure(iso).bookable = list.length;
+
     return map;
-  }, [appointments, exceptions, timezone]);
+  }, [appointments, exceptions, bookable, timezone]);
 
   const dayAppointments = useMemo(
     () =>
@@ -400,6 +427,9 @@ export default function AppointmentsPage(): ReactElement {
               <span {...stylex.props(s.legendItem)}>
                 <Text type="supporting" color="secondary">Schraffur = ganztägig gesperrt</Text>
               </span>
+              <span {...stylex.props(s.legendItem)}>
+                <Text type="supporting" color="secondary">„2 frei“ = so viele Arten sind buchbar</Text>
+              </span>
             </div>
           </div>
 
@@ -409,6 +439,8 @@ export default function AppointmentsPage(): ReactElement {
             appointments={dayAppointments}
             exceptions={dayExceptions}
             types={types}
+            bookable={bookable.get(toIsoDate(selected)) ?? []}
+            bookingEnabled={settings.bookingEnabled}
             onDecide={(id, approve, note) =>
               after(
                 () => decideRequest(id, approve, note),

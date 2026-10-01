@@ -27,6 +27,7 @@ import {
   AvailabilityException,
   findAccountByEmail,
 } from "../api";
+import { BookableType } from "../bookable";
 import {
   CalendarDate,
   addDays,
@@ -42,6 +43,9 @@ type Props = {
   appointments: Appointment[];
   exceptions: AvailabilityException[];
   types: AppointmentType[];
+  /** Was Kund:innen an diesem Tag buchen können. */
+  bookable: BookableType[];
+  bookingEnabled: boolean;
   onDecide: (id: string, approve: boolean, note: string) => Promise<void>;
   onCancel: (id: string, note: string) => Promise<void>;
   onBlock: (startMs: number, endMs: number, note: string) => Promise<void>;
@@ -264,7 +268,7 @@ function AppointmentEntry(props: {
 
 export default function DayDetail(props: Props): ReactElement {
   const {
-    date, timezone, appointments, exceptions, types,
+    date, timezone, appointments, exceptions, types, bookable, bookingEnabled,
     onDecide, onCancel, onBlock, onDeleteException, onManual, onLink,
   } = props;
 
@@ -340,6 +344,21 @@ export default function DayDetail(props: Props): ReactElement {
   return (
     <div data-testid="tagesdetail" {...stylex.props(s.card)}>
       <Heading level={6}>{formatCalendarDateLong(date)}</Heading>
+
+      {bookingEnabled && (
+        <div data-testid="buchbar" {...stylex.props(s.entry)}>
+          <Text type="body" weight="semibold">Buchbar für Kund:innen</Text>
+          {bookable.length === 0 ? (
+            <Text type="supporting" color="secondary">An diesem Tag ist nichts buchbar.</Text>
+          ) : (
+            bookable.map((item) => (
+              <Text key={item.name} type="supporting">
+                <strong>{item.name}:</strong> {item.times.join(" · ")}
+              </Text>
+            ))
+          )}
+        </div>
+      )}
 
       <div {...stylex.props(s.toolbar)}>
         {/* Der Zwei-Klick-Weg aus §11.1: Tag antippen, „Ganzer Tag zu“. */}

@@ -31,6 +31,8 @@ export interface DaySummary {
   blocked: boolean;
   imported: boolean;
   opened: boolean;
+  /** Anzahl der Termin-Arten, die Kund:innen an diesem Tag buchen können. */
+  bookable: number;
 }
 
 type Props = {
@@ -153,6 +155,7 @@ function describe(date: CalendarDate, summary: DaySummary | undefined): string {
   if (summary?.pending) parts.push(`${summary.pending} offene Anfragen`);
   if (summary?.blocked) parts.push("gesperrt");
   if (summary?.opened) parts.push("zusätzlich geöffnet");
+  if (summary?.bookable) parts.push(`${summary.bookable} Termin-Arten buchbar`);
   if (parts.length === 1) parts.push("nichts eingetragen");
   return parts.join(", ");
 }
@@ -210,6 +213,12 @@ export default function MonthGrid(props: Props): ReactElement {
                 {date.day}
               </Text>
               {markers(summary)}
+              {/* kurz, weil die Zelle am Handy kaum 45 px breit ist */}
+              {summary?.bookable ? (
+                <Text type="supporting" color="secondary">
+                  {summary.bookable} frei
+                </Text>
+              ) : null}
             </button>
           );
         })}

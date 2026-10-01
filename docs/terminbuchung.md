@@ -529,6 +529,11 @@ das zäh genug, dass es unterbleibt. Sperren muss in zwei Klicks gehen.
   Anfragen, Sperrzeiten und importierte Fremdtermine.
 - **Klick auf einen Tag** → Detailliste mit Aktionen: bestätigen, ablehnen,
   stornieren, ganztägig sperren, Zeitfenster sperren, mit Konto verknüpfen.
+- **Was Kund:innen buchen können** (seit 2026-10-01): pro Tag „x frei“ im
+  Raster, im Tagesdetail je Art die freien Startzeiten. Die Zeiten kommen vom
+  öffentlichen `GET /api/custom/booking/availability`, je aktive Art ein
+  Aufruf — also exakt das, was die Buchungsseite zeigt, mit Buchungen,
+  Sperren, Vorlauf, Tageslimit und Horizont. Ist die Buchung aus, fehlt beides.
 - **Offene Anfragen zusätzlich oben angepinnt**, unabhängig vom angezeigten
   Monat — sonst verfallen sie, weil gerade der falsche Monat offen war.
 - **Termin-Arten, Regeln und Einbettung als eigene Unterseiten** — Einrichtung,
