@@ -67,6 +67,16 @@ routerAdd("POST", "/api/custom/order-confirmation", (e) => {
     }
   } catch (_) { /* leave empty */ }
 
+  // Versand für Laborabzüge — vom Server bei der Zahlung berechnet
+  const shipping = order.getFloat("shipping");
+  if (shipping > 0) {
+    total += shipping;
+    itemsHtml +=
+      "<tr><td style='padding:4px 12px 4px 0'>Versand</td><td style='padding:4px 0;text-align:right'>" +
+      shipping.toFixed(2) + " " + currency + "</td></tr>";
+    itemsText += "- Versand: " + shipping.toFixed(2) + " " + currency + "\n";
+  }
+
   const totalHtml = total > 0
     ? "<p style='font-weight:600'>Gesamt: " + total.toFixed(2) + " " + currency + "</p>"
     : "";

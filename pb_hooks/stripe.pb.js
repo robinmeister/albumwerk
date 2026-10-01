@@ -94,7 +94,7 @@ routerAdd("POST", "/api/custom/stripe/create-checkout-session", (e) => {
   // authoritative price — the client value is never trusted
   let total;
   try {
-    total = co.authoritativeTotal(e.app, shootingId, list);
+    total = co.authoritativeTotal(e.app, shootingId, list, e.auth.id);
   } catch (err) {
     if (err instanceof BadRequestError) throw err;
     e.app.logger().error("stripe price calc failed", "error", String(err));

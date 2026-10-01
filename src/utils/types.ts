@@ -67,6 +67,7 @@ export type Order = {
   imagePriceObjectList: string;
   shootingId: string;
   userId: string;
+  shipping?: number;
 }
 
 export type TableOrder = {
@@ -76,6 +77,8 @@ export type TableOrder = {
   userEmail?: string;
   shootingTitle?: string;
   totalPrice: number;
+  // bezahlter Versand, steckt schon in totalPrice
+  shipping?: number;
   finished: boolean;
   imagePriceObjectList?: string;
 }

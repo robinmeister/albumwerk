@@ -359,6 +359,7 @@ export default function OrdersPage(): ReactElement {
         userId:               r.userId,
         shootingId:           r.shootingId,
         imagePriceObjectList: r.imagePriceObjectList,
+        shipping:             r.shipping ?? 0,
         created:              r.created,
       }));
 
@@ -371,7 +372,9 @@ export default function OrdersPage(): ReactElement {
           shootingId:           order.shootingId,
           userEmail:            user?.email,
           shootingTitle:        shooting?.title,
-          totalPrice:           calculateTotalPrice(parseIPOL(order.imagePriceObjectList)),
+          // Versand rechnet der Server bei der Zahlung und legt ihn an der Bestellung ab
+          totalPrice:           calculateTotalPrice(parseIPOL(order.imagePriceObjectList)) + (order.shipping ?? 0),
+          shipping:             order.shipping ?? 0,
           finished:             false,
           imagePriceObjectList: order.imagePriceObjectList,
           createdAt:            order.created,

@@ -46,6 +46,11 @@ const BILDER: Record<string, Felder> = {
   vorschau1: { type: "preview", shootingId: "s1", name: "a.jpg" },
   original1: { type: "original", shootingId: "s1", name: "a.jpg" },
   vorschau2: { type: "preview", shootingId: "s1", name: "weg.jpg" },
+  // Shooting einer anderen Kundin — Vorschauen sind für jeden lesbar
+  fremd1: { type: "preview", shootingId: "s2", name: "b.jpg" },
+  fremdoriginal1: { type: "original", shootingId: "s2", name: "b.jpg" },
+  frei1: { type: "preview", shootingId: "s3", name: "c.jpg", isPublic: true },
+  freioriginal1: { type: "original", shootingId: "s3", name: "c.jpg", isPublic: true },
 };
 
 const EINSTELLUNGEN: Felder = {
@@ -60,7 +65,7 @@ function app(settings: Felder | null = EINSTELLUNGEN) {
       if (collection === "settings" && settings) return satz(id, settings);
       if (collection === "prices" && PREISE[id]) return satz(id, PREISE[id]);
       if (collection === "images" && BILDER[id]) return satz(id, BILDER[id]);
-      if (collection === "users") return satz(id, { downloadableImages: [] });
+      if (collection === "users") return satz(id, { downloadableImages: [], shootingIds: id === "kunde1" ? ["s1"] : [] });
       if (collection === "shootings") return satz(id, { packageId: "" });
       throw new Error("nicht gefunden: " + collection + "/" + id);
     },
@@ -105,27 +110,65 @@ describe("Versand", () => {
 
   it("schlägt den Versand auf den Abzug auf", () => {
     const l = liste([["vorschau1", "preis-abzug", 2]]);
-    expect(co.authoritativeTotal(app(), "s1", l)).toBe(14.9);
+    expect(co.authoritativeTotal(app(), "s1", l, "kunde1")).toBe(14.9);
   });
 
   it("nimmt für Abzüge ohne Laborprodukt keinen Versand", () => {
     const l = liste([["vorschau1", "preis-handabzug", 2]]);
-    expect(co.authoritativeTotal(app(), "s1", l)).toBe(10);
+    expect(co.authoritativeTotal(app(), "s1", l, "kunde1")).toBe(10);
   });
 
   it("nimmt für rein digitale Bestellungen keinen Versand", () => {
     const l = liste([["vorschau1", "preis-digital", 1]]);
-    expect(co.authoritativeTotal(app(), "s1", l)).toBe(15);
+    expect(co.authoritativeTotal(app(), "s1", l, "kunde1")).toBe(15);
   });
 
   it("zählt den ganzen Warenwert gegen die Grenze", () => {
     const l = liste([["vorschau1", "preis-abzug", 1], ["vorschau2", "preis-digital", 1]]);
-    expect(co.authoritativeTotal(app({ ...EINSTELLUNGEN, freeShippingFrom: 20 }), "s1", l)).toBe(20);
+    expect(co.authoritativeTotal(app({ ...EINSTELLUNGEN, freeShippingFrom: 20 }), "s1", l, "kunde1")).toBe(20);
   });
 
   it("rechnet ohne Einstellungen keinen Versand", () => {
     const l = liste([["vorschau1", "preis-abzug", 2]]);
-    expect(co.authoritativeTotal(app(null), "s1", l)).toBe(10);
+    expect(co.authoritativeTotal(app(null), "s1", l, "kunde1")).toBe(10);
+  });
+});
+
+describe("Bilder in der Bestellung", () => {
+  const fehler = "Unbekanntes Bild in der Bestellung.";
+
+  it("lehnt einen Abzug aus einem fremden Shooting ab", () => {
+    const l = liste([["fremd1", "preis-abzug", 1]]);
+    expect(() => co.authoritativeTotal(app(), "s1", l, "kunde1")).toThrow(fehler);
+  });
+
+  it("lehnt auch ein digitales Bild aus einem fremden Shooting ab", () => {
+    const l = liste([["vorschau1", "preis-digital", 1], ["fremd1", "preis-digital", 1]]);
+    expect(() => co.authoritativeTotal(app(), "s1", l, "kunde1")).toThrow(fehler);
+  });
+
+  it("lehnt ein Shooting ab, das der Kundin nicht zugeordnet ist", () => {
+    const l = liste([["fremd1", "preis-abzug", 1]]);
+    expect(() => co.authoritativeTotal(app(), "s2", l, "kunde1")).toThrow(fehler);
+  });
+
+  it("lehnt Einträge ohne Bild-URL ab", () => {
+    const l = [{ image: "irgendwas", price: [{ id: "preis-abzug", quantity: 1 }] }];
+    expect(() => co.authoritativeTotal(app(), "s1", l, "kunde1")).toThrow(fehler);
+  });
+
+  it("lässt Bilder eines öffentlichen Shootings zu", () => {
+    const l = liste([["frei1", "preis-abzug", 1]]);
+    expect(co.authoritativeTotal(app(), "s3", l, "kunde1")).toBe(9.9);
+  });
+
+  it("legt für ein fremdes Bild kein Original in den Druckauftrag", () => {
+    const a = app();
+    co.finalizeOrder(a, {
+      userId: "kunde1", shootingId: "s1",
+      imagePriceObjectList: liste([["fremd1", "preis-abzug", 1]]), userData: KUNDIN,
+    });
+    expect(druckauftrag(a).data.items[0].originalId).toBe("");
   });
 });
 
@@ -150,7 +193,7 @@ describe("Druckauftrag nach der Zahlung", () => {
     expect(job.data.status).toBe("awaiting_approval");
     expect(job.data.route).toBe("customer");
     expect(job.data.items).toEqual([
-      { image: bild("vorschau1"), sku: "GLOBAL-PHO-5X7", copies: 2, originalId: "original1" },
+      { image: bild("vorschau1"), sku: "GLOBAL-PHO-5X7", copies: 2, originalId: "original1", shootingId: "s1", name: "a.jpg" },
     ]);
     expect(job.data.recipient).toEqual({
       name: "Ada Muster", email: "ada@example.org", phone: "0170",
@@ -187,6 +230,37 @@ describe("Druckauftrag nach der Zahlung", () => {
     const job = druckauftrag(a);
     expect(job.data.items[0].originalId).toBe("");
     expect(job.data.error).toContain("Original");
+  });
+
+  it("speichert den Versand an der Bestellung", () => {
+    const a = app();
+    co.finalizeOrder(a, {
+      userId: "kunde1", shootingId: "s1",
+      imagePriceObjectList: liste([["vorschau1", "preis-abzug", 2]]), userData: KUNDIN,
+    });
+    expect(a.gespeichert.find((r: any) => r.collection === "orders").data.shipping).toBe(4.9);
+  });
+
+  it("speichert ohne Laborprodukt keinen Versand", () => {
+    const a = app();
+    co.finalizeOrder(a, {
+      userId: "kunde1", shootingId: "s1",
+      imagePriceObjectList: liste([["vorschau1", "preis-digital", 1]]), userData: KUNDIN,
+    });
+    expect(a.gespeichert.find((r: any) => r.collection === "orders").data.shipping).toBe(0);
+  });
+
+  it("findet das Original nach dem Ersetzen über Shooting und Namen wieder", () => {
+    const a = app();
+    BILDER.ersetzt1 = { type: "original", shootingId: "s9", name: "neu.jpg" };
+    try {
+      expect(pl.currentOriginalId(a, { originalId: "alt", shootingId: "s9", name: "neu.jpg" })).toBe("ersetzt1");
+      expect(pl.currentOriginalId(a, { originalId: "alt", shootingId: "s9", name: "fehlt.jpg" })).toBe("");
+      // Aufträge von vor dieser Änderung tragen nur die ID
+      expect(pl.currentOriginalId(a, { originalId: "alt" })).toBe("alt");
+    } finally {
+      delete BILDER.ersetzt1;
+    }
   });
 
   it("übernimmt ein gewähltes Land in Großbuchstaben", () => {
@@ -286,6 +360,13 @@ describe("Status von Prodigi", () => {
   it("setzt einen weiterversandten Auftrag nicht zurück", () => {
     const o = auftrag({ shipments: [{ status: "Shipped", tracking: { url: "u", number: "n" } }] });
     expect(pl.applyLabOrder("delivered_to_customer", o).status).toBe("delivered_to_customer");
+  });
+
+  it("behält beim weiterversandten Auftrag die Sendung des Studios", () => {
+    const o = auftrag({ shipments: [{ status: "Shipped", tracking: { url: "u", number: "n" } }] });
+    const f = pl.applyLabOrder("delivered_to_customer", o);
+    expect(f).not.toHaveProperty("trackingNumber");
+    expect(f).not.toHaveProperty("trackingUrl");
   });
 });
 

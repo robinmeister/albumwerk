@@ -70,18 +70,41 @@ function shippingCost(app, list, goodsTotal) {
 // trägt die URL der Vorschau, das Original hat denselben Namen im selben Shooting.
 var FILE_URL_RE = /\/api\/files\/[^/]+\/([^/]+)\//;
 
-function originalIdFor(app, imageUrl) {
+function imageIdOf(imageUrl) {
   var m = String(imageUrl || "").match(FILE_URL_RE);
-  if (!m) return "";
+  return m ? m[1] : "";
+}
+
+function findOriginal(app, shootingId, name) {
+  return app.findFirstRecordByFilter(
+    "images",
+    "shootingId = {:s} && type = 'original' && name = {:n}",
+    { s: shootingId, n: name }
+  );
+}
+
+// Nur Bilder aus dem Shooting der Bestellung — sonst ließe sich über eine
+// fremde (öffentlich lesbare) Vorschau das Original eines anderen drucken.
+function originalFor(app, imageUrl, shootingId) {
+  var id = imageIdOf(imageUrl);
+  if (!id || !shootingId) return null;
   try {
-    var image = app.findRecordById("images", m[1]);
-    if (image.getString("type") === "original") return image.id;
-    var original = app.findFirstRecordByFilter(
-      "images",
-      "shootingId = {:s} && type = 'original' && name = {:n}",
-      { s: image.getString("shootingId"), n: image.getString("name") }
-    );
-    return original.id;
+    var image = app.findRecordById("images", id);
+    if (image.getString("shootingId") !== shootingId) return null;
+    if (image.getString("type") === "original") return image;
+    return findOriginal(app, shootingId, image.getString("name"));
+  } catch (_) {
+    return null;
+  }
+}
+
+// "Ersetzen" im Album löscht das alte Original und legt ein neues an. Darum
+// vor dem Senden über Shooting und Namen neu suchen; ältere Aufträge tragen
+// nur die ID.
+function currentOriginalId(app, item) {
+  if (!item.shootingId || !item.name) return String(item.originalId || "");
+  try {
+    return findOriginal(app, item.shootingId, item.name).id;
   } catch (_) {
     return "";
   }
@@ -109,8 +132,11 @@ function createPrintJob(app, order, list) {
 
   var missing = false;
   for (var i = 0; i < items.length; i++) {
-    items[i].originalId = originalIdFor(app, items[i].image);
-    if (!items[i].originalId) missing = true;
+    var original = originalFor(app, items[i].image, order.getString("shootingId"));
+    items[i].originalId = original ? original.id : "";
+    items[i].shootingId = original ? original.getString("shootingId") : "";
+    items[i].name = original ? original.getString("name") : "";
+    if (!original) missing = true;
   }
 
   var s = readSettings(app);
@@ -262,7 +288,12 @@ function applyLabOrder(currentStatus, o) {
     out.status = "in_production";
   }
 
-  if (currentStatus === "delivered_to_customer") out.status = currentStatus;
+  // Die Kund:in hat die Sendung des Studios bekommen, nicht die des Labors.
+  if (currentStatus === "delivered_to_customer") {
+    out.status = currentStatus;
+    delete out.trackingUrl;
+    delete out.trackingNumber;
+  }
   return out;
 }
 
@@ -333,10 +364,12 @@ function submitJob(app, job) {
 
   var view = jobView(job);
   for (var i = 0; i < view.items.length; i++) {
+    view.items[i].originalId = currentOriginalId(app, view.items[i]);
     if (!view.items[i].originalId) {
       return { ok: false, message: "Zu mindestens einem Bild fehlt das Original." };
     }
   }
+  job.set("items", view.items);
   var recipient = recipientFor(view, parseJson(s.getString("studioAddress"), {}));
   if (!addressComplete(recipient)) {
     return {
@@ -486,4 +519,6 @@ module.exports = {
   shippingCost: shippingCost,
   recipientFromUserData: recipientFromUserData,
   createPrintJob: createPrintJob,
+  imageIdOf: imageIdOf,
+  currentOriginalId: currentOriginalId,
 };

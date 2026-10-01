@@ -11,7 +11,7 @@ export interface PrintRecipient {
   postalCode: string; city: string; state: string; countryCode: string;
 }
 
-export interface PrintItem { image: string; sku: string; copies: number; originalId: string }
+export interface PrintItem { image: string; sku: string; copies: number; originalId: string; name?: string }
 
 export interface PrintJob {
   id: string;

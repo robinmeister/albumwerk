@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 
 import PageLoader from "../../components/feedback/PageLoader";
 import Page from "../../components/layout/Page";
+import { thumbUrl } from "../../features/Album/components/AlbumImage";
 import PrintSettings from "../../features/Print/PrintSettings";
 import {
   PrintJob, PrintRoute, STATUS_TEXTE, cancelJob, listJobs, markDelivered, setRoute, submitJob,
@@ -18,6 +19,7 @@ import { SectionCard, sf } from "../../features/Settings/components/SettingsSect
 
 const s = stylex.create({
   row: { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" },
+  thumb: { width: 56, height: 56, objectFit: "cover", borderRadius: "var(--radius-element)" },
 });
 
 function fehlertext(e: any): string {
@@ -58,6 +60,13 @@ function JobCard({ job, onChange }: { job: PrintJob; onChange: () => Promise<voi
           <Badge variant={st.variant} label={st.label} />
           {job.labCost && <Text type="supporting" color="secondary">Laborkosten: {job.labCost}</Text>}
         </div>
+        {/* Was gedruckt wird — vor der Freigabe sichtbar */}
+        {job.items.map((it, i) => (
+          <div key={i} {...stylex.props(s.row)}>
+            <img src={thumbUrl(it.image)} alt={it.name ?? ""} {...stylex.props(s.thumb)} />
+            <Text type="body">{it.name ? `${it.name} · ` : ""}{it.sku} · {it.copies}×</Text>
+          </div>
+        ))}
         <Text type="body">
           {r.name}, {r.line1}, {r.postalCode} {r.city}, {r.countryCode}
         </Text>

@@ -148,16 +148,51 @@ function isPackageOrder(app, shootingId, list) {
   return itemsTotal(app, list) === 0 && packageOf(app, shootingId) !== null;
 }
 
+function readIds(record, key) {
+  var slice = record.getStringSlice(key) || [];
+  // Altbestand: JSON-Feld als Text gespeichert (wie in link_shooting.pb.js)
+  if (slice.length === 1 && slice[0].charAt(0) === "[") {
+    try { return JSON.parse(slice[0]).map(String); } catch (_) { return slice; }
+  }
+  return slice;
+}
+
+// Bestellbar ist nur, was die Kund:in auch sehen darf — dieselbe Regel wie die
+// viewRule auf images (Admin, isPublic oder zugeordnetes Shooting), und nur aus
+// dem Shooting der Bestellung. Vorschauen selbst sind für jeden lesbar, darum
+// entscheidet das Shooting, nicht die Vorschau.
+function assertImagesOrderable(app, buyerId, shootingId, list) {
+  var buyer = null;
+  try { buyer = app.findRecordById("users", String(buyerId || "")); } catch (_) { buyer = null; }
+  var isAdmin = !!(buyer && buyer.getBool("isAdmin"));
+  var assigned = !!buyer && readIds(buyer, "shootingIds").indexOf(shootingId) !== -1;
+  for (var i = 0; i < list.length; i++) {
+    var image = null;
+    try {
+      image = app.findRecordById("images", pl.imageIdOf(list[i] && list[i].image));
+    } catch (_) { image = null; }
+    var ok = !!image && !!shootingId && image.getString("shootingId") === shootingId &&
+      (isAdmin || assigned || image.getBool("isPublic"));
+    if (!ok) throw new BadRequestError("Unbekanntes Bild in der Bestellung.");
+  }
+}
+
 // Authoritative total in major currency units. Per-image prices take
 // precedence; if there are none, fall back to package pricing. Shipping is
 // added for per-image orders that contain a lab product — packages sell
 // images, not prints.
-function authoritativeTotal(app, shootingId, list) {
+function authoritativeTotal(app, shootingId, list, buyerId) {
+  assertImagesOrderable(app, buyerId, shootingId, list);
+  return orderTotals(app, shootingId, list).total;
+}
+
+function orderTotals(app, shootingId, list) {
   var total = itemsTotal(app, list);
   if (total === 0 && shootingId) {
-    return packageTotal(app, shootingId, list);
+    return { total: packageTotal(app, shootingId, list), shipping: 0 };
   }
-  return round2(total + pl.shippingCost(app, list, total));
+  var shipping = pl.shippingCost(app, list, total);
+  return { total: round2(total + shipping), shipping: shipping };
 }
 
 // Every image in the order, regardless of price — used for package orders.
@@ -205,6 +240,10 @@ function finalizeOrder(app, opts) {
   order.set("shootingId", opts.shootingId || "");
   order.set("imagePriceObjectList", JSON.stringify(list));
   order.set("userData", opts.userData || {});
+  // Bezahlt ist bezahlt: ein inzwischen gelöschter Preis darf die Bestellung nicht kippen.
+  var shipping = 0;
+  try { shipping = orderTotals(app, opts.shootingId, list).shipping; } catch (_) { shipping = 0; }
+  order.set("shipping", shipping);
   app.save(order);
 
   // Drucke mit Laborprodukt werden ein Druckauftrag, der auf Freigabe wartet.

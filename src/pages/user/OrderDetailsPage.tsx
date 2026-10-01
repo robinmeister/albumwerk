@@ -134,6 +134,9 @@ export default function OrderDetailsPage(): ReactElement {
           </div>
           <div {...stylex.props(s.price)}>
             <Heading level={6}>{order.totalPrice.toFixed(2)}€</Heading>
+            {(order.shipping ?? 0) > 0 && (
+              <Text type="body" color="secondary">inkl. {order.shipping!.toFixed(2)}€ Versand</Text>
+            )}
             {order.finished ? (
               <Badge variant="success" label="Erledigt" />
             ) : (

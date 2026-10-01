@@ -40,7 +40,7 @@ let kunde: ReturnType<typeof satz>;
 let gespeichert: unknown[];
 
 function app(shootingFelder: Felder) {
-  kunde = satz("kunde1", { downloadableImages: [] });
+  kunde = satz("kunde1", { downloadableImages: [], shootingIds: ["shooting1"] });
   gespeichert = [];
   return {
     findRecordById(collection: string, id: string) {
@@ -49,6 +49,7 @@ function app(shootingFelder: Felder) {
       if (collection === "prices" && id === "preis-digital") return satz(id, DIGITAL);
       if (collection === "prices" && id === "preis-abzug") return satz(id, ABZUG);
       if (collection === "users") return kunde;
+      if (collection === "images") return satz(id, { type: "preview", shootingId: "shooting1" });
       throw new Error("nicht gefunden: " + collection + "/" + id);
     },
     findCollectionByNameOrId: (name: string) => name,
@@ -57,14 +58,17 @@ function app(shootingFelder: Felder) {
   };
 }
 
+// Die Bestellung trägt die Datei-URL der Vorschau (vgl. printlib.imageIdOf).
+const url = (id: string) => `https://galerie.example/api/files/images/${id}/x.jpg`;
+
 // Die Paketauswahl kommt ohne Einzelpreise an — genau so baut sie
 // src/pages/user/PricingPage.tsx zusammen.
 const paketListe = (anzahl: number) =>
-  Array.from({ length: anzahl }, (_, i) => ({ image: "bild-" + i, price: [] }));
+  Array.from({ length: anzahl }, (_, i) => ({ image: url("bild-" + i), price: [] }));
 
 const einzelListe = (bilder: Array<[string, string]>) =>
   bilder.map(([image, preisId]) => ({
-    image,
+    image: url(image),
     price: [{ id: preisId, quantity: 1 }],
   }));
 
@@ -86,17 +90,17 @@ describe("Paketkauf", () => {
   it("berechnet den Aufschlag fuer Bilder ueber dem Paketumfang", () => {
     const a = app(MIT_PAKET);
     // 199 EUR Paketpreis + 10 zusaetzliche Bilder à 6 EUR
-    expect(co.authoritativeTotal(a, "shooting1", paketListe(35))).toBe(259);
+    expect(co.authoritativeTotal(a, "shooting1", paketListe(35), "kunde1")).toBe(259);
   });
 
   it("bleibt beim Paketpreis, solange der Umfang reicht", () => {
     const a = app(MIT_PAKET);
-    expect(co.authoritativeTotal(a, "shooting1", paketListe(10))).toBe(199);
+    expect(co.authoritativeTotal(a, "shooting1", paketListe(10), "kunde1")).toBe(199);
   });
 
   it("nimmt ohne Paket am Shooting keinen Paketpreis an", () => {
     const a = app({ packageId: "" });
-    expect(co.authoritativeTotal(a, "shooting1", paketListe(35))).toBe(0);
+    expect(co.authoritativeTotal(a, "shooting1", paketListe(35), "kunde1")).toBe(0);
   });
 });
 
@@ -106,7 +110,7 @@ describe("Einzelbildkauf", () => {
   it("rechnet die Einzelpreise zusammen", () => {
     const a = app(OHNE_PAKET);
     const liste = einzelListe([["bild-1", "preis-digital"], ["bild-2", "preis-abzug"]]);
-    expect(co.authoritativeTotal(a, "shooting1", liste)).toBe(20);
+    expect(co.authoritativeTotal(a, "shooting1", liste, "kunde1")).toBe(20);
   });
 
   it("schaltet nur herunterladbare Positionen frei", () => {
@@ -117,7 +121,7 @@ describe("Einzelbildkauf", () => {
       shootingId: "shooting1",
       imagePriceObjectList: liste,
     });
-    expect(kunde.felder.downloadableImages).toEqual(["bild-1"]);
+    expect(kunde.felder.downloadableImages).toEqual([url("bild-1")]);
   });
 
   it("schaltet bei Einzelpreisen ohne Download nichts frei, auch mit Paket am Shooting", () => {
