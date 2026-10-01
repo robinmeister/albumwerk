@@ -14,6 +14,7 @@ import * as stylex from "@stylexjs/stylex";
 import { Plus as Add, ArrowLeft as ArrowBack, Sparkles as AutoAwesome, Trash2 as Delete, Euro, Tag as LocalOffer, Search } from "lucide-react";
 import { toast } from "react-toastify";
 import { pb } from "../../config/pocketbase";
+import { useSettings } from "../../context/SettingsContext";
 
 import { Package, Price } from "../../utils/types";
 import DeleteModal from "../../components/widgets/DeleteModal";
@@ -25,6 +26,7 @@ import {
   CATEGORY_ORDER,
   PriceCategory,
   SIZE_SUGGESTIONS,
+  LAB_PRODUCTS,
   STANDARD_CATALOG,
   STANDARD_PACKAGES,
   categoryOf,
@@ -40,6 +42,7 @@ type PriceForm = {
   isDownloadable: boolean;
   category: PriceCategory;
   size: string;
+  labSku: string;
 };
 
 type PackageFormType = {
@@ -52,7 +55,7 @@ type PackageFormType = {
 
 const EMPTY_PRICE_FORM: PriceForm = {
   title: "", amount: "", description: "", isDownloadable: false,
-  category: "print", size: "",
+  category: "print", size: "", labSku: "",
 };
 const EMPTY_PKG_FORM: PackageFormType = { title: "", numberOfImages: "", totalPrice: "", singlePrice: "", description: "" };
 
@@ -153,6 +156,8 @@ function ListItem({
 
 export default function AdminPricingPage(): ReactElement {
   const isMobile = useMobileService();
+  const { settings } = useSettings();
+  const [customSku, setCustomSku] = useState(false);
 
   const [prices,   setPrices]   = useState<Price[]>([]);
   const [packages, setPackages] = useState<Package[]>([]);
@@ -196,12 +201,15 @@ export default function AdminPricingPage(): ReactElement {
       isDownloadable: Boolean(price.isDownloadable),
       category:       categoryOf(price),
       size:           price.size ?? "",
+      labSku:         price.labSku ?? "",
     });
+    setCustomSku(Boolean(price.labSku) && !LAB_PRODUCTS.some(p => p.sku === price.labSku));
   }
 
   function startNewPrice() {
     setSelectedPriceId("");
     setPriceForm(EMPTY_PRICE_FORM);
+    setCustomSku(false);
   }
 
   function setPriceCategory(category: PriceCategory) {
@@ -210,6 +218,7 @@ export default function AdminPricingPage(): ReactElement {
       category,
       isDownloadable: category === "digital",
       size: category === "digital" ? "" : f.size,
+      labSku: category === "digital" ? "" : f.labSku,
     }));
   }
 
@@ -227,6 +236,7 @@ export default function AdminPricingPage(): ReactElement {
           isDownloadable: entry.isDownloadable,
           category:       entry.category,
           size:           entry.size,
+          labSku:         entry.labSku ?? "",
         });
       }
       await fetchPrices();
@@ -251,6 +261,7 @@ export default function AdminPricingPage(): ReactElement {
         isDownloadable: priceForm.isDownloadable,
         category:       priceForm.category,
         size:           priceForm.size,
+        labSku:         priceForm.category === "digital" ? "" : priceForm.labSku.trim(),
       };
       if (selectedPriceId === "") {
         const ref = await pb.collection("prices").create(data);
@@ -551,6 +562,7 @@ export default function AdminPricingPage(): ReactElement {
                         onChange={(v) => v && setPriceCategory(v as PriceCategory)}
                       />
                       {priceForm.category !== "digital" && (
+                        <>
                         <TextInput
                           width="100%"
                           label="Größe"
@@ -559,6 +571,37 @@ export default function AdminPricingPage(): ReactElement {
                           value={priceForm.size}
                           onChange={(v) => setPriceForm(f => ({ ...f, size: v }))}
                         />
+                        <Selector
+                          width="100%"
+                          label="Druck über Prodigi"
+                          description={
+                            priceForm.labSku && !settings.prodigiEnabled
+                              ? "Verbinde Prodigi unter „Druckaufträge“, damit diese Bestellungen ans Labor gehen."
+                              : "Mit Laborprodukt wird jede Bestellung ein Druckauftrag, den du freigibst."
+                          }
+                          options={[
+                            { value: "", label: "Nicht über das Labor" },
+                            ...LAB_PRODUCTS.map(p => ({ value: p.sku, label: `${p.label} (${p.sku})` })),
+                            { value: "custom", label: "Eigene Artikelnummer" },
+                          ]}
+                          value={customSku ? "custom" : priceForm.labSku}
+                          onChange={(v) => {
+                            if (v === "custom") { setCustomSku(true); return; }
+                            setCustomSku(false);
+                            setPriceForm(f => ({ ...f, labSku: v ?? "" }));
+                          }}
+                        />
+                        {customSku && (
+                          <TextInput
+                            width="100%"
+                            label="Prodigi-Artikelnummer"
+                            placeholder="z. B. GLOBAL-PHO-5X7"
+                            description="Steht im Produktkatalog von Prodigi. Ob sie stimmt, zeigt sich beim ersten Senden."
+                            value={priceForm.labSku}
+                            onChange={(v) => setPriceForm(f => ({ ...f, labSku: v }))}
+                          />
+                        )}
+                        </>
                       )}
                       <TextInput
                         width="100%"

@@ -97,11 +97,12 @@ export const STANDARD_CATALOG: {
   size: string;
   amount: number;
   isDownloadable: boolean;
+  labSku?: string;
   description: string;
 }[] = [
   { category: "digital", size: "", amount: 15, isDownloadable: true,
     description: "Bild in voller Auflösung als Download" },
-  { category: "print", size: "10×15 cm", amount: 3.5, isDownloadable: false,
+  { category: "print", size: "10×15 cm", amount: 3.5, isDownloadable: false, labSku: "GLOBAL-PHO-4X6",
     description: "Klassischer Fotoabzug, glänzend oder matt" },
   { category: "print", size: "13×18 cm", amount: 5, isDownloadable: false,
     description: "Klassischer Fotoabzug, glänzend oder matt" },
@@ -118,3 +119,9 @@ export const STANDARD_CATALOG: {
   { category: "poster", size: "50×75 cm", amount: 29, isDownloadable: false,
     description: "Posterdruck auf Premiumpapier" },
 ];
+
+// Die kuratierte Prodigi-Auswahl ist der Teil des Startkatalogs, der eine
+// Artikelnummer trägt — eine zweite Liste liefe nur auseinander.
+export const LAB_PRODUCTS: { sku: string; label: string }[] = STANDARD_CATALOG
+  .filter((e) => e.labSku)
+  .map((e) => ({ sku: e.labSku!, label: priceTitle(e.category, e.size) }));

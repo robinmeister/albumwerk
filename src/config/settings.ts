@@ -32,6 +32,9 @@ export const LOGO_PLAETZE = {
 export type LogoPlatz = keyof typeof LOGO_PLAETZE;
 export type LogoScales = Partial<Record<LogoPlatz, number>>;
 
+// Ziel beim Lieferweg „an mich“ (docs/superpowers/specs/2026-10-01-druckauftraege-design.md)
+export type StudioAddress = { name: string; line1: string; zip: string; city: string; country: string };
+
 export interface AppSettings {
   id: string;
   businessName: string;
@@ -61,6 +64,14 @@ export interface AppSettings {
   paypalLiveMode: boolean;
   stripeEnabled: boolean;
   currency: string;
+  // Druckaufträge über Prodigi. Der Schlüssel selbst ist versteckt;
+  // prodigiEnabled sagt nur, ob einer hinterlegt ist (wie stripeEnabled).
+  prodigiEnabled: boolean;
+  prodigiLive: boolean;
+  printDefaultRoute: "customer" | "studio";
+  studioAddress: StudioAddress;
+  shippingFlat: number;
+  freeShippingFrom: number;
   imprintHtml: string;
   privacyHtml: string;
   watermarkText: string;
@@ -111,6 +122,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
   paypalLiveMode: false,
   stripeEnabled: false,
   currency: "EUR",
+  prodigiEnabled: false,
+  prodigiLive: false,
+  printDefaultRoute: "customer",
+  studioAddress: { name: "", line1: "", zip: "", city: "", country: "DE" },
+  shippingFlat: 0,
+  freeShippingFrom: 0,
   imprintHtml: "",
   privacyHtml: "",
   watermarkText: "",

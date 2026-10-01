@@ -16,6 +16,7 @@ export type Price = {
   // catalog fields: product type + physical size ("13×18 cm")
   category?: "digital" | "print" | "canvas" | "poster" | "other";
   size?: string;
+  labSku?: string;
 }
 
 export type ImagePriceObject = {
@@ -30,6 +31,7 @@ export type PriceWithQuantity = {
   description: string;
   amount: string;
   isDownloadable: boolean;
+  labSku?: string;
   quantity: number;
 }
 
@@ -44,6 +46,7 @@ export type User = {
   city?: string;
   street?: string;
   zip?: string;
+  country?: string;
   shootingIds?: string[];
   downloadableImages?: string[];
 }
