@@ -100,6 +100,26 @@ describe("Verkaufsbereitschaft — weiche Punkte", () => {
   });
 });
 
+describe("Druck-Labor", () => {
+  it("taucht ohne Laborpreise nicht auf", () => {
+    const punkte = verkauf.pruefeVerkaufsbereitschaft({});
+    expect(punkte.some((p: { key: string }) => p.key === "druck")).toBe(false);
+  });
+
+  it("ist mit Laborpreisen ein weicher Punkt", () => {
+    const offen = verkauf.pruefeVerkaufsbereitschaft({ laborPreise: true })
+      .find((p: { key: string }) => p.key === "druck");
+    expect(offen).toEqual({ key: "druck", hart: false, erfuellt: false });
+    const erledigt = verkauf.pruefeVerkaufsbereitschaft({ laborPreise: true, prodigiEnabled: true })
+      .find((p: { key: string }) => p.key === "druck");
+    expect(erledigt.erfuellt).toBe(true);
+  });
+
+  it("sperrt den Verkauf nicht", () => {
+    expect(verkauf.offeneHarte(verkauf.pruefeVerkaufsbereitschaft({ laborPreise: true }))).not.toContain("druck");
+  });
+});
+
 describe("Verkaufsbereitschaft — Ableitung fuer die Oberflaeche", () => {
   const punkte = (overrides: Record<string, unknown> = {}): Punkt[] =>
     verkauf.pruefeVerkaufsbereitschaft({ ...VOLLSTAENDIG, ...overrides });

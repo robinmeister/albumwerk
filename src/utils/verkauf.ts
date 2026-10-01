@@ -6,7 +6,7 @@ import { pb } from "../config/pocketbase";
 
 export type PunktKey =
   | "zahlung" | "katalog" | "recht" | "bestellmail"
-  | "name" | "logo" | "kontaktmail" | "domain" | "wasserzeichen";
+  | "name" | "logo" | "kontaktmail" | "domain" | "wasserzeichen" | "druck";
 
 export interface Punkt {
   key: PunktKey;
@@ -32,6 +32,7 @@ export const PUNKT_TEXTE: Record<PunktKey, { label: string; ziel: string }> = {
   kontaktmail: { label: "Kontakt-E-Mail hinterlegt", ziel: "/kontakt" },
   domain: { label: "Eigene Domain eingerichtet", ziel: "/domain" },
   wasserzeichen: { label: "Wasserzeichen eingerichtet", ziel: "/bilder" },
+  druck: { label: "Druck-Labor verbunden", ziel: "/print" },
 };
 
 // Vor dem ersten Laden und nach einem Fehlschlag: NICHT gesperrt. Ein kurzes

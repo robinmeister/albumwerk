@@ -44,6 +44,13 @@ function pruefeVerkaufsbereitschaft(werte) {
   };
   sammle(HARTE, true);
   sammle(WEICHE, false);
+
+  // Nur wer Laborpreise hat, braucht ein verbundenes Labor — allen anderen
+  // zeigte der Punkt einen Haken an etwas, das sie nie eingerichtet haben.
+  if (w.laborPreise) {
+    punkte.push({ key: "druck", hart: false, erfuellt: Boolean(w.prodigiEnabled) });
+  }
+
   return punkte;
 }
 
@@ -61,6 +68,14 @@ function offeneHarte(punkte) {
 function hatRecords(app, name) {
   try {
     return app.findRecordsByFilter(name, "id != ''", "", 1, 0).length > 0;
+  } catch (_) {
+    return false;
+  }
+}
+
+function hatLaborPreise(app) {
+  try {
+    return app.findRecordsByFilter("prices", "labSku != ''", "", 1, 0).length > 0;
   } catch (_) {
     return false;
   }
@@ -90,6 +105,8 @@ function leseWerte(app) {
     customDomain: text("customDomain"),
     watermarkText: text("watermarkText"),
     watermarkLogo: text("watermarkLogo"),
+    laborPreise: hatLaborPreise(app),
+    prodigiEnabled: s ? s.getBool("prodigiEnabled") : false,
   };
 }
 
