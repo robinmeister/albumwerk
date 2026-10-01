@@ -534,6 +534,14 @@ das zäh genug, dass es unterbleibt. Sperren muss in zwei Klicks gehen.
 - **Termin-Arten, Regeln und Einbettung als eigene Unterseiten** — Einrichtung,
   nicht Tagesgeschäft.
 
+**Geführt einrichten** (`/appointments/setup`, seit 2026-09-30): ein Interview
+mit einer Frage pro Bildschirm, das Arten, aktive Wochenfenster und die
+Grenzen „pro Tag“ und „im Voraus“ **ersetzt**. Arten werden über den
+Kurz-Link zugeordnet und nie gelöscht, nur deaktiviert; inaktive Fenster und
+Ausnahmen bleiben unberührt. Gespeichert wird in einer Transaktion über
+`POST /api/custom/booking/apply-plan`. Details:
+`docs/superpowers/specs/2026-09-30-termin-interview-design.md`.
+
 **Navigation:** In `App.tsx` liegen alle Admin-Seiten flach nebeneinander; vier
 weitere Einträge sprengen das Menü. Eine **Gruppe „Termine"** (Kalender ·
 Termin-Arten · Verfügbarkeit · Einbetten) — setzt voraus, dass `Layout.tsx`

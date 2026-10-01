@@ -22,6 +22,7 @@ import SignUpPage from "./pages/auth/SignUpPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import AdminAlbumPage from "./pages/admin/AdminAlbumPage";
 import AppointmentsPage from "./pages/admin/AppointmentsPage";
+import AppointmentSetupPage from "./pages/admin/AppointmentSetupPage";
 import AppointmentTypesPage from "./pages/admin/AppointmentTypesPage";
 import AvailabilityPage from "./pages/admin/AvailabilityPage";
 import EmbedPage from "./pages/admin/EmbedPage";
@@ -174,6 +175,7 @@ function ThemedApp(): ReactElement {
                   <Route path="album" element={<AdminAlbumPage />} />
                   {/* Die statischen Unterseiten stehen vor der Übersicht, damit
                       /appointments/types nicht als Kalender aufgelöst wird. */}
+                  <Route path="appointments/setup" element={<AppointmentSetupPage />} />
                   <Route path="appointments/types" element={<AppointmentTypesPage />} />
                   <Route path="appointments/availability" element={<AvailabilityPage />} />
                   <Route path="appointments/embed" element={<EmbedPage />} />

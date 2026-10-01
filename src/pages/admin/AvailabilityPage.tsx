@@ -23,7 +23,8 @@ import { Spinner } from "@astryxdesign/core/Spinner";
 import { Switch } from "@astryxdesign/core/Switch";
 import { Text } from "@astryxdesign/core/Text";
 import { TextInput } from "@astryxdesign/core/TextInput";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Wand2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import * as stylex from "@stylexjs/stylex";
 import { toast } from "react-toastify";
 
@@ -101,6 +102,7 @@ const EMPTY_RULE: AvailabilityRuleInput = {
 
 export default function AvailabilityPage(): ReactElement {
   const { settings, refresh } = useSettings();
+  const navigate = useNavigate();
 
   const [rules, setRules] = useState<AvailabilityRule[]>([]);
   const [types, setTypes] = useState<AppointmentType[]>([]);
@@ -242,6 +244,14 @@ export default function AvailabilityPage(): ReactElement {
     <Page
       title="Verfügbarkeit"
       subtitle="Wann kann bei dir gebucht werden?"
+      actions={
+        <Button
+          variant="secondary"
+          icon={<Wand2 />}
+          label="Geführt einrichten"
+          onClick={() => navigate("/appointments/setup")}
+        />
+      }
     >
       <div {...stylex.props(s.column)}>
         <AppointmentsTabs />
@@ -331,6 +341,7 @@ export default function AvailabilityPage(): ReactElement {
               dense
               title="Noch keine Zeitfenster"
               description="Trage ein, wann du grundsätzlich buchbar bist — zum Beispiel „Samstag 9 bis 13 Uhr“."
+              action={{ label: "Geführt einrichten", icon: <Wand2 />, onClick: () => navigate("/appointments/setup") }}
             />
           ) : (
             rules.map((rule) => (

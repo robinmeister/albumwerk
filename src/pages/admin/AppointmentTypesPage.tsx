@@ -19,7 +19,8 @@ import { Switch } from "@astryxdesign/core/Switch";
 import { Text } from "@astryxdesign/core/Text";
 import { TextArea } from "@astryxdesign/core/TextArea";
 import { TextInput } from "@astryxdesign/core/TextInput";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Wand2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import * as stylex from "@stylexjs/stylex";
 import { toast } from "react-toastify";
 
@@ -98,6 +99,7 @@ const s = stylex.create({
 
 export default function AppointmentTypesPage(): ReactElement {
   const { settings } = useSettings();
+  const navigate = useNavigate();
   const [types, setTypes] = useState<AppointmentType[]>([]);
   const [loading, setLoading] = useState(true);
   const [unavailable, setUnavailable] = useState(false);
@@ -181,7 +183,15 @@ export default function AppointmentTypesPage(): ReactElement {
       subtitle="Was können deine Kund:innen bei dir buchen?"
       actions={
         !draft && (
-          <Button icon={<Plus />} label="Neue Art" onClick={() => setDraft({ ...EMPTY })} />
+          <>
+            <Button
+              variant="secondary"
+              icon={<Wand2 />}
+              label="Geführt einrichten"
+              onClick={() => navigate("/appointments/setup")}
+            />
+            <Button icon={<Plus />} label="Neue Art" onClick={() => setDraft({ ...EMPTY })} />
+          </>
         )
       }
     >
@@ -315,6 +325,7 @@ export default function AppointmentTypesPage(): ReactElement {
           <EmptyState
             title="Noch keine Termin-Arten"
             description="Lege zuerst an, was buchbar sein soll — zum Beispiel „Kennenlerngespräch, 20 Minuten“ und „Portraitshooting, 90 Minuten“."
+            action={{ label: "Geführt einrichten", icon: <Wand2 />, onClick: () => navigate("/appointments/setup") }}
           />
         ) : (
           types.map((type) => (
