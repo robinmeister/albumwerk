@@ -260,6 +260,7 @@ export default function PricingPage(): ReactElement {
           amount:         record.amount,
           description:    record.description,
           isDownloadable: record.isDownloadable,
+          labSku:         record.labSku,
         };
       })
     );

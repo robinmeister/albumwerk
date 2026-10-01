@@ -1,6 +1,7 @@
 import { Badge } from "@astryxdesign/core/Badge";
 import { Button } from "@astryxdesign/core/Button";
 import { Divider } from "@astryxdesign/core/Divider";
+import { Selector } from "@astryxdesign/core/Selector";
 import { RadioList, RadioListItem } from "@astryxdesign/core/RadioList";
 import { Text } from "@astryxdesign/core/Text";
 import { TextInput } from "@astryxdesign/core/TextInput";
@@ -15,6 +16,7 @@ import { ImagePriceObject, Package, PriceWithQuantity } from "../../../../utils/
 import { calculateTotalPackagePrice, calculateTotalPrice } from "../../utils/functions";
 import { AuthContext } from "../../../../context/AuthContext";
 import { useSettings } from "../../../../context/SettingsContext";
+import { hasLabItem, shippingFor } from "../../utils/shipping";
 import PaypalForm from "./PaypalForm";
 import StripeForm from "./StripeForm";
 import PaymentUnavailable from "../../../../components/feedback/PaymentUnavailable";
@@ -106,6 +108,16 @@ const s = stylex.create({
   paypalMarkTail: { color: "#0070ba" },
   back: { marginTop: 16 },
 });
+
+// Länder, in die Prodigi aus der EU liefert und die hier realistisch bestellt
+// werden. Erweitern ist eine Zeile; die Prüfung macht Prodigi beim Senden.
+const LAENDER: { value: string; label: string }[] = [
+  { value: "DE", label: "Deutschland" }, { value: "AT", label: "Österreich" },
+  { value: "CH", label: "Schweiz" }, { value: "NL", label: "Niederlande" },
+  { value: "BE", label: "Belgien" }, { value: "LU", label: "Luxemburg" },
+  { value: "FR", label: "Frankreich" }, { value: "IT", label: "Italien" },
+  { value: "DK", label: "Dänemark" }, { value: "PL", label: "Polen" },
+];
 
 function SectionHeader({ title }: { title: string }) {
   return (
@@ -227,10 +239,14 @@ export default function PaymentForm(props: Props): ReactElement {
     status: showError(name) ? ({ type: "error", message: "Pflichtfeld" } as const) : undefined,
   });
 
-  const totalPrice = shootingPackage && calculateTotalPrice(imagePriceObjectList) === 0
+  const goodsTotal = shootingPackage && calculateTotalPrice(imagePriceObjectList) === 0
     ? parseFloat(calculateTotalPackagePrice(shootingPackage, selectedImages.length))
     : calculateTotalPrice(imagePriceObjectList);
-  const totalLabel = `${typeof totalPrice === "number" ? totalPrice.toFixed(2) : totalPrice} €`;
+  // Pakete verkaufen Bilder, keine Abzüge — Versand nur bei Einzelpreisen
+  const hasLab = !shootingPackage && hasLabItem(imagePriceObjectList);
+  const shipping = shippingFor(goodsTotal, hasLab, settings.shippingFlat ?? 0, settings.freeShippingFrom ?? 0);
+  const totalPrice = goodsTotal + shipping;
+  const totalLabel = `${totalPrice.toFixed(2)} €`;
 
   if (loading) {
     return <PageLoader />;
@@ -273,6 +289,12 @@ export default function PaymentForm(props: Props): ReactElement {
           </div>
         )}
 
+        {hasLab && (
+          <div {...stylex.props(s.totalRow)}>
+            <Text type="body" color="secondary">Versand</Text>
+            <Text type="body">{shipping > 0 ? `${shipping.toFixed(2)} €` : "kostenlos"}</Text>
+          </div>
+        )}
         <div {...stylex.props(s.totalRow)}>
           <Text type="body" color="secondary">Gesamtpreis</Text>
           <Badge variant="info" label={totalLabel} />
@@ -302,14 +324,19 @@ export default function PaymentForm(props: Props): ReactElement {
             </div>
             <TextInput width="100%" label="PLZ" {...req("zip")} />
             <TextInput width="100%" label="Stadt" {...req("city")} />
-            <div {...stylex.props(s.full)}>
-              <TextInput
-                width="100%"
-                label="Bundesland"
-                value={userData.state ?? ""}
-                onChange={(v) => setUserData((prev: any) => ({ ...prev, state: v }))}
-              />
-            </div>
+            <TextInput
+              width="100%"
+              label="Bundesland"
+              value={userData.state ?? ""}
+              onChange={(v) => setUserData((prev: any) => ({ ...prev, state: v }))}
+            />
+            <Selector
+              width="100%"
+              label="Land"
+              options={LAENDER}
+              value={userData.country || "DE"}
+              onChange={(v) => setUserData((prev: any) => ({ ...prev, country: v ?? "DE" }))}
+            />
           </div>
         </div>
       ) : (
