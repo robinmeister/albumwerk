@@ -309,7 +309,7 @@ export type ChangeField =
   | "horizonDays"
   | "enabled";
 
-export type ChangeKind = "neu" | "geändert" | "deaktiviert" | "entfällt";
+export type ChangeKind = "warnung" | "neu" | "geändert" | "deaktiviert" | "entfällt";
 
 export interface Change {
   field: ChangeField;
@@ -399,5 +399,19 @@ export function diffPlans(old: Plan, next: Plan, currency = "EUR"): Change[] {
   if (!old.enabled && next.enabled) {
     changes.push({ field: "enabled", kind: "neu", text: "Die Terminbuchung wird eingeschaltet" });
   }
-  return changes;
+
+  // Warnungen zuerst: Arten ohne Zeitfenster sind nicht buchbar, ohne dass es sonst jemand merkt
+  const active = next.types.filter((type) => type.active);
+  const warnings: Change[] = [];
+  if (active.length > 0 && next.rules.length === 0) {
+    warnings.push({ field: "rules", kind: "warnung", text: "Kein Zeitfenster – Kund:innen können nichts buchen" });
+  } else {
+    for (const type of active) {
+      const open = next.rules.some((r) => r.allowedSlugs.length === 0 || r.allowedSlugs.includes(type.slug));
+      if (!open) {
+        warnings.push({ field: "rules", kind: "warnung", text: `„${type.name}“ hat kein Zeitfenster und ist nicht buchbar` });
+      }
+    }
+  }
+  return [...warnings, ...changes];
 }

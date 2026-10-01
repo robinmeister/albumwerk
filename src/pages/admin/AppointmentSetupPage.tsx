@@ -94,6 +94,7 @@ const HORIZON: Option<number>[] = [
   { value: 365, label: "1 Jahr" },
 ];
 const KIND_LABEL: Record<Change["kind"], string> = {
+  warnung: "Achtung",
   neu: "Neu",
   geändert: "Geändert",
   deaktiviert: "Nicht mehr buchbar",
@@ -268,7 +269,11 @@ export default function AppointmentSetupPage(): ReactElement {
   }
 
   const set = (patch: Partial<Answers>) => setAnswers({ ...answers, ...patch });
-  const setSchedule = (patch: Partial<Answers>) => set({ ...patch, scheduleTouched: true });
+  // Gleicher Wert wie jetzt: nichts tun, sonst gälte der Zeitplan als berührt
+  const setSchedule = (patch: Partial<Answers>) => {
+    if (Object.entries(patch).every(([key, value]) => same(answers[key as keyof Answers], value))) return;
+    set({ ...patch, scheduleTouched: true });
+  };
   const setService = (slug: string, patch: Partial<Service>) =>
     set({ services: answers.services.map((sv) => (sv.slug === slug ? { ...sv, ...patch } : sv)) });
   const perService = (render: (service: Service) => ReactNode) =>
@@ -304,8 +309,8 @@ export default function AppointmentSetupPage(): ReactElement {
 
   const restrictionOptions: Option<Restriction>[] = [
     { value: "all", label: "Wie meine Arbeitszeit" },
-    { value: "weekdays", label: "Nur werktags" },
-    { value: "weekend", label: "Nur am Wochenende" },
+    { value: "weekdays", label: "Nur werktags", isDisabled: !answers.days.some((d) => d <= 5) },
+    { value: "weekend", label: "Nur am Wochenende", isDisabled: !answers.days.some((d) => d >= 6) },
     { value: "evening", label: "Nur abends (ab 17 Uhr)", isDisabled: !hasEvening(answers) },
   ];
 
@@ -323,7 +328,7 @@ export default function AppointmentSetupPage(): ReactElement {
         ))}
       </div>
       <div {...stylex.props(s.inline)}>
-        <TextInput label="Eigene Leistung" placeholder="z. B. Newborn" value={customName} onChange={setCustomName} />
+        <TextInput label="Eigene Leistung" placeholder="z. B. Newborn" value={customName} onChange={(v) => setCustomName(v.slice(0, 80))} />
         <Button
           variant="secondary"
           label="Hinzufügen"
@@ -442,9 +447,7 @@ export default function AppointmentSetupPage(): ReactElement {
             options={restrictionOptions}
             value={service.restriction}
             onChange={(v) => {
-              setAnswers({
-                ...answers,
-                scheduleTouched: true,
+              setSchedule({
                 services: answers.services.map((sv) => (sv.slug === service.slug ? { ...sv, restriction: v } : sv)),
               });
             }}
@@ -464,7 +467,7 @@ export default function AppointmentSetupPage(): ReactElement {
     changes.length === 0 ? (
       <Text type="body">Dein Plan bleibt, wie er ist.</Text>
     ) : (
-      (["neu", "geändert", "deaktiviert", "entfällt"] as const).map((kind) => {
+      (["warnung", "neu", "geändert", "deaktiviert", "entfällt"] as const).map((kind) => {
         const group = changes.filter((c) => c.kind === kind);
         return (
           group.length > 0 && (

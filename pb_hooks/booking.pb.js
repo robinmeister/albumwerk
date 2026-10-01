@@ -648,12 +648,12 @@ routerAdd("POST", "/api/custom/booking/apply-plan", (e) => {
     try {
       e.app.runInTransaction((txApp) => {
         const typeCol = txApp.findCollectionByNameOrId("appointmentTypes");
-        const bySlug = {};
+        const bySlug = Object.create(null);
         txApp.findAllRecords("appointmentTypes").forEach((record) => {
           bySlug[record.getString("slug")] = record;
         });
 
-        const idBySlug = {};
+        const idBySlug = Object.create(null);
         body.types.forEach((type) => {
           let record = bySlug[type.slug];
           if (!record) {
@@ -697,7 +697,7 @@ routerAdd("POST", "/api/custom/booking/apply-plan", (e) => {
           txApp.save(record);
         });
 
-        const settings = txApp.findRecordById("settings", "appsettings0001");
+        const settings = txApp.findRecordById("settings", booking.SETTINGS_ID);
         settings.set("bookingMaxPerDay", Math.max(0, Math.round(Number(body.maxPerDay) || 0)));
         settings.set("bookingHorizonDays", Math.max(1, Math.round(Number(body.horizonDays) || 90)));
         settings.set("bookingEnabled", true);

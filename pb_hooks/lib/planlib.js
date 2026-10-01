@@ -12,7 +12,7 @@ function validatePlan(body) {
   const rules = body && Array.isArray(body.rules) ? body.rules : null;
   if (!types || !rules) return "Der Plan ist unvollständig.";
 
-  const slugs = {};
+  const slugs = Object.create(null);
   for (let i = 0; i < types.length; i++) {
     const type = types[i] || {};
     const slug = String(type.slug || "");

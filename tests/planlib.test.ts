@@ -13,6 +13,10 @@ describe('validatePlan', () => {
     expect(validatePlan({ types: [type], rules: [rule] })).toBeNull()
   })
 
+  it('Slugs wie „constructor“ sind keine Duplikate', () => {
+    expect(validatePlan({ types: [{ ...type, slug: 'constructor' }], rules: [] })).toBeNull()
+  })
+
   it.each([
     [{}, 'Der Plan ist unvollständig.'],
     [{ types: [type, type], rules: [] }, 'Der Kurz-Link „portrait“ kommt doppelt vor.'],

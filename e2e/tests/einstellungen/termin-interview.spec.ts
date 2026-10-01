@@ -27,21 +27,30 @@ test.beforeAll(async () => {
 test.afterAll(async () => {
   const pb = new PbAdmin();
   await pb.login();
-  await einstellungenWiederherstellen(pb);
   // Ohne Sicherung nichts anfassen — sonst löschte der Abgleich alle Live-Daten
-  if (!typesBefore || !rulesBefore) return;
-  for (const rule of await pb.list("availabilityRules")) await pb.delete("availabilityRules", rule.id);
-  for (const rule of rulesBefore) {
-    const { id: _id, collectionId: _c, collectionName: _n, created: _cr, updated: _u, ...data } = rule;
-    await pb.create("availabilityRules", data);
+  if (!typesBefore || !rulesBefore) {
+    await einstellungenWiederherstellen(pb);
+    return;
   }
-  for (const type of await pb.list("appointmentTypes")) {
-    const before = typesBefore.find((t) => t.id === type.id);
-    if (before) {
-      const { id: _id, collectionId: _c, collectionName: _n, created: _cr, updated: _u, ...data } = before;
-      await pb.update("appointmentTypes", type.id, data);
-    } else {
-      await pb.delete("appointmentTypes", type.id);
+  const rules = rulesBefore;
+  const types = typesBefore;
+  // Die Arten werden auch zurückgesetzt, wenn Einstellungen oder Fenster scheitern
+  try {
+    await einstellungenWiederherstellen(pb);
+    for (const rule of await pb.list("availabilityRules")) await pb.delete("availabilityRules", rule.id);
+    for (const rule of rules) {
+      const { id: _id, collectionId: _c, collectionName: _n, created: _cr, updated: _u, ...data } = rule;
+      await pb.create("availabilityRules", data);
+    }
+  } finally {
+    for (const type of await pb.list("appointmentTypes")) {
+      const before = types.find((t) => t.id === type.id);
+      if (before) {
+        const { id: _id, collectionId: _c, collectionName: _n, created: _cr, updated: _u, ...data } = before;
+        await pb.update("appointmentTypes", type.id, data);
+      } else {
+        await pb.delete("appointmentTypes", type.id);
+      }
     }
   }
 });

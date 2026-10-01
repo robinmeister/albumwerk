@@ -202,6 +202,47 @@ describe('diffPlans', () => {
     ])
   })
 
+  describe('Warnung', () => {
+    const svc = (slug: string, name: string, restriction: 'all' | 'evening' = 'all') => ({
+      ...answersFromPlan(plan).services[0], slug, name, restriction,
+    })
+    const warn = (text: string) => ({ field: 'rules', kind: 'warnung', text })
+
+    it('Nur abends ohne Abendzeiten', () => {
+      const a = answers({
+        services: [svc('portrait', 'Portraitshooting'), svc('abend', 'Abendshooting', 'evening')],
+        days: [6], windows: { 6: [{ startMinute: 540, endMinute: 780 }] }, restrict: true,
+      })
+      const changes = diffPlans(plan, planFromAnswers(a, plan))
+      expect(changes[0]).toEqual(warn('„Abendshooting“ hat kein Zeitfenster und ist nicht buchbar'))
+      expect(changes.filter((c) => c.kind === 'warnung')).toHaveLength(1)
+    })
+
+    it('unveränderte Fenster, neue Art ohne erlaubendes Fenster', () => {
+      const restricted = currentPlan([type({}), type({ id: 'id-k', slug: 'kennenlernen', name: 'Kennenlernen' })],
+        [rule({ allowedTypes: ['id-k'] })], SETTINGS)
+      const a = { ...answersFromPlan(restricted), scheduleTouched: false }
+      a.services = [svc('portrait', 'Portraitshooting'), ...a.services.slice(1)]
+      expect(diffPlans(restricted, planFromAnswers(a, restricted))).toEqual([
+        warn('„Portraitshooting“ hat kein Zeitfenster und ist nicht buchbar'),
+      ])
+    })
+
+    it('leere Fenster: eine Kalender-Warnung statt je Art', () => {
+      const a = answers({ services: [svc('portrait', 'Portraitshooting'), svc('b', 'Zweite')], days: [] })
+      const changes = diffPlans(plan, planFromAnswers(a, plan))
+      expect(changes.filter((c) => c.kind === 'warnung')).toEqual([
+        warn('Kein Zeitfenster – Kund:innen können nichts buchen'),
+      ])
+      expect(changes[0].kind).toBe('warnung')
+    })
+
+    it('normaler Plan hat keine Warnung', () => {
+      const a = { ...answersFromPlan(plan), maxPerDay: 5 }
+      expect(diffPlans(plan, planFromAnswers(a, plan)).some((c) => c.kind === 'warnung')).toBe(false)
+    })
+  })
+
   it('Grenzen und Einschalten', () => {
     const off = { ...plan, enabled: false, maxPerDay: 0 }
     expect(diffPlans(off, { ...off, enabled: true, maxPerDay: 2, horizonDays: 180 })).toEqual([
