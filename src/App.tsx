@@ -35,6 +35,7 @@ import NoMatchPage from "./pages/NoMatchPage";
 import "react-toastify/dist/ReactToastify.css";
 import { EmptyLayout, Layout } from "./components/layout/Layout";
 import DownloadsPage from "./pages/user/DownloadsPage";
+import PrintsPage from "./pages/user/PrintsPage";
 import OrdersPage from "./pages/user/OrdersPage";
 import OrderDetailsPage from "./pages/user/OrderDetailsPage";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
@@ -154,6 +155,7 @@ function ThemedApp(): ReactElement {
                   <Route path="pricing" element={<PricingPage />} />
                   <Route path="profile" element={<ProfilePage />} />
                   <Route path="downloads" element={<DownloadsPage />} />
+                  <Route path="prints" element={<PrintsPage />} />
                   {/* direct download of paid/public shootings, no checkout */}
                   <Route path="shootingDownloads" element={<PublicDownloadsPage />} />
                   <Route path="support" element={<SupportPage />} />

@@ -21,6 +21,7 @@ export interface NavGroup {
 export const userNavItems: NavItem[] = [
   { key: "album", label: "Album", path: "/album", exact: true, Icon: Image },
   { key: "downloads", label: "Downloads", path: "/downloads", Icon: Download },
+  { key: "prints", label: "Drucke", path: "/prints", Icon: Printer },
 ];
 
 // Ungruppiert und immer sichtbar: der Alltag.
