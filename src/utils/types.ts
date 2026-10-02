@@ -93,6 +93,8 @@ export type FinishedOrder = {
   shootingTitle: string;
   totalPrice: number;
   finished: boolean;
+  trackingNumber?: string;
+  trackingUrl?: string;
 }
 
 export type UserOrder = {

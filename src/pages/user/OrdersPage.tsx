@@ -24,6 +24,7 @@ import {
   UserOrder,
 } from "../../utils/types";
 import { calculateTotalPrice } from "../../features/Pricing/utils/functions";
+import ShipmentFields, { EMPTY_SHIPMENT, Shipment, hasManualPrints } from "../../features/Orders/ShipmentFields";
 import { getUsersSnapshot } from "../../utils/functions";
 import useMobileService from "../../hooks/useMobileService";
 
@@ -205,8 +206,8 @@ function OrderListItem({
 }
 
 function OrderDetailPanel({
-  order, finishing, onFinish,
-}: { order: TableOrderExtended; finishing: boolean; onFinish: () => void }) {
+  order, finishing, onFinish, shipment, onShipmentChange,
+}: { order: TableOrderExtended; finishing: boolean; onFinish: () => void; shipment: Shipment; onShipmentChange: (v: Shipment) => void }) {
   const items = useMemo(() => parseIPOL(order.imagePriceObjectList), [order.imagePriceObjectList]);
   const allPrices: PriceWithQuantity[] = items.flatMap(i => i.price);
   const printCount = allPrices.filter(p => !p.isDownloadable).reduce((s, p) => s + p.quantity, 0);
@@ -241,15 +242,20 @@ function OrderDetailPanel({
         </div>
 
         {!order.finished && (
-          <Button
-            variant="primary"
-            width="100%"
-            icon={<Send />}
-            isLoading={finishing}
-            isDisabled={finishing}
-            label="Bestellung abschicken"
-            onClick={onFinish}
-          />
+          <>
+            {hasManualPrints(items) && (
+              <ShipmentFields value={shipment} onChange={onShipmentChange} />
+            )}
+            <Button
+              variant="primary"
+              width="100%"
+              icon={<Send />}
+              isLoading={finishing}
+              isDisabled={finishing}
+              label="Bestellung abschicken"
+              onClick={onFinish}
+            />
+          </>
         )}
       </div>
 
@@ -306,7 +312,10 @@ export default function OrdersPage(): ReactElement {
   const [finishing,     setFinishing]     = useState(false);
   const [activeTab,     setActiveTab]     = useState(0);
   const [search,        setSearch]        = useState("");
-  const [selectedOrder, setSelectedOrder] = useState<TableOrderExtended | undefined>();
+  const [selectedOrder, setSelectedOrderRaw] = useState<TableOrderExtended | undefined>();
+  const [shipment, setShipment] = useState<Shipment>(EMPTY_SHIPMENT);
+  // Sendungsfelder gehören zur ausgewählten Bestellung: bei jedem Wechsel leeren.
+  const setSelectedOrder = (o: TableOrderExtended | undefined) => { setSelectedOrderRaw(o); setShipment(EMPTY_SHIPMENT); };
   const [summaryOpen,   setSummaryOpen]   = useState(false);
   const [sortKey,       setSortKey]       = useState<SortKey>("email");
   const [sortDir,       setSortDir]       = useState<SortDir>("asc");
@@ -426,6 +435,8 @@ export default function OrdersPage(): ReactElement {
         totalPrice:           selectedOrder.totalPrice,
         finished:             true,
         imagePriceObjectList: selectedOrder.imagePriceObjectList,
+        trackingNumber:       shipment.trackingNumber.trim(),
+        trackingUrl:          shipment.trackingUrl.trim(),
       });
       toast.success("Bestellung abgeschickt");
       setSelectedOrder(undefined);
@@ -657,6 +668,8 @@ export default function OrdersPage(): ReactElement {
                   order={selectedOrder}
                   finishing={finishing}
                   onFinish={() => void handleFinishOrder()}
+                  shipment={shipment}
+                  onShipmentChange={setShipment}
                 />
               </div>
             )}

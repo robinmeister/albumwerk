@@ -12,6 +12,7 @@ import { pb } from "../../config/pocketbase";
 
 import Page from "../../components/layout/Page";
 import { ImagePriceObject, PriceWithQuantity, TableOrder } from "../../utils/types";
+import ShipmentFields, { EMPTY_SHIPMENT, Shipment, hasManualPrints } from "../../features/Orders/ShipmentFields";
 
 function parseIPOL(val: unknown): ImagePriceObject[] {
   if (typeof val === "string") return JSON.parse(val);
@@ -19,6 +20,7 @@ function parseIPOL(val: unknown): ImagePriceObject[] {
 }
 
 const s = stylex.create({
+  shipment: { display: "grid", gap: 12, marginBottom: 16, maxWidth: 480 },
   bar: {
     display: "flex",
     alignItems: "center",
@@ -59,6 +61,7 @@ export default function OrderDetailsPage(): ReactElement {
   const [order] = useState<TableOrder>(location.state?.order);
   const [items, setItems] = useState<ImagePriceObject[]>([]);
   const [finishing, setFinishing] = useState(false);
+  const [shipment, setShipment] = useState<Shipment>(EMPTY_SHIPMENT);
 
   useEffect(() => {
     if (order?.imagePriceObjectList) {
@@ -81,6 +84,8 @@ export default function OrderDetailsPage(): ReactElement {
         totalPrice:           order.totalPrice,
         finished:             true,
         imagePriceObjectList: order.imagePriceObjectList,
+        trackingNumber:       shipment.trackingNumber.trim(),
+        trackingUrl:          shipment.trackingUrl.trim(),
       });
       toast.success("Bestellung erfolgreich abgeschickt");
       navigate("/orders");
@@ -124,6 +129,12 @@ export default function OrderDetailsPage(): ReactElement {
           onClick={() => void handleFinishOrder()}
         />
       </div>
+
+      {!order.finished && hasManualPrints(items) && (
+        <div {...stylex.props(s.shipment)}>
+          <ShipmentFields value={shipment} onChange={setShipment} />
+        </div>
+      )}
 
       {/* Order summary */}
       <div {...stylex.props(s.summary)}>
