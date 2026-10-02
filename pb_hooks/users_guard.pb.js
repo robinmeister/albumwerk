@@ -51,3 +51,15 @@ onRecordUpdateRequest((e) => {
   }
   return e.next();
 }, "users");
+
+// emailVisibility ist für alle Konten false, damit Kund:innen keine fremden
+// Adressen sehen. Admins brauchen die Adresse aber (Nutzerliste, Bestätigung
+// beim Vergeben von Adminrechten) — PocketBase gibt sie von sich aus nur
+// Superusern und dem Konto selbst heraus.
+onRecordEnrich((e) => {
+  const auth = e.requestInfo && e.requestInfo.auth;
+  if (auth && auth.getBool("isAdmin")) {
+    e.record.ignoreEmailVisibility(true);
+  }
+  return e.next();
+}, "users");

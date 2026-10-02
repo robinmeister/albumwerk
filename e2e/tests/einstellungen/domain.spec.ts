@@ -120,15 +120,14 @@ test("scheitert nur die Zustellung, heisst es nicht 'nicht gesendet'", async ({
   anmelden,
 }) => {
   await verwaltetStubben(page);
-  // support.pb.js antwortet mit 502, wenn die Weiterleitung scheitert. Hier
-  // erzwungen, weil die Dev-Instanz sonst erfolgreich per Mail zustellt.
-  await page.route("**/api/custom/support/forward", (route) =>
-    route.fulfill({
-      status: 502,
-      contentType: "application/json",
-      body: JSON.stringify({ status: "error", message: "Weiterleitung fehlgeschlagen" }),
-    }),
-  );
+  // support.pb.js leitet beim Anlegen weiter, die Seite liest danach nur
+  // forwardState am Ticket. Der Fehlschlag wird dort vorgetäuscht, weil die
+  // Dev-Instanz sonst erfolgreich per Mail zustellt.
+  await page.route("**/api/collections/supportTickets/records/*", async (route) => {
+    if (route.request().method() !== "GET") return route.continue();
+    const response = await route.fetch();
+    await route.fulfill({ response, json: { ...(await response.json()), forwardState: "failed" } });
+  });
 
   await anmelden(page, DEMO_ADMIN.email, DEMO_ADMIN.password);
   await page.goto("/domain");

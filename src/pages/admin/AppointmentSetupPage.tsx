@@ -529,7 +529,7 @@ export default function AppointmentSetupPage(): ReactElement {
 
         {step !== SUMMARY && hints.length > 0 && (
           <div data-testid="interview-aenderungen">
-            <Banner status="info" title="Das ändert sich an deinem Plan">
+            <Banner status="info" title="Das ändert sich an deinem Plan" defaultIsExpanded>
               <ul {...stylex.props(s.list)}>
                 {hints.map((c) => (
                   <li key={c.text}><Text type="body">{c.text}</Text></li>

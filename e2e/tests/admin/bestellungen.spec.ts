@@ -38,9 +38,7 @@ test("Fotograf schließt eine Bestellung ab", async ({ page, album, pb, anmelden
     await anmelden(page, DEMO_ADMIN.email, DEMO_ADMIN.password);
     await page.goto("/orders");
 
-    // Die Liste zeigt Shooting und Betrag; eine Kundenspalte gibt es nicht,
-    // weil users.emailVisibility false ist und PocketBase das Feld auch
-    // Admins nicht ausliefert.
+    // Die Liste zeigt Shooting und Betrag; eine Kundenspalte gibt es nicht.
     const zeile = page.getByTestId("bestellzeile").filter({ hasText: album.title });
     await expect(zeile).toBeVisible();
     await shot(zeile, "bestellungen-bearbeiten/01-eingegangen");

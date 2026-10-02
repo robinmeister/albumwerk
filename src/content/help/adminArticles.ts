@@ -476,8 +476,8 @@ export const adminArticles: HelpArticle[] = [
     bodyHtml: `
 <p>Unter <strong>Nutzer</strong> siehst du alle registrierten Konten mit ihren Kontaktdaten und den zugeordneten Alben.</p>
 <figure>
-  <img src="/help/nutzer-verwalten/01-suchen.webp" alt="Die Nutzertabelle mit den Spalten Name, E-Mail, Alben, Verifiziert und Admin" loading="lazy" />
-  <figcaption>Die Suche oben grenzt die Liste auf einen Namen ein. Der Schalter rechts vergibt Adminrechte.</figcaption>
+  <img src="/help/nutzer-verwalten/01-suchen.webp" alt="Die Nutzertabelle mit den Spalten Name, E-Mail, Ort, Alben, Verifiziert und Rolle" loading="lazy" />
+  <figcaption>Die Suche oben grenzt die Liste auf einen Namen oder eine E-Mail-Adresse ein. Ein Klick auf die Zeile öffnet die Details, dort vergibst du auch Adminrechte.</figcaption>
 </figure>
 <h2>Wie Kunden zu einem Konto kommen</h2>
 <p>In aller Regel gar nicht durch dich: Du gibst den Album-Link oder QR-Code weiter, der Kunde registriert sich selbst und das Album wird dabei automatisch mit seinem neuen Konto verknüpft. Das ist der bequemste Weg für beide Seiten.</p>

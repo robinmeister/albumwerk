@@ -13,24 +13,26 @@ test("Fotograf findet einen Kunden und ändert die Rechte", async ({
   await anmelden(page, DEMO_ADMIN.email, DEMO_ADMIN.password);
   await page.goto("/users");
 
-  await page.getByPlaceholder("Suche nach Name oder E-Mail…").fill(album.kundin.lastName);
+  await page.getByPlaceholder("Suche nach Name oder E-Mail…").fill(album.kundin.email);
 
-  // Nicht über die E-Mail suchen: die Spalte bleibt leer, weil users.emailVisibility
-  // false ist und PocketBase das Feld deshalb auch Admins nicht ausliefert.
+  // Die E-Mail-Spalte ist nur befüllt, weil der Enrich-Hook in users_guard.pb.js
+  // Admins die Adresse trotz emailVisibility=false ausliefert.
   const zeile = page.getByRole("row", { name: new RegExp(album.kundin.lastName) });
-  await expect(zeile).toBeVisible();
+  await expect(zeile).toContainText(album.kundin.email);
   // Die ganze Tabelle, nicht nur die Zeile: ohne die Spaltenköpfe ist im Bild
-  // nicht zu erkennen, was „1" und der Schalter rechts bedeuten.
+  // nicht zu erkennen, was die Spalten bedeuten.
   await shot(page.locator("table"), "nutzer-verwalten/01-suchen");
 
   // Adminrechte setzen und wieder zurücknehmen — der Test hinterlässt keinen
-  // veränderten Rechtestand.
-  // Der Schalter liegt außerhalb des row-Elements, deshalb über `main` gesucht —
-  // die Suche oben hat die Liste bereits auf diesen einen Nutzer eingegrenzt.
-  // force, weil Astryx ein gestaltetes Label über die eigentliche Checkbox legt:
-  // Playwrights Klickbarkeitsprüfung hält sie sonst dauerhaft für verdeckt.
-  const adminSchalter = page.locator('main input[type="checkbox"]');
-  await adminSchalter.click({ force: true });
+  // veränderten Rechtestand. Beides läuft über den Dialog und verlangt die
+  // E-Mail-Adresse als Bestätigung.
+  await zeile.click();
+  const dialog = page.getByRole("dialog");
+  const bestaetigung = dialog.getByPlaceholder(album.kundin.email);
+
+  await dialog.getByRole("button", { name: "Zum Admin machen" }).click();
+  await bestaetigung.fill(album.kundin.email);
+  await dialog.getByRole("button", { name: "Admin-Rechte vergeben" }).click();
   await expect
     .poll(async () => (await pb.get("users", album.kundin.id)).isAdmin, {
       timeout: 15_000,
@@ -38,7 +40,9 @@ test("Fotograf findet einen Kunden und ändert die Rechte", async ({
     })
     .toBe(true);
 
-  await adminSchalter.click({ force: true });
+  await dialog.getByRole("button", { name: "Admin-Rechte entziehen" }).click();
+  await bestaetigung.fill(album.kundin.email);
+  await dialog.getByRole("button", { name: "Rechte entziehen", exact: true }).click();
   await expect
     .poll(async () => (await pb.get("users", album.kundin.id)).isAdmin, { timeout: 15_000 })
     .toBe(false);
