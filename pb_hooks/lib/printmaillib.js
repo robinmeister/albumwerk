@@ -86,13 +86,20 @@ function notifyStudioShipped(app, job) {
     "Druckaufträge öffnen", jobsLink(app));
 }
 
-function notifyCustomerShipped(app, job) {
-  var url = job.getString("trackingUrl");
-  send(app, customerEmail(job),
+// Gemeinsam für Labor (Webhook) und Handdrucke („Abschicken“).
+function notifyShipped(app, to, trackingNumber, trackingUrl) {
+  var nr = String(trackingNumber || "");
+  var url = String(trackingUrl || "").trim();
+  if (!/^https?:\/\//i.test(url)) url = "";
+  send(app, to,
     "Deine Drucke sind unterwegs",
     "Deine Drucke sind unterwegs",
-    ["Deine bestellten Drucke wurden verschickt."].concat(trackingLines(job)),
+    ["Deine bestellten Drucke wurden verschickt."].concat(nr ? ["Sendungsnummer: " + nr] : []),
     "Sendung verfolgen", url);
+}
+
+function notifyCustomerShipped(app, job) {
+  notifyShipped(app, customerEmail(job), job.getString("trackingNumber"), job.getString("trackingUrl"));
 }
 
 module.exports = {
@@ -100,4 +107,5 @@ module.exports = {
   notifyFailed: notifyFailed,
   notifyStudioShipped: notifyStudioShipped,
   notifyCustomerShipped: notifyCustomerShipped,
+  notifyShipped: notifyShipped,
 };
