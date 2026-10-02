@@ -87,14 +87,14 @@ function notifyStudioShipped(app, job) {
 }
 
 // Gemeinsam für Labor (Webhook) und Handdrucke („Abschicken“).
-function notifyShipped(app, to, trackingNumber, trackingUrl) {
+function notifyShipped(app, to, trackingNumber, trackingUrl, partial) {
   var nr = String(trackingNumber || "");
   var url = String(trackingUrl || "").trim();
   if (!/^https?:\/\//i.test(url)) url = "";
   send(app, to,
     "Deine Drucke sind unterwegs",
     "Deine Drucke sind unterwegs",
-    ["Deine bestellten Drucke wurden verschickt."].concat(nr ? ["Sendungsnummer: " + nr] : []),
+    [partial ? "Ein Teil deiner bestellten Drucke wurde verschickt. Der Rest folgt separat." : "Deine bestellten Drucke wurden verschickt."].concat(nr ? ["Sendungsnummer: " + nr] : []),
     "Sendung verfolgen", url);
 }
 

@@ -165,7 +165,29 @@ function needsManualShipmentMail(app, order) {
   return groupsForOrder(items, job, null).some(function (g) { return g.kind === "manual"; });
 }
 
+// Entscheidung des finishedOrders-Hooks: null = keine Mail, sonst
+// { partial } (partial: Laborteil noch unterwegs). Ein zweiter Archiveintrag
+// zur selben Bestellung (Zurück-Button im Browser) löst keine zweite Mail aus.
+function shipmentMailDecision(app, order, finished) {
+  var orderId = finished.getString("orderId");
+  if (orderId) {
+    var others = [];
+    try {
+      others = app.findRecordsByFilter("finishedOrders", "orderId = {:o} && id != {:id}", "", 1, 0, { o: orderId, id: finished.id });
+    } catch (_) {
+      others = [];
+    }
+    if (others.length > 0) return null;
+  }
+  var items = physicalItems(app, parseList(order.getString("imagePriceObjectList")));
+  var job = jobFields(findByOrder(app, "printJobs", order.id));
+  var groups = groupsForOrder(items, job, null);
+  if (!groups.some(function (g) { return g.kind === "manual"; })) return null;
+  return { partial: groups.some(function (g) { return g.kind === "lab"; }) };
+}
+
 module.exports = {
+  shipmentMailDecision: shipmentMailDecision,
   customerStatus: customerStatus,
   manualStatus: manualStatus,
   physicalItems: physicalItems,

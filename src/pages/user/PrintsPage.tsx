@@ -55,10 +55,11 @@ function datum(created: string): string {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("de-DE");
 }
 
-function Gruppe({ g }: { g: DruckGruppe }): ReactElement {
-  const st = STATUS[g.status];
+function Gruppe({ g, caption }: { g: DruckGruppe; caption?: string }): ReactElement {
+  const st = STATUS[g.status] ?? STATUS.processing;
   return (
     <div {...stylex.props(s.group)}>
+      {caption && <Text type="supporting" color="secondary">{caption}</Text>}
       <div {...stylex.props(s.groupHead)}>
         <Badge variant={st.variant} label={st.label} />
         {g.trackingUrl ? (
@@ -124,7 +125,9 @@ export default function PrintsPage(): ReactElement {
         {orders.map((o) => (
           <div key={o.id} {...stylex.props(s.card)}>
             <Heading level={6}>{datum(o.created) ? `Bestellung vom ${datum(o.created)}` : "Bestellung"}</Heading>
-            {o.groups.map((g) => <Gruppe key={g.kind} g={g} />)}
+            {o.groups.map((g, i) => (
+              <Gruppe key={g.kind} g={g} caption={o.groups.length > 1 ? `Lieferung ${i + 1} von ${o.groups.length}` : undefined} />
+            ))}
           </div>
         ))}
       </div>

@@ -46,7 +46,8 @@ function app(w: Welt = {}) {
       if (!hit) throw new Error("nicht gefunden");
       return satz(hit.id, hit);
     },
-    findRecordsByFilter(c: string, _f: string, _s: string, _l: number, _o: number, p: { u: string }) {
+    findRecordsByFilter(c: string, _f: string, _s: string, _l: number, _o: number, p: { u?: string; o?: string; id?: string }) {
+      if (p.o !== undefined) return (tabellen[c] ?? []).filter((r) => r.orderId === p.o && r.id !== p.id).map((r) => satz(r.id, r));
       return (tabellen[c] ?? []).filter((r) => r.userId === p.u).map((r) => satz(r.id, r));
     },
   };
@@ -202,5 +203,34 @@ describe("Versand-Mail beim Abschicken", () => {
 
   it("nicht bei rein digitalen Bestellungen", () => {
     expect(dl.needsManualShipmentMail(app(), order([pos("a", "p-digital")]))).toBe(false);
+  });
+
+  describe("Entscheidung im Hook", () => {
+    const fin = (id: string, orderId: string) => satz(id, { orderId });
+    const alt = [{ id: "f1", orderId: "o1" }, { id: "f2", orderId: "o1" }];
+
+    it("erste Fertigstellung: Mail, nicht partiell", () => {
+      const a = app({ finishedOrders: [alt[0]] });
+      expect(dl.shipmentMailDecision(a, order([pos("a", "p-hand")]), fin("f1", "o1"))).toEqual({ partial: false });
+    });
+
+    it("zweite Fertigstellung derselben Bestellung: keine Mail", () => {
+      const a = app({ finishedOrders: alt });
+      expect(dl.shipmentMailDecision(a, order([pos("a", "p-hand")]), fin("f2", "o1"))).toBeNull();
+    });
+
+    it("leere orderId (Altbestand) wird nicht als Duplikat gewertet", () => {
+      const a = app({ finishedOrders: [{ id: "f1", orderId: "" }, { id: "f2", orderId: "" }] });
+      expect(dl.shipmentMailDecision(a, order([pos("a", "p-hand")]), fin("f2", ""))).toEqual({ partial: false });
+    });
+
+    it("gemischte Bestellung: Mail mit partial", () => {
+      const a = app({ printJobs: [{ id: "j1", orderId: "o1", status: "submitted", route: "customer" }], finishedOrders: [alt[0]] });
+      expect(dl.shipmentMailDecision(a, order([pos("a", "p-hand"), pos("b", "p-labor")]), fin("f1", "o1"))).toEqual({ partial: true });
+    });
+
+    it("keine Handdrucke: keine Mail", () => {
+      expect(dl.shipmentMailDecision(app(), order([pos("a", "p-digital")]), fin("f1", "o1"))).toBeNull();
+    });
   });
 });

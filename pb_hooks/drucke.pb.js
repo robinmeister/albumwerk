@@ -21,13 +21,14 @@ onRecordAfterCreateSuccess((e) => {
     const orderId = finished.getString("orderId");
     let order = null;
     try { order = e.app.findRecordById("orders", orderId); } catch (_) { order = null; }
-    if (order && dl.needsManualShipmentMail(e.app, order)) {
+    const decision = order ? dl.shipmentMailDecision(e.app, order, finished) : null;
+    if (decision) {
       let to = "";
       try { to = String(JSON.parse(order.getString("userData") || "{}").email || ""); } catch (_) { to = ""; }
       if (!to) {
         try { to = e.app.findRecordById("users", order.getString("userId")).email(); } catch (_) { to = ""; }
       }
-      pm.notifyShipped(e.app, to, finished.getString("trackingNumber"), finished.getString("trackingUrl"));
+      pm.notifyShipped(e.app, to, finished.getString("trackingNumber"), finished.getString("trackingUrl"), decision.partial);
     }
   } catch (err) {
     // „Abschicken“ ist gespeichert — eine fehlende Mail darf das nicht kippen
