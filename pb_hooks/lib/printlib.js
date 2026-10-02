@@ -205,6 +205,16 @@ function addressComplete(r) {
   return Boolean(r && r.name && r.line1 && r.postalCode && r.city && r.countryCode);
 }
 
+// Prodigi lehnt Abzüge ohne finish und Leinwände ohne wrap ab
+// (MissingRequiredAttributes). MirrorWrap spiegelt den Rand, statt das Motiv
+// um die Kante zu ziehen.
+// ponytail: feste Wahl je Produktfamilie, Auswahl am Preis erst wenn gewünscht
+function labAttributes(sku) {
+  if (/^GLOBAL-PHO-/.test(sku)) return { finish: "lustre" };
+  if (/^GLOBAL-CAN-/.test(sku)) return { wrap: "MirrorWrap" };
+  return {};
+}
+
 function prodigiOrderBody(view, recipient, baseUrl, token) {
   var address = {
     line1: recipient.line1,
@@ -231,6 +241,7 @@ function prodigiOrderBody(view, recipient, baseUrl, token) {
         sku: it.sku,
         copies: it.copies,
         sizing: "fillPrintArea",
+        attributes: labAttributes(it.sku),
         assets: [{
           printArea: "default",
           url: baseUrl + "/api/custom/printfile/" + view.id + "/" + i + "?t=" + encodeURIComponent(token),
@@ -509,6 +520,7 @@ module.exports = {
   studioRecipient: studioRecipient,
   recipientFor: recipientFor,
   addressComplete: addressComplete,
+  labAttributes: labAttributes,
   prodigiOrderBody: prodigiOrderBody,
   applyLabOrder: applyLabOrder,
   deliveredFields: deliveredFields,

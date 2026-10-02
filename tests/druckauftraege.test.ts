@@ -295,9 +295,16 @@ describe("Prodigi-Auftrag", () => {
         sku: "GLOBAL-PHO-5X7",
         copies: 2,
         sizing: "fillPrintArea",
+        attributes: { finish: "lustre" },
         assets: [{ printArea: "default", url: "https://galerie.example/api/custom/printfile/job1/0?t=tok" }],
       }],
     });
+  });
+
+  it("setzt die Attribute, ohne die Prodigi ablehnt", () => {
+    expect(pl.labAttributes("GLOBAL-PHO-4X6")).toEqual({ finish: "lustre" });
+    expect(pl.labAttributes("GLOBAL-CAN-16X24")).toEqual({ wrap: "MirrorWrap" });
+    expect(pl.labAttributes("GLOBAL-FAP-20X30")).toEqual({});
   });
 
   it("schickt beim Weg 'an mich' an die Studioadresse", () => {
