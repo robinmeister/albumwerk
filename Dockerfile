@@ -37,7 +37,7 @@ ARG TARGETARCH
 LABEL org.opencontainers.image.title="Albumwerk" \
       org.opencontainers.image.description="Albumwerk — self-hostbare Kundenalben & Bildverkauf für Fotografen. 0 % Kommission, DSGVO-freundlich" \
       org.opencontainers.image.version="${APP_VERSION}" \
-      org.opencontainers.image.source="https://gitea.robinhm.de/robinmeister/kathis_platform" \
+      org.opencontainers.image.source="https://gitea.robinhm.de/robinmeister/albumwerk" \
       org.opencontainers.image.licenses="PolyForm-Noncommercial-1.0.0"
 
 RUN apk add --no-cache \

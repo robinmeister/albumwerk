@@ -36,7 +36,7 @@ Ihre Fotos und Kundendaten bleiben bei Ihnen.
 
 ```bash
 git clone <URL-DIESES-REPOSITORYS>
-cd kathis_platform
+cd albumwerk
 ```
 
 (Alternativ den Projektordner z. B. per SFTP auf den Server kopieren und

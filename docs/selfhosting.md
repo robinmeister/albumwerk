@@ -167,5 +167,5 @@ löschen und neu starten.
 
 ## Hilfe
 
-Fragen und Probleme: [Issues im Repo](https://gitea.robinhm.de/robinmeister/kathis_platform/issues)
+Fragen und Probleme: [Issues im Repo](https://gitea.robinhm.de/robinmeister/albumwerk/issues)
 oder E-Mail an den Anbieter (siehe LICENSE.md).
